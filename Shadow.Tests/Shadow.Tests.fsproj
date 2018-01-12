@@ -97,11 +97,6 @@
     <Reference Include="System.Xml.Linq" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\AltCover.Recorder\AltCover.Shadow.fsproj">
-      <Name>AltCover.Shadow</Name>
-      <Project>{62480be3-4479-4a47-a23f-50858ecd74b3}</Project>
-      <Private>True</Private>
-    </ProjectReference>
     <ProjectReference Include="..\Shadow.Tests2\Shadow.Tests2.fsproj">
       <Name>Shadow.Tests2</Name>
       <Project>{d6ed39d2-ea21-4141-96d7-2b5f234fcd3e}</Project>

@@ -10,10 +10,13 @@ open System.Runtime.CompilerServices
 open System.Runtime.InteropServices
 open System.Xml
 
+open CoreSubstitutes
+
 [<ProgId("ExcludeFromCodeCoverage")>] // HACK HACK HACK
-type Tracer = { Tracer : string }
+type Tracer () = 
+  member val Tracer = String.Empty with get, set
 #if NETSTANDARD2_0
-   with static member Core () =
+  static member Core () =
              typeof<Microsoft.FSharp.Core.CompilationMappingAttribute>.Assembly.Location
 #endif
 
@@ -26,8 +29,12 @@ module Locking =
   /// Synchronize an action on an object
   /// </summary>
   /// <param name="f">The action to perform</param>
-  let internal WithLockerLocked (locker:'a) (f: unit -> unit) =
-    lock locker f
+  let internal WithLockerLocked (locker:'a) (f: 'b -> 'c) =
+    System.Threading.Monitor.Enter locker
+    try 
+      f null
+    finally
+      System.Threading.Monitor.Exit locker
 
 module Instance =
   open System.Globalization
@@ -52,7 +59,7 @@ module Instance =
   /// <summary>
   /// Accumulation of visit records
   /// </summary>
-  let internal Visits = new Dictionary<string, Dictionary<int, int>>();
+  let internal Visits = new Dictionary<String, Dictionary<Int32, Int32>>();
 
   /// <summary>
   /// Interlock for report instances
@@ -86,7 +93,7 @@ module Instance =
   /// </summary>
   /// <param name="hitCounts">The coverage results to incorporate</param>
   /// <param name="coverageFile">The coverage file to update as a stream</param>
-  let internal UpdateReport counts coverageFile =
+  let internal UpdateReport (counts : IEnumerable<KeyValuePair<String, Dictionary<Int32, Int32>>> ) coverageFile =
     mutex.WaitOne(10000) |> ignore
     let flushStart = DateTime.UtcNow;
     try
@@ -107,30 +114,30 @@ module Instance =
       root.SetAttribute("measureTime",
                         measureTime.ToString("o", System.Globalization.CultureInfo.InvariantCulture));
 
-      counts
-      |> Seq.iter (fun (pair : KeyValuePair<string, Dictionary<int,int>>) ->
+      for pair in counts do
           let moduleId = pair.Key;
           let moduleHits = pair.Value;
           let affectedModules =
               coverageDocument.SelectNodes("//module")
-              |> Seq.cast<XmlElement>
-              |> Seq.filter (fun el -> el.GetAttribute("moduleId").Equals(moduleId))
-              |> Seq.truncate 1 // at most 1
+              |> MySeq.cast<XmlElement>
+              |> MySeq.filter (fun el -> el.GetAttribute("moduleId").Equals(moduleId))
+              |> MySeq.truncate 1 // at most 1
 
-          affectedModules
-          |> Seq.iter (fun affectedModule ->
-          // Don't do this in one leap like --
-          // affectedModule.Descendants(XName.Get("seqpnt"))
-          // Get the methods, then flip their
-          // contents before concatenating
-          affectedModule.SelectNodes("method")
-          |> Seq.cast<XmlElement>
-          |> Seq.collect (fun (``method``:XmlElement) -> ``method``.SelectNodes("seqpnt")
-                                                           |> Seq.cast<XmlElement>
-                                                           |> Seq.toList |> List.rev)
-          |> Seq.mapi (fun counter pt -> (counter, pt))
-          |> Seq.filter (fst >> moduleHits.ContainsKey)
-          |> Seq.iter (fun x ->
+          for affectedModule in affectedModules do
+            // Don't do this in one leap like --
+            // affectedModule.Descendants(XName.Get("seqpnt"))
+            // Get the methods, then flip their
+            // contents before concatenating
+            let points = affectedModule.SelectNodes("method")
+                         |> MySeq.cast<XmlElement>
+                         |> MySeq.collect<XmlElement, XmlElement> (fun (``method``:XmlElement) -> let nodes = List<XmlElement>(``method``.SelectNodes("seqpnt")
+                                                                                                                               |> MySeq.cast<XmlElement>)
+                                                                                                  nodes.Reverse()
+                                                                                                  nodes :> IEnumerable<XmlElement>)
+                         |> MySeq.mapi<XmlElement, Int32*XmlElement> (fun counter pt -> (counter, pt))
+                         |> MySeq.filter<Int32*XmlElement> (fst >> moduleHits.ContainsKey)
+
+            for x in points do
               let pt = snd x
               let counter = fst x
               let attribute = pt.GetAttribute("visitcount")
@@ -138,9 +145,9 @@ module Instance =
               let vc = Int32.TryParse(value,
                                       System.Globalization.NumberStyles.Integer,
                                       System.Globalization.CultureInfo.InvariantCulture)
-              // Treat -ve visit counts (an exemption added in analysis) as zero
+              // Treat -ve visit counts (an exemption added in analysis) as zero 
               let visits = moduleHits.[counter] + (max 0 (if fst vc then snd vc else 0))
-              pt.SetAttribute("visitcount", visits.ToString(CultureInfo.InvariantCulture)))))
+              pt.SetAttribute("visitcount", String.Format(CultureInfo.InvariantCulture, "{0}", visits))
 
       // Save modified xml to a file
       coverageFile.Seek(0L, SeekOrigin.Begin) |> ignore
@@ -160,10 +167,10 @@ module Instance =
   /// This method flushes hit count buffers.
   /// </summary>
   let internal FlushCounter _ =
-     WithVisitsLocked (fun () ->
+     WithVisitsLocked (fun _ ->
       match Visits.Count with
       | 0 -> ()
-      | _ -> let counts = Visits |> Seq.toArray
+      | _ -> let counts = MySeq.cast<KeyValuePair<String, Dictionary<Int32, Int32>>> Visits
              Visits.Clear()
              measureTime <- DateTime.UtcNow
              use coverageFile = new FileStream(ReportFile, FileMode.Open, FileAccess.ReadWrite, FileShare.None, 4096, FileOptions.SequentialScan)
@@ -178,11 +185,11 @@ module Instance =
   /// <param name="hitPointId">Sequence Point identifier</param>
   let Visit moduleId hitPointId =
    if not <| String.IsNullOrEmpty(moduleId) then
-    WithVisitsLocked (fun () -> if not (Visits.ContainsKey moduleId)
-                                    then Visits.[moduleId] <- new Dictionary<int, int>()
-                                if not (Visits.[moduleId].ContainsKey hitPointId) then
+    WithVisitsLocked (fun _ -> if not (Visits.ContainsKey moduleId)
+                                    then Visits.[moduleId] <- new Dictionary<Int32,Int32>()
+                               if not (Visits.[moduleId].ContainsKey hitPointId) then
                                     Visits.[moduleId].Add(hitPointId, 1)
-                                else
+                               else
                                     Visits.[moduleId].[hitPointId] <- 1 + Visits.[moduleId].[hitPointId])
     AppDomain.CurrentDomain.DomainUnload.Add(fun x -> Console.Out.WriteLine("unloaded"))
   // Register event handling
