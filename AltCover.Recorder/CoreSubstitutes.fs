@@ -1,4 +1,4 @@
-﻿namespace AltCover.Recorder
+﻿namespace System
 
 open System
 open System.Collections.Generic
@@ -7,6 +7,22 @@ open System.Collections.Generic
 ////1>FSC: error FS0193: The module/namespace 'System' from compilation unit 'mscorlib' did not contain the namespace, module or type 'IObservable`1'
 ////1>FSC: error FS0193: The module/namespace 'System' from compilation unit 'mscorlib' did not contain the namespace, module or type 'IObservable`1'
 ////1>FSC: error FS0193: The module/namespace 'System' from compilation unit 'mscorlib' did not contain the namespace, module or type 'IObservable`1'
+
+[<AttributeUsage(AttributeTargets.Field, AllowMultiple = false)>]
+type LiteralAttribute() =
+   inherit Attribute()
+
+type Lazy<'a>() =
+  inherit Object()
+
+type IObserver<'a> =
+  abstract member OnNext : 'a -> Void
+  abstract member OnError : Exception -> Void
+  abstract member OnCompleted : Void -> Void
+
+type IObservable<'a> =
+  abstract member Subscribe : IObserver<'a> -> IDisposable
+
 
 module CoreSubstitutes =
 
