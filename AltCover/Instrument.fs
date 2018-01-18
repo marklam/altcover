@@ -415,6 +415,12 @@ module Instrument =
                    use fsharpbytes = new FileStream(AltCover.Recorder.Tracer.Core(), FileMode.Open, FileAccess.Read)
                    use libstream = new FileStream(fsharplib, FileMode.Create)
                    fsharpbytes.CopyTo libstream
+
+                 let system = Path.Combine(Visitor.OutputDirectory(), "System.Runtime.dll")
+                 if not (File.Exists system) then
+                   use sbytes = new FileStream(AltCover.Recorder.Tracer.Runtime(), FileMode.Open, FileAccess.Read)
+                   use sstream = new FileStream(system, FileMode.Create)
+                   sbytes.CopyTo sstream
 #endif
                  state
 

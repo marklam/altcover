@@ -6,7 +6,7 @@
     <ProductVersion>8.0.30703</ProductVersion>
     <SchemaVersion>2.0</SchemaVersion>
     <ProjectGuid>{02192b55-3a50-4ad2-b519-560f30c14dd4}</ProjectGuid>
-    <OutputType>Library</OutputType>
+    <OutputType>Exe</OutputType>
     <RootNamespace>AltCover.Recorder</RootNamespace>
     <AssemblyName>AltCover.Recorder</AssemblyName>
     <TargetFrameworkVersion Condition="'$(TRAVIS_JOB_NUMBER)' == ''">v2.0</TargetFrameworkVersion>

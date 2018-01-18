@@ -12,9 +12,11 @@ open System.Xml
 
 [<ProgId("ExcludeFromCodeCoverage")>] // HACK HACK HACK
 type Tracer = { Tracer : string }
-#if NETSTANDARD2_0
+#if NETCOREAPP2_0
    with static member Core () =
              typeof<Microsoft.FSharp.Core.CompilationMappingAttribute>.Assembly.Location
+        static member Runtime () =
+             typeof<System.Runtime.AssemblyTargetedPatchBandAttribute>.Assembly.Location
 #endif
 
 // Abstract out compact bits of F# that expand into
@@ -184,3 +186,8 @@ module Instance =
   do
     AppDomain.CurrentDomain.DomainUnload.Add(FlushCounter)
     AppDomain.CurrentDomain.ProcessExit.Add(FlushCounter)
+
+module Program = 
+ let [<EntryPoint>] main _ = 
+  printfn "Hello recorder world"
+  0

@@ -47,12 +47,10 @@ open System.Runtime.CompilerServices
 #else
 [<assembly: AssemblyConfiguration("Release {0}")>]
 #endif
-#if NETSTANDARD2_0
-[<assembly: InternalsVisibleTo("AltCover.Shadow.Tests")>]
-#else
+
 #if NETCOREAPP2_0
 [<assembly: InternalsVisibleTo("AltCover.Tests")>]
-
+[<assembly: InternalsVisibleTo("AltCover.Shadow.Tests")>]
 #else
 [<assembly: InternalsVisibleTo("AltCover.Tests, PublicKey={1}")>]
 [<assembly: InternalsVisibleTo("AltCover.Tests, PublicKey={2}")>]
@@ -60,7 +58,6 @@ open System.Runtime.CompilerServices
 [<assembly: InternalsVisibleTo("AltCover.Shadow.Tests, PublicKey={2}")>]
 [<assembly: InternalsVisibleTo("AltCover.Shadow.Tests2, PublicKey={1}")>]
 [<assembly: InternalsVisibleTo("AltCover.Shadow.Tests2, PublicKey={2}")>]
-#endif
 #endif
 ()
 """

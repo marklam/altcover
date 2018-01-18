@@ -972,7 +972,12 @@ type AltCoverTests() = class
   [<Test>]
   member self.ShouldBeAbleToGetTheVisitReportMethod () =
     let where = Assembly.GetExecutingAssembly().Location
-    let path = Path.Combine(Path.GetDirectoryName(where) + AltCoverTests.Hack(), "AltCover.Recorder.dll")
+    let path = Path.Combine(Path.GetDirectoryName(where) + AltCoverTests.Hack(),
+#if NETCOREAPP2_0
+                             "AltCover.Recorder.dll")
+#else
+                             "AltCover.Recorder.exe")
+#endif
     let def = Mono.Cecil.AssemblyDefinition.ReadAssembly path
     let recorder = AltCover.Instrument.RecordingMethod def
     Assert.That(Naming.FullMethodName recorder, Is.EqualTo "System.Void AltCover.Recorder.Instance.Visit(System.String,System.Int32)")
@@ -1772,7 +1777,11 @@ type AltCoverTests() = class
     let state = Instrument.Context.Build ["nunit.framework"; "nonesuch"]
 
     let path' = Path.Combine(Path.GetDirectoryName(where) + AltCoverTests.Hack(),
+#if NETCOREAPP2_0
                              "AltCover.Recorder.dll")
+#else
+                             "AltCover.Recorder.exe")
+#endif
     let def' = Mono.Cecil.AssemblyDefinition.ReadAssembly path'
     let visit = def'.MainModule.GetAllTypes()
                 |> Seq.collect (fun t -> t.Methods)
@@ -1836,7 +1845,11 @@ type AltCoverTests() = class
     let state = Instrument.Context.Build ["nunit.framework"; "nonesuch"]
 
     let path' = Path.Combine(Path.GetDirectoryName(where) + AltCoverTests.Hack(),
+#if NETCOREAPP2_0
                              "AltCover.Recorder.dll")
+#else
+                             "AltCover.Recorder.exe")
+#endif
     let def' = Mono.Cecil.AssemblyDefinition.ReadAssembly path'
     let visit = def'.MainModule.GetAllTypes()
                 |> Seq.collect (fun t -> t.Methods)
@@ -2875,6 +2888,7 @@ type AltCoverTests() = class
                          "Sample1.exe"
                          "Sample1.exe.mdb"
 #if NETCOREAPP2_0
+                         "System.Runtime.dll"
 #else
                          "Sample1.pdb"
 #endif
@@ -2989,7 +3003,11 @@ type AltCoverTests() = class
 #endif
                          "Sample2.runtimeconfig.dev.json"
                          "Sample2.runtimeconfig.json"
-                         "Sample2.pdb"]
+                         "Sample2.pdb"
+#if NETCOREAPP2_0
+                         "System.Runtime.dll"
+#endif
+                         ]
 
       let expected' = if pdb |> File.Exists |> not then
                         List.concat [expected; ["AltCover.Recorder.g.dll.mdb"; "Sample2.dll.mdb" ]]
@@ -3000,6 +3018,7 @@ type AltCoverTests() = class
 
       Assert.That (Directory.GetFiles(output)
                    |> Seq.map Path.GetFileName
+                   |> Seq.filter (fun f -> f.EndsWith(".tmp", StringComparison.Ordinal) |> not)
                    |> Seq.sortBy (fun f -> f.ToUpperInvariant()),
                    Is.EquivalentTo expected')
 
