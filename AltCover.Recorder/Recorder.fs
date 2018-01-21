@@ -6,6 +6,10 @@ namespace AltCover.Recorder
 open System
 open System.Collections.Generic
 open System.IO
+#if NET2
+#else
+open System.IO.MemoryMappedFiles
+#endif
 open System.Runtime.CompilerServices
 open System.Runtime.InteropServices
 open System.Xml
@@ -65,6 +69,16 @@ module Instance =
   /// Interlock for report instances
   /// </summary>
   let private mutex = new System.Threading.Mutex(false, Token + ".mutex");
+
+  /// <summary>
+  /// Inter-process communications
+  /// </summary>
+  let mutable channel : Stream = null
+#if NET2
+  let mutable share : MemoryStream = null // TODO
+#else
+  let mutable share : MemoryMappedFile = null
+#endif
 
   /// <summary>
   /// Load the XDocument
@@ -158,11 +172,20 @@ module Instance =
   let private WithVisitsLocked =
     Locking.WithLockerLocked Visits
 
+  let private formatter = System.Runtime.Serialization.Formatters.Binary.BinaryFormatter()
+  let private push (moduleId:string) hitPointId =
+     formatter.Serialize(channel, (moduleId, hitPointId))
+
+  let internal Signal f g =
+     match channel with
+     | null -> WithVisitsLocked f
+     | _ -> g()
+
   /// <summary>
   /// This method flushes hit count buffers.
   /// </summary>
-  let internal FlushCounter _ _ =
-     WithVisitsLocked (fun () ->
+  let internal FlushCounter finish _ =
+     Signal (fun () ->
       match Visits.Count with
       | 0 -> ()
       | _ -> let counts = Dictionary<string, Dictionary<int, int>> Visits
@@ -172,6 +195,15 @@ module Instance =
              let flushStart = UpdateReport counts coverageFile
              let delta = TimeSpan(DateTime.UtcNow.Ticks - flushStart.Ticks)
              Console.Out.WriteLine("Coverage statistics flushing took {0:N} seconds", delta.TotalSeconds))
+            (fun () ->
+             printfn "pushing flush %A" finish
+             if finish then
+               push null -1
+               use local1 = channel
+               share.Dispose()
+               channel <- null
+               share <- null
+               local1.Flush())
 
   /// <summary>
   /// This method is executed from instrumented assemblies.
@@ -179,15 +211,28 @@ module Instance =
   /// <param name="moduleId">Assembly being visited</param>
   /// <param name="hitPointId">Sequence Point identifier</param>
   let Visit moduleId hitPointId =
-   if not <| String.IsNullOrEmpty(moduleId) then
-    WithVisitsLocked (fun () -> if not (Visits.ContainsKey moduleId)
-                                    then Visits.[moduleId] <- new Dictionary<int, int>()
-                                if not (Visits.[moduleId].ContainsKey hitPointId) then
-                                    Visits.[moduleId].Add(hitPointId, 1)
-                                else
-                                    Visits.[moduleId].[hitPointId] <- 1 + Visits.[moduleId].[hitPointId])
+    if not <| String.IsNullOrEmpty(moduleId) then
+      Signal (fun () -> if not (Visits.ContainsKey moduleId)
+                        then Visits.[moduleId] <- new Dictionary<int, int>()
+                        if not (Visits.[moduleId].ContainsKey hitPointId) then
+                            Visits.[moduleId].Add(hitPointId, 1)
+                        else
+                            Visits.[moduleId].[hitPointId] <- 1 + Visits.[moduleId].[hitPointId])
+                  (fun () -> push moduleId hitPointId)
+
+  let internal OpenChannel name =
+#if NET2
+    ignore name
+#else
+    try
+      share <- MemoryMappedFile.OpenExisting name
+      channel <- share.CreateViewStream() :> Stream
+    with
+    | :? FileNotFoundException -> ()
+#endif
 
   // Register event handling
   do
     AppDomain.CurrentDomain.DomainUnload.Add(FlushCounter false)
     AppDomain.CurrentDomain.ProcessExit.Add(FlushCounter true)
+    OpenChannel Token

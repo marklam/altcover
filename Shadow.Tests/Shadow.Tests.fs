@@ -4,12 +4,20 @@ namespace Shadow.TestsCore
 #if NET4
 namespace Shadow.Tests4
 #else
+#if NET2
 namespace Shadow.Tests2
+#else
+namespace Shadow.TestsMono
+#endif
 #endif
 #endif
 
 open System
 open System.Collections.Generic
+#if NET2
+#else
+open System.IO.MemoryMappedFiles
+#endif
 open System.IO
 open System.Reflection
 open System.Xml
@@ -111,6 +119,102 @@ type AltCoverTests() = class
       Assert.That (Instance.Visits.[key].[23], Is.EqualTo 2)
     finally
       Instance.Visits.Clear()
+
+#if NET2
+#else
+#if NET4
+#else
+  [<Test>]
+#endif
+#endif
+  member self.MappedVisitShouldSignal() =
+    Assert.That (Instance.channel, Is.Null, "channel unexpected")
+    Assert.That (Instance.share, Is.Null, "share unexpected")
+    let token = Guid.NewGuid().ToString() + "VisitShouldSignal"
+    printfn "token = %s" token
+#if NET2
+    use server = new MemoryStream()
+    use channel = new MemoryStream()
+#else
+    use server = MemoryMappedFile.CreateNew(token, 65536L)
+    use channel = server.CreateViewStream()
+    printfn "Created ViewStream"
+#endif
+    try
+      Instance.OpenChannel token
+      Assert.That (Instance.channel, Is.Not.Null, "channel unexpected fail to create")
+      use clientChannel = Instance.channel
+      use clientShare = Instance.share
+      printfn "Created client"
+      try
+        let expected = ("name", 23)
+        let formatter = System.Runtime.Serialization.Formatters.Binary.BinaryFormatter()
+        printfn "about to act"
+        //async {
+        Instance.Visit "name" 23
+        //} |> Async.Start
+        printfn "about to read %d" channel.Length
+        let result = formatter.Deserialize(channel) :?> (string*int)
+        Assert.That (Instance.Visits, Is.Empty, "unexpected local write")
+        Assert.That (result, Is.EqualTo expected, "unexpected result")
+        printfn "after all work"
+      finally
+        printfn "finally 1"
+        Instance.channel <- null
+        Instance.share <- null
+    finally
+      printfn "finally 2"
+      Instance.Visits.Clear()
+    printfn "all done"
+
+#if NET2
+#else
+#if NET4
+#else
+  [<Test>]
+#endif
+#endif
+  member self.MappedFlushShouldTidyUp() =
+    Assert.That (Instance.channel, Is.Null, "channel unexpected")
+    Assert.That (Instance.share, Is.Null, "share unexpected")
+    let token = Guid.NewGuid().ToString() + "FlushShouldTidyUp"
+    printfn "token = %s" token
+#if NET2
+    use server = new MemoryStream()
+    use channel = new MemoryStream()
+#else
+    use server = MemoryMappedFile.CreateNew(token, 65536L)
+    use channel = server.CreateViewStream()
+    printfn "Created ViewStream"
+#endif
+    try
+      Instance.OpenChannel token
+      Assert.That (Instance.channel, Is.Not.Null, "channel unexpected fail to create")
+      use clientChannel = Instance.channel
+      use clientShare = Instance.share
+      printfn "Created client"
+      try
+        let expected = ("name", 23)
+        let formatter = System.Runtime.Serialization.Formatters.Binary.BinaryFormatter()
+        printfn "About to act"
+        formatter.Serialize(Instance.channel, expected)
+        Instance.FlushCounter true ()
+        printfn "About to read"
+        let result = formatter.Deserialize(channel) :?> (string*int)
+        let result' = formatter.Deserialize(channel) :?> (string*int)
+        printfn "About to assert"
+        Assert.That (Instance.Visits, Is.Empty, "unexpected local write")
+        Assert.That (result, Is.EqualTo expected, "unexpected result")
+        Assert.That (result' |> fst |> String.IsNullOrEmpty, Is.True, "unexpected end-of-message")
+        printfn "done"
+      finally
+        printfn "first finally"
+        Instance.channel <- null
+        Instance.share <- null
+    finally
+      printfn "second finally"
+      Instance.Visits.Clear()
+    printfn "all done"
 
   member private self.UpdateReport a b =
     Instance.UpdateReport a b
