@@ -450,8 +450,8 @@ Target "UnitTestWithAltCoverRunner" (fun _ ->
                               String.Join ("\" \"", [ Path.getFullName  "_Binaries/AltCover.Tests/Debug+AnyCPU/__UnitTestWithAltCoverRunner/AltCover.Tests.dll"
                                                       Path.getFullName  "_Binaries/AltCover.Tests/Debug+AnyCPU/__UnitTestWithAltCoverRunner/Sample2.dll"]) + "\""
                             )}) "Re-instrument tests returned with a non-zero exit code"
-       File.ReadAllText("_Reports/UnitTestWithAltCoverRunner.xml")
-       |> printfn "%s"
+       //File.ReadAllText("_Reports/UnitTestWithAltCoverRunner.xml")
+       //|> printfn "%s"
       with
       | x -> printfn "%A" x
              reraise ()
