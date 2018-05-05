@@ -497,11 +497,11 @@ Target "UnitTestWithAltCover" (fun _ ->
 
       ReportGenerator.generateReports
                      (fun p -> { p with ExePath = findToolInSubPath "ReportGenerator.exe" "."
-                                        ReportTypes = [ ReportGenerator.ReportType.Html; ReportGenerator.ReportType.XmlSummary ]
+                                        ReportTypes = [ ReportGenerator.ReportType.Html; ReportGenerator.ReportType.XmlSummary; ReportGenerator.ReportType.Xml ]
                                         TargetDir = "_Reports/_UnitTestWithAltCover"})
           [xaltReport; altReport; weakReport; shadowReport]
 
-      File.ReadAllText("_Reports/_UnitTestWithAltCover/Summary.xml")
+      File.ReadAllText("_Reports/_UnitTestWithAltCover/AltCover_AltCover.Instrument.xml") //Summary.xml")
       |> printfn "%s"
           
     else
