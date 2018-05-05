@@ -4,7 +4,7 @@ open System.Reflection
 open System.Xml
 open System.Xml.Linq
 
-open Fake.Core.Environment
+open Fake.Core
 open Fake.DotNet
 open Fake.IO.FileSystemOperators
 open Fake.IO
@@ -22,6 +22,7 @@ module Actions =
         |> Seq.filter (fun n -> match n.Name with
                                 | "obj" -> Path.Combine(n.FullName, "dotnet-fake.fsproj.nuget.g.props") |> File.Exists |> not
                                 | _ -> true)
+        |> Seq.filter (fun n -> "packages" |> Path.GetFullPath |> n.FullName.StartsWith |> not)
         |> Seq.map (fun x -> x.FullName)
         |> Seq.distinct
         // arrange so leaves get deleted first, avoiding "does not exist" warnings
@@ -33,7 +34,7 @@ module Actions =
         |> Seq.iter (fun n -> printfn "Deleting %s" n
                               Directory.Delete(n, true))
 
-        let temp = environVar "TEMP"
+        let temp = Environment.environVar "TEMP"
         if not <| String.IsNullOrWhiteSpace temp then
             Directory.GetFiles(temp, "*.tmp.dll.mdb")
             |> Seq.iter File.Delete
@@ -57,14 +58,20 @@ open System.Runtime.CompilerServices
 [<assembly: AssemblyConfiguration("Release {0}")>]
 #endif
 #if NETSTANDARD2_0
+[<assembly: InternalsVisibleTo("AltCover.Shadow.Adapter")>]
 [<assembly: InternalsVisibleTo("AltCover.Shadow.Tests")>]
 #else
 #if NETCOREAPP2_0
 [<assembly: InternalsVisibleTo("AltCover.Tests")>]
+[<assembly: InternalsVisibleTo("AltCover.XTests")>]
 
 #else
 [<assembly: InternalsVisibleTo("AltCover.Tests, PublicKey={1}")>]
 [<assembly: InternalsVisibleTo("AltCover.Tests, PublicKey={2}")>]
+[<assembly: InternalsVisibleTo("AltCover.XTests, PublicKey={1}")>]
+[<assembly: InternalsVisibleTo("AltCover.XTests, PublicKey={2}")>]
+[<assembly: InternalsVisibleTo("AltCover.Shadow.Adapter, PublicKey={1}")>]
+[<assembly: InternalsVisibleTo("AltCover.Shadow.Adapter, PublicKey={2}")>]
 [<assembly: InternalsVisibleTo("AltCover.Shadow.Tests, PublicKey={1}")>]
 [<assembly: InternalsVisibleTo("AltCover.Shadow.Tests, PublicKey={2}")>]
 [<assembly: InternalsVisibleTo("AltCover.Shadow.Tests2, PublicKey={1}")>]
@@ -145,7 +152,7 @@ open System.Runtime.CompilerServices
                    |> Seq.filter (fun x -> others |> Seq.exists (fun y -> x = y) |> not)
                    |> Seq.sort
                    |> Seq.toList
-    let expected = "Invoke as_bar bytes get_MyBar makeThing returnBar returnFoo testMakeThing testMakeUnion"
+    let expected = ".ctor Invoke as_bar bytes get_MyBar makeThing returnBar returnFoo testMakeThing testMakeUnion"
     Assert.That(recorded, expected.Split() |> Is.EquivalentTo, sprintf "Bad method list %A" recorded)
 
   let ValidateFSharpTypesCoverage simpleReport =
@@ -155,7 +162,7 @@ open System.Runtime.CompilerServices
     let recorded = coverageDocument.Descendants(XName.Get("seqpnt"))
                    |> Seq.map (fun x -> x.Attribute(XName.Get("visitcount")).Value)
                    |> Seq.toList
-    let expected = "0 1 1 1 1 1 1 1 0 0 0 0 0 0 0 0 0 2 1 1 1"
+    let expected = "0 1 1 1 1 1 1 1 0 0 0 0 0 0 0 0 0 0 0 2 1 1 1"
     Assert.That(recorded, expected.Split() |> Is.EquivalentTo, sprintf "Bad method list %A" recorded)
 
   let ValidateSample1 simpleReport sigil =
@@ -201,11 +208,11 @@ open System.Runtime.CompilerServices
     Assert.That(result.ExitCode, Is.EqualTo 0, msg)
 
   let Run (f:Fake.Core.ProcStartInfo -> Fake.Core.ProcStartInfo) msg =
-    Fake.Core.Process.ExecAndReturnMessages (f >> Fake.Core.Process.withFramework) (TimeSpan.FromMinutes 5.0)
+    Fake.Core.Process.execWithResult (f >> Fake.Core.Process.withFramework) (TimeSpan.FromMinutes 10.0)
     |> (HandleResults msg)
 
   let RunDotnet (o:DotNet.Options -> DotNet.Options) cmd args msg =
-    DotNet.Exec o cmd args
+    DotNet.exec o cmd args
     |> (HandleResults msg)
 
   let SimpleInstrumentingRun (samplePath:string) (binaryPath:string) (reportSigil:string) =

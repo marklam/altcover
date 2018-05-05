@@ -10,9 +10,22 @@ open System.Globalization
 open System.IO
 open System.Xml
 
-type ReportFormat = NCover = 0 | OpenCover = 1
+type ReportFormat = NCover = 0 | OpenCover = 1 | OpenCoverWithTracking = 2
+
+[<System.Runtime.InteropServices.ProgIdAttribute("ExcludeFromCodeCoverage hack for OpenCover issue 615")>]
+type internal Track =
+  | Null
+  | Time of int64
+  | Call of int
+  | Both of (int64 * int)
 
 module Counter =
+   /// <summary>
+   /// The offset flag for branch counts
+   /// </summary>
+  let internal BranchFlag = 0x80000000
+  let internal BranchMask = 0x7FFFFFFF
+
    /// <summary>
    /// The time at which coverage run began
    /// </summary>
@@ -45,18 +58,31 @@ module Counter =
   let private WriteXDocument (coverageDocument:XmlDocument) (stream:Stream) =
     coverageDocument.Save(stream)
 
-  let internal FindIndexFromUspid uspid =
+  let internal FindIndexFromUspid flag uspid =
     let f, c = Int32.TryParse( uspid ,
                     System.Globalization.NumberStyles.Integer,
                     System.Globalization.CultureInfo.InvariantCulture)
-    if f then c else -1
+    if f then (c|||flag) else -1
+
+  let internal OpenCoverXml = ("//Module", "hash", "Classes/Class/Methods/Method",
+                                                        [("SequencePoints/SequencePoint", 0)
+                                                         ("BranchPoints/BranchPoint", BranchFlag)]
+                                                        , "vc")
+  let internal NCoverXml = ("//module", "moduleId", "method", [("seqpnt",0)], "visitcount")
+
+  let internal XmlByFormat format =
+    match format with
+    | ReportFormat.OpenCoverWithTracking
+    | ReportFormat.OpenCover -> OpenCoverXml
+    | _ -> NCoverXml
 
   /// <summary>
   /// Save sequence point hit counts to xml report file
   /// </summary>
   /// <param name="hitCounts">The coverage results to incorporate</param>
   /// <param name="coverageFile">The coverage file to update as a stream</param>
-  let internal UpdateReport (postProcess:XmlDocument -> unit) own (counts:Dictionary<string, Dictionary<int, int>>) format coverageFile =
+  let internal UpdateReport (postProcess:XmlDocument -> unit) (pointProcess:XmlElement -> Track list -> unit)
+                            own (counts:Dictionary<string, Dictionary<int, int * Track list>>) format coverageFile (outputFile:Stream) =
     let flushStart = DateTime.UtcNow
     let coverageDocument = ReadXDocument coverageFile
     let root = coverageDocument.DocumentElement
@@ -77,9 +103,7 @@ module Counter =
         root.SetAttribute("driverVersion", "AltCover.Recorder " +
                                      System.Diagnostics.FileVersionInfo.GetVersionInfo(System.Reflection.Assembly.GetExecutingAssembly().Location).FileVersion)
 
-    let (m, i, m', s, v) = match format with
-                           | ReportFormat.OpenCover -> ("//Module", "hash", "Classes/Class/Methods/Method", "SequencePoints/SequencePoint", "vc")
-                           | _ -> ("//module", "moduleId", "method", "seqpnt", "visitcount")
+    let (m, i, m', s, v) = XmlByFormat format
     coverageDocument.SelectNodes(m)
     |> Seq.cast<XmlElement>
     |> Seq.map (fun el -> el.GetAttribute(i), el)
@@ -94,11 +118,17 @@ module Counter =
         let nn = affectedModule.SelectNodes(m')
         nn
         |> Seq.cast<XmlElement>
-        |> Seq.collect (fun (``method``:XmlElement) -> ``method``.SelectNodes(s)
-                                                        |> Seq.cast<XmlElement>
-                                                        |> Seq.toList |> List.rev)
-        |> Seq.mapi (fun counter pt -> ((match format with
-                                        | ReportFormat.OpenCover -> "uspid" |> pt.GetAttribute |> FindIndexFromUspid 
+        |> Seq.collect (fun (``method``:XmlElement) ->
+                                    s
+                                    |> Seq.collect (fun (name, flag) ->
+                                                    ``method``.SelectNodes(name)
+                                                    |> Seq.cast<XmlElement>
+                                                    |> Seq.map (fun x -> (x,flag))
+                                                    |> Seq.toList |> List.rev))
+        |> Seq.mapi (fun counter (pt,flag) ->
+                             ((match format with
+                                        | ReportFormat.OpenCoverWithTracking
+                                        | ReportFormat.OpenCover -> "uspid" |> pt.GetAttribute |> (FindIndexFromUspid flag)
                                         | _ -> counter),
                                         pt))
         |> Seq.filter (fst >> moduleHits.ContainsKey)
@@ -109,25 +139,34 @@ module Counter =
                                     System.Globalization.NumberStyles.Integer,
                                     System.Globalization.CultureInfo.InvariantCulture) |> snd
             // Treat -ve visit counts (an exemption added in analysis) as zero
-            let visits = moduleHits.[counter] + (max 0 vc)
-            pt.SetAttribute(v, visits.ToString(CultureInfo.InvariantCulture))))
+            let (count, l) = moduleHits.[counter]
+            let visits = (max 0 vc) + count + l.Length
+            pt.SetAttribute(v, visits.ToString(CultureInfo.InvariantCulture))
+            pointProcess pt l))
 
     postProcess coverageDocument
 
     // Save modified xml to a file
-    coverageFile.Seek(0L, SeekOrigin.Begin) |> ignore
-    coverageFile.SetLength 0L
-    if own then WriteXDocument coverageDocument coverageFile
+    outputFile.Seek(0L, SeekOrigin.Begin) |> ignore
+    outputFile.SetLength 0L
+    if own then WriteXDocument coverageDocument outputFile
     flushStart
 
-  let DoFlush postProcess own counts format report =
+  let internal DoFlush postProcess pointProcess own counts format report output =
     use coverageFile = new FileStream(report, FileMode.Open, FileAccess.ReadWrite, FileShare.None, 4096, FileOptions.SequentialScan)
-    let flushStart = UpdateReport postProcess own counts format coverageFile
+    use target = match output with
+                 | None -> new MemoryStream() :> Stream
+                 | Some f -> new FileStream(f, FileMode.OpenOrCreate, FileAccess.Write, FileShare.None, 4096, FileOptions.SequentialScan) :> Stream
+
+    let outputFile = if Option.isSome output then target else coverageFile :> Stream
+    let flushStart = UpdateReport postProcess pointProcess own counts format coverageFile outputFile
     TimeSpan(DateTime.UtcNow.Ticks - flushStart.Ticks)
 
-  let AddVisit (counts:Dictionary<string, Dictionary<int, int>>) moduleId hitPointId =
-    if not (counts.ContainsKey moduleId) then counts.[moduleId] <- Dictionary<int, int>()
+  let internal AddVisit (counts:Dictionary<string, Dictionary<int, int * Track list>>) moduleId hitPointId context =
+    if not (counts.ContainsKey moduleId) then counts.[moduleId] <- Dictionary<int, int * Track list>()
     if not (counts.[moduleId].ContainsKey hitPointId) then
-        counts.[moduleId].Add(hitPointId, 1)
-    else
-        counts.[moduleId].[hitPointId] <- 1 + counts.[moduleId].[hitPointId]
+        counts.[moduleId].Add(hitPointId, (0,[]))
+    let n, l = counts.[moduleId].[hitPointId]
+    counts.[moduleId].[hitPointId] <- match context with
+                                      | Null -> (1 + n, l)
+                                      | something -> (n, something :: l)

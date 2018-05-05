@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="15.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <Import Project="..\packages\NUnit.3.10.1\build\NUnit.props" Condition="Exists('..\packages\NUnit.3.10.1\build\NUnit.props')" />
   <Import Project="$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props" Condition="Exists('$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props')" />
   <PropertyGroup>
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
@@ -64,8 +65,8 @@
     <Compile Include="..\_Generated\VisibleToTest.fs">
       <Link>VisibleToTest.fs</Link>
     </Compile>
-    <Compile Include="..\Shadow.Tests\Tracer.fs">
-      <Link>Tracer.fs</Link>
+    <Compile Include="..\Shadow.Tests\Tracer.Tests.fs">
+      <Link>Tracer.Tests.fs</Link>
     </Compile>
     <Compile Include="..\Shadow.Tests\Shadow.Tests.fs">
       <Link>Shadow.Tests.fs</Link>
@@ -78,6 +79,11 @@
     </EmbeddedResource>
   </ItemGroup>
   <ItemGroup>
+    <ProjectReference Include="..\Shadow.Adapter\Shadow.Adapter.fsproj">
+      <Name>Shadow.Adapter</Name>
+      <Project>{24bfb835-2dac-45d4-afda-f9c2f13b41dd}</Project>
+      <Private>True</Private>
+    </ProjectReference>
     <Reference Condition="'$(OS)' == 'Windows_NT'" Include="FSharp.Core, Version=2.3.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a">
       <Private>True</Private>
     </Reference>
@@ -86,15 +92,13 @@
     </Reference>
     <Reference Include="mscorlib" />
     <Reference Include="nunit.framework">
-      <HintPath>..\packages\NUnit.3.9.0\lib\net20\nunit.framework.dll</HintPath>
+      <HintPath>..\packages\NUnit.3.10.1\lib\net20\nunit.framework.dll</HintPath>
     </Reference>
     <Reference Include="NUnit.System.Linq">
-      <HintPath>..\packages\NUnit.3.9.0\lib\net20\NUnit.System.Linq.dll</HintPath>
+      <HintPath>..\packages\NUnit.3.10.1\lib\net20\NUnit.System.Linq.dll</HintPath>
     </Reference>
     <Reference Include="System" />
     <Reference Include="System.Xml" />
-  </ItemGroup>
-  <ItemGroup>
     <ProjectReference Include="..\AltCover.Recorder\AltCover.Shadow.fsproj">
       <Name>AltCover.Shadow</Name>
       <Project>{62480be3-4479-4a47-a23f-50858ecd74b3}</Project>

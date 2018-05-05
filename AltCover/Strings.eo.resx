@@ -121,7 +121,7 @@
     <value>Laŭvola: La dosierujo enhavanta asembleojn al instrumento (defaŭlta: aktuala dosierujo)</value>
   </data>
   <data name="o|outputDirectory=" xml:space="preserve">
-    <value>Laŭvola: La dosierujo ricevi la instrumentajn asembleojn kaj iliajn kunulojn (defaŭlte: sub-dosierujo '__Instrumented' de la aktuala dosierujo)</value>
+    <value>Laŭvola: La dosierujo ricevi la instrumentajn asembleojn kaj iliajn kunulojn (defaŭlte: sub-dosierujo '__Instrumented' de la aktuala dosierujo; aŭ '__Saved' se 'inplace' estas aro)</value>
   </data>
   <data name="k|key=" xml:space="preserve">
     <value>Laŭvola, multobla: iu ajn alia forta-nomo ŝlosilo por uzi</value>
@@ -133,19 +133,19 @@
     <value>Laŭvola: La eliga raporta ŝablono-dosiero (defaŭlte: 'coverage.xml' en la aktuala dosierujo)</value>
   </data>
   <data name="f|fileFilter=" xml:space="preserve">
-    <value>Laŭvola: fonta dosiernomo por ekskludi de instrumentado (eble ripeti)</value>
+    <value>Laŭvola, multobla: fonta dosiernomo por ekskludi de instrumentado</value>
   </data>
   <data name="s|assemblyFilter=" xml:space="preserve">
-    <value>Laŭvola: ensambla nomo por ekskludi de instrumentado (eble ripeti)</value>
+    <value>Laŭvola, multobla: ensambla nomo por ekskludi de instrumentado</value>
   </data>
   <data name="t|typeFilter=" xml:space="preserve">
-    <value>Laŭvola: tajpu nomon por ekskludi de instrumentado (eble ripeti)</value>
+    <value>Laŭvola, multobla: tajpu nomon por ekskludi de instrumentado</value>
   </data>
   <data name="m|methodFilter=" xml:space="preserve">
-    <value>Laŭvola: metodo nomo por ekskludi de instrumentado (eble ripeti)</value>
+    <value>Laŭvola, multobla: metodo nomo por ekskludi de instrumentado</value>
   </data>
   <data name="a|attributeFilter=" xml:space="preserve">
-    <value>Laŭvola: atribuka nomo por ekskludi de instrumentado (eble ripeti)</value>
+    <value>Laŭvola, multobla: atribuka nomo por ekskludi de instrumentado</value>
   </data>
   <data name="?|help|h" xml:space="preserve">
     <value>Elmetas ĉi tiujn eblojn.</value>
@@ -154,9 +154,10 @@
     <value>Krei dosierujon {0}</value>
   </data>
   <data name="HelpText" xml:space="preserve">
-    <value>AltCover [/i[nputDirectory]=VALO] [/o[utputDirectory]=VALO] [/sn|strongNameKey=VALO] [/k[ey]=VALO] [/x[mlReport]=VALO] [/f[ileFilter]=VALO] [/s|assemblyFilter=VALO] [/t|typeFilter=VALO] [/m|methodFilter=VALO] [/a|attributeFilter=VALO] [/?|h[elp]] [-- ] [...]
+    <value>AltCover [/i[nputDirectory]=VALO] [/o[utputDirectory]=VALO] [/y|symbolDirectory=VALO] [/sn|strongNameKey=VALO] [/k[ey]=VALO] [/x[mlReport]=VALO] [/f[ileFilter]=VALO] [/s|assemblyFilter=VALO] [/t|typeFilter=VALO] [/m|methodFilter=VALO] [/a|attributeFilter=VALO] [/c[allContext]=VALO] [--opencover] [--inplace] [--save] [/?|h[elp]] [-- ] [...]
 aŭ
-AltCover Runner [/r[ecordingDirectory]=VALO] [/w[orkingDirectory]=VALO] [/x||executable=VALO] [/?|h[elp]] [-- ] [...]</value>
+AltCover Runner [/r[ecordingDirectory]=VALO] [/w[orkingDirectory]=VALO] [/x||executable=VALO] [--collect] [/l[covReport]=VALO] [/t[hreshold]=VALO] [/c[obertura]=VALO] [/o[utputFile]=VALO] [/?|h[elp]] [-- ] [...]
+Vidu https://github.com/SteveGilham/altcover/wiki/Usage por plenaj detaloj.</value>
   </data>
   <data name="NotInPlace" xml:space="preserve">
     <value>De kaj al adresaroj estas identaj</value>
@@ -174,10 +175,13 @@ AltCover Runner [/r[ecordingDirectory]=VALO] [/w[orkingDirectory]=VALO] [/x||exe
     <value>Skribi dosierojn al {0}</value>
   </data>
   <data name="reportingto" xml:space="preserve">
-    <value>Kovra Raporto: {0}</value>
+    <value>
+Kovra Raporto: {0}
+
+</value>
   </data>
   <data name="e|assemblyExcludeFilter=" xml:space="preserve">
-    <value>Laŭvola: asembleo, kiu kunligas aliajn agordajn asembleojn, sed por kiuj internaĵoj povas esti ekskluditaj (eble ripeti)</value>
+    <value>Laŭvola, multobla: asembleo, kiu kunligas aliajn agordajn asembleojn, sed por kiuj internaĵoj povas esti ekskluditaj</value>
   </data>
   <data name="r|recorderDirectory=" xml:space="preserve">
     <value>La dosierujo enhavanta la instrumentan kodon por kontroli (inkluzive de la AltCover.Recorder.g.dll generita per antaŭa uzo de la ".net core" AltCover).</value>
@@ -209,5 +213,112 @@ AltCover Runner [/r[ecordingDirectory]=VALO] [/w[orkingDirectory]=VALO] [/x||exe
   </data>
   <data name="CommandLine" xml:space="preserve">
     <value>Komandlinio: '{0} {1}'</value>
+  </data>
+  <data name="y|symbolDirectory=" xml:space="preserve">
+    <value>Laŭvola, multobla: Aldona dosierujo serĉi kongruajn simbolojn por la asembleoj en la eniga dosierujo</value>
+  </data>
+  <data name="c|callContext=" xml:space="preserve">
+    <value>Laŭvola, multobla: Rilatado aŭ tempoj de vizitoj en tikoj aŭ nomitaj metodvokoj kondukantaj al la vizitoj.
+    Ununura cifero 0-7 donas la nombron de dekuma lokoj de sekundoj por raporti; ĉio alia kompatas la sistemon horloĝon disponebla per DateTime.UtcNow
+    Kordo en krampoj [] estas interpretita kiel atributo tipo nomon (la malantaŭa parto "Attribute" estas nedeviga), do [Test] aŭ [TestAttribute] kongruas; se la nomo enhavas unu aŭ pli ".", tiam ĝi estos egalita kontraŭ la plena nomo de la atributa tipo.
+     Aliaj kordoj estas interpretitaj kiel metodnomoj (plene kvalifikitaj se la ĉeno enhavas ajnajn "" "karakterojn).</value>
+  </data>
+  <data name="DirectoryNotFound" xml:space="preserve">
+    <value>{0} : Dosierujo {1} ne trovita</value>
+  </data>
+  <data name="FileNotFound" xml:space="preserve">
+    <value>{0} : Dosiero {1} ne trovita</value>
+  </data>
+  <data name="InvalidValue" xml:space="preserve">
+    <value>{0} : ne povas esti '{1}'</value>
+  </data>
+  <data name="MultiplesNotAllowed" xml:space="preserve">
+    <value>{0} : specifu ĉi tion nur unufoje</value>
+  </data>
+  <data name="collect" xml:space="preserve">
+    <value>Laŭvola: Procezo antaŭe konservis krudajn kovraĵojn, anstataŭ ĵeti procezon.</value>
+  </data>
+  <data name="inplace" xml:space="preserve">
+    <value>Laŭvola: Instrumento de inputDirectory, prefere ol outputDirectory (ekz. por dotnet test)</value>
+  </data>
+  <data name="save" xml:space="preserve">
+    <value>Laŭvola: Skribu krudan kovradan datumon al dosiero por posta prilaborado</value>
+  </data>
+  <data name="instrumentingin" xml:space="preserve">
+    <value>Instrumentaj dosieroj en {0}</value>
+  </data>
+  <data name="savingto" xml:space="preserve">
+    <value>Ŝpari dosierojn al {0}</value>
+  </data>
+  <data name="executableRequired" xml:space="preserve">
+    <value>Uzo en la "runner" postulas precize unu el ĉu '--executable' aŭ '--collect'.</value>
+  </data>
+  <data name="recorderNotFound" xml:space="preserve">
+    <value>Agordo de registradoj {0} ne trovita en la nomumita dosierujo.</value>
+  </data>
+  <data name="recorderRequired" xml:space="preserve">
+    <value>La valoro '--recorderDirectory' estas postulita.</value>
+  </data>
+  <data name="SaveExists" xml:space="preserve">
+    <value>Elŝuta dosierujo por konservitaj dosieroj {0} jam ekzistas</value>
+  </data>
+  <data name="l|lcovReport=" xml:space="preserve">
+    <value>Laŭvola: Dosiero por la versio de formato lcov de la datumoj kolektitaj</value>
+  </data>
+  <data name="Alternative" xml:space="preserve">
+    <value>==== Alternativaj Rezultoj (inkluzivas ĉiujn metodojn inkluzive de tiuj sen responda fonto) ====</value>
+  </data>
+  <data name="AltVC" xml:space="preserve">
+    <value>Alternativaj Vizititaj Klasoj {0} de {1} ({2})</value>
+  </data>
+  <data name="AltVM" xml:space="preserve">
+    <value>Alternativaj Vizititaj Metodoj {0} de {1} ({2})</value>
+  </data>
+  <data name="VisitedBranches" xml:space="preserve">
+    <value>Vizititaj Branĉoj {0} de {1} ({2})</value>
+  </data>
+  <data name="VisitedClasses" xml:space="preserve">
+    <value>Vizititaj Klasoj {0} de {1} ({2})</value>
+  </data>
+  <data name="VisitedMethods" xml:space="preserve">
+    <value>Vizititaj Metodoj {0} de {1} ({2})</value>
+  </data>
+  <data name="VisitedPoints" xml:space="preserve">
+    <value>Vizititaj Punktoj {0} de {1} ({2})</value>
+  </data>
+  <data name="Collection" xml:space="preserve">
+    <value>
+ERROR *** Kolekto fazo malsukcesis
+
+</value>
+  </data>
+  <data name="Instrumentation" xml:space="preserve">
+    <value>
+ERROR *** Instrumentation fazo malsukcesis
+
+</value>
+  </data>
+  <data name="WrittenTo" xml:space="preserve">
+    <value>
+Detaloj skribitaj al {0}</value>
+  </data>
+  <data name="instrumenting" xml:space="preserve">
+    <value>   =&gt; {0}</value>
+  </data>
+  <data name="instrumented" xml:space="preserve">
+    <value>    {1}
+                &lt;=  {0}</value>
+  </data>
+  <data name="t|threshold=" xml:space="preserve">
+    <value> Laŭvola: minimuma akceptebla kovra procento (entjero, 0 ĝis 100). Se la rezulto de kovraĵo estas sub sojlo, la rondkodo de la procezo estas (sojlo - reala) rondigita ĝis la plej proksima entjero.</value>
+  </data>
+  <data name="c|cobertura=" xml:space="preserve">
+    <value>Laŭvola: Dosiero por la versio de formato Cobertura de la datumoj kolektitaj</value>
+  </data>
+  <data name="threshold" xml:space="preserve">
+    <value>Kovra procento atingita estas {0}% sub la sojlo de {1}%.</value>
+  </data>
+  <data name="o|outputFile=" xml:space="preserve">
+    <value>Laŭvola: skribu la registradan kovradon al ĉi tiu dosiero anstataŭ anstataŭi la originalan raportan dosieron.</value>
   </data>
 </root>

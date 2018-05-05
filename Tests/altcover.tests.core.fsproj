@@ -29,6 +29,10 @@
     <EmbeddedResource Include="Sample1WithOpenCover.xml" />
     <EmbeddedResource Include="Sample1ClassExclusion.xml" />
     <EmbeddedResource Include="Sample1MethodExclusion.xml" />
+    <EmbeddedResource Include="NCover.lcov" />
+    <EmbeddedResource Include="OpenCover.lcov" />
+    <EmbeddedResource Include="NCover.cob" />
+    <EmbeddedResource Include="OpenCover.cob" />
   </ItemGroup>
 
   <ItemGroup>
@@ -51,12 +55,13 @@
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="15.6.0" />
-    <PackageReference Include="Mono.Cecil" Version="0.10.0-beta7" />
+    <PackageReference Include="Microsoft.Build.Utilities.Core" Version="15.6.85" />
+    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="15.7.0" />
+    <PackageReference Include="Mono.Cecil" Version="0.10.0" />
     <PackageReference Include="Mono.Options" Version="5.3.0.1" />
-    <PackageReference Include="Newtonsoft.Json" Version="11.0.1" />
-    <PackageReference Include="NUnit" Version="3.9.0" />
-    <PackageReference Include="NUnit3TestAdapter" Version="3.9.0" />
+    <PackageReference Include="Newtonsoft.Json" Version="11.0.2" />
+    <PackageReference Include="NUnit" Version="3.10.1" />
+    <PackageReference Include="NUnit3TestAdapter" Version="3.10.0" />
   </ItemGroup>
 
   <ItemGroup>
@@ -65,6 +70,8 @@
     <ProjectReference Include="..\Sample1\sample1.core.csproj" />
     <ProjectReference Include="..\Sample2\sample2.core.fsproj" />
     <ProjectReference Include="..\Sample3\sample3.core.csproj" />
+    <ProjectReference Include="..\Sample5\sample5.core.csproj" />
+    <ProjectReference Include="..\Sample6\sample6.core.fsproj" />
   </ItemGroup>
 
   <ItemGroup>

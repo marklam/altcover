@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="15.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <Import Project="..\packages\NUnit.3.10.1\build\NUnit.props" Condition="Exists('..\packages\NUnit.3.10.1\build\NUnit.props')" />
   <Import Project="$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props" Condition="Exists('$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props')" />
   <PropertyGroup>
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
@@ -83,19 +84,36 @@
     <EmbeddedResource Include="HandRolledMonoCoverage.xml" />
     <EmbeddedResource Include="Sample1ClassExclusion.xml" />
     <EmbeddedResource Include="Sample1MethodExclusion.xml" />
+    <EmbeddedResource Include="NCover.lcov" />
+    <EmbeddedResource Include="OpenCover.lcov" />
+    <EmbeddedResource Include="NCover.cob" />
+    <EmbeddedResource Include="OpenCover.cob" />
   </ItemGroup>
   <ItemGroup>
+    <ProjectReference Include="..\Sample5\Sample5.csproj">
+      <Name>Sample5</Name>
+      <Project>{d1f77a3c-6b04-41b7-9507-fc1a7263cd3d}</Project>
+      <Private>True</Private>
+    </ProjectReference>
+    <ProjectReference Include="..\Sample6\Sample6.fsproj">
+      <Name>Sample6</Name>
+      <Project>{4fa35926-fb21-4f1b-bb55-465d472ee027}</Project>
+      <Private>True</Private>
+    </ProjectReference>
+    <Reference Include="Microsoft.Build.Framework" />
+    <Reference Include="Microsoft.Build.Tasks.v4.0" />
+    <Reference Include="Microsoft.Build.Utilities.v4.0" />
     <Reference Include="Mono.Cecil">
-      <HintPath>..\packages\Mono.Cecil.0.10.0-beta7\lib\net40\Mono.Cecil.dll</HintPath>
+      <HintPath>..\packages\Mono.Cecil.0.10.0\lib\net40\Mono.Cecil.dll</HintPath>
     </Reference>
     <Reference Include="Mono.Cecil.Mdb">
-      <HintPath>..\packages\Mono.Cecil.0.10.0-beta7\lib\net40\Mono.Cecil.Mdb.dll</HintPath>
+      <HintPath>..\packages\Mono.Cecil.0.10.0\lib\net40\Mono.Cecil.Mdb.dll</HintPath>
     </Reference>
     <Reference Include="Mono.Cecil.Pdb">
-      <HintPath>..\packages\Mono.Cecil.0.10.0-beta7\lib\net40\Mono.Cecil.Pdb.dll</HintPath>
+      <HintPath>..\packages\Mono.Cecil.0.10.0\lib\net40\Mono.Cecil.Pdb.dll</HintPath>
     </Reference>
     <Reference Include="Mono.Cecil.Rocks">
-      <HintPath>..\packages\Mono.Cecil.0.10.0-beta7\lib\net40\Mono.Cecil.Rocks.dll</HintPath>
+      <HintPath>..\packages\Mono.Cecil.0.10.0\lib\net40\Mono.Cecil.Rocks.dll</HintPath>
     </Reference>
     <Reference Include="Mono.Options">
       <HintPath>..\packages\Mono.Options.Signed.0.2.3\lib\net45\Mono.Options.dll</HintPath>
@@ -105,10 +123,10 @@
       <HintPath>..\packages\FSharp.Core.4.3.4\lib\net45\FSharp.Core.dll</HintPath>
     </Reference>
     <Reference Include="Newtonsoft.Json">
-      <HintPath>..\packages\Newtonsoft.Json.11.0.1\lib\net45\Newtonsoft.Json.dll</HintPath>
+      <HintPath>..\packages\Newtonsoft.Json.11.0.2\lib\net45\Newtonsoft.Json.dll</HintPath>
     </Reference>
     <Reference Include="nunit.framework">
-      <HintPath>..\packages\NUnit.3.9.0\lib\net45\nunit.framework.dll</HintPath>
+      <HintPath>..\packages\NUnit.3.10.1\lib\net45\nunit.framework.dll</HintPath>
     </Reference>
     <Reference Include="System" />
     <Reference Include="System.Core" />
