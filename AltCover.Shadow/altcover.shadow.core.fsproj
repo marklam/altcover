@@ -23,6 +23,7 @@
     <Compile Include="..\AltCover.Recorder\Base.fs" Link="Base.fs" />
     <Compile Include="..\AltCover.Recorder\Tracer.fs" Link="Tracer.fs" />
     <Compile Include="..\AltCover.Recorder\Recorder.fs" Link="Recorder.fs" />
+    <Compile Include="..\AltCover.Recorder\Program.fs" Link="Program.fs" />
   </ItemGroup>
 
   <ItemGroup>
