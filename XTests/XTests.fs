@@ -540,7 +540,7 @@ module XTests =
 #else
                 ".exe"
 #endif
-    let create = Path.Combine(where, "AltCover.Recorder.g" + suffix)
+    let create = Path.Combine(where, "AltCover.Recorder.g.dll")
     if create |> File.Exists |> not then do
         let from = Path.Combine(here, "AltCover.Recorder" + suffix)
         let updated = Instrument.PrepareAssembly from
@@ -554,7 +554,7 @@ module XTests =
     let codedreport =  "coverage.xml" |> Path.GetFullPath
     let alternate =  "not-coverage.xml" |> Path.GetFullPath
     try
-      Runner.RecorderName <- "AltCover.Recorder.g" + suffix
+      Runner.RecorderName <- "AltCover.Recorder.g.dll"
       let payload (rest:string list) =
         Assert.Equal(rest, [|"test"; "1"|])
         255

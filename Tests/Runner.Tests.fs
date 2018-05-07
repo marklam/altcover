@@ -964,7 +964,7 @@ type AltCoverTests() = class
 #else
                 ".exe"
 #endif
-      let create = Path.Combine(where, "AltCover.Recorder.g" + suffix)
+      let create = Path.Combine(where, "AltCover.Recorder.g.dll")
       if create |> File.Exists |> not then do
         let from = Path.Combine(here, "AltCover.Recorder" + suffix)
         use frombytes = new FileStream(from, FileMode.Open, FileAccess.Read)

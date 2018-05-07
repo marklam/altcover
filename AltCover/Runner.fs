@@ -304,14 +304,7 @@ module Runner =
                             | None -> CommandLine.error <- (CommandLine.resources.GetString "recorderRequired") ::
                                                             CommandLine.error
                                       Left ("UsageError", options)
-                            | Some path -> let suffix = 
-#if NETCOREAPP2_0
-                                                        ".dll"
-#else
-                                                        ".exe"
-#endif
-
-                                           let dll = Path.Combine (path, "AltCover.Recorder.g" + suffix)
+                            | Some path -> let dll = Path.Combine (path, "AltCover.Recorder.g.dll")
                                            if File.Exists dll then parse
                                            else CommandLine.error <- String.Format(CultureInfo.CurrentCulture,
                                                          CommandLine.resources.GetString "recorderNotFound",
