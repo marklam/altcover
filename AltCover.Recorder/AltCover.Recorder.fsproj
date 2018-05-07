@@ -21,7 +21,7 @@
     </NuGetPackageImportStamp>
     <ResolveNuGetPackages>false</ResolveNuGetPackages>
     <UseStandardResourceNames>True</UseStandardResourceNames>
-    <Win32Resource>$(ProjectDir)../AltCover/Resource.res</Win32Resource>    
+    <Win32Resource>$(ProjectDir)../AltCover/Resource.res</Win32Resource>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
     <DebugSymbols>true</DebugSymbols>
@@ -83,6 +83,7 @@
     <Compile Include="Base.fs" />
     <Compile Include="Tracer.fs" />
     <Compile Include="Recorder.fs" />
+    <Compile Include="Program.fs" />
     <EmbeddedResource Include="Strings.resx" />
     <Content Include="packages.config" />
   </ItemGroup>
@@ -111,7 +112,7 @@
 	<Target Name="AfterBuild">
 	</Target>
 	-->
-	<Target Name="FSharpLint" BeforeTargets="AfterBuild" Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' AND '$(FSharpLintEnabled)' != 'false'">
+  <Target Name="FSharpLint" BeforeTargets="AfterBuild" Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' AND '$(FSharpLintEnabled)' != 'false'">
     <FSharpLintTask Project="$(MSBuildProjectFullPath)" TreatWarningsAsErrors="true" />
-	</Target>
+  </Target>
 </Project>
