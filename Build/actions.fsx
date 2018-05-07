@@ -64,7 +64,8 @@ open System.Runtime.CompilerServices
 #if NETCOREAPP2_0
 [<assembly: InternalsVisibleTo("AltCover.Tests")>]
 [<assembly: InternalsVisibleTo("AltCover.XTests")>]
-
+[<assembly: InternalsVisibleTo("AltCover.Shadow.Adapter")>]
+[<assembly: InternalsVisibleTo("AltCover.Shadow.Tests")>]
 #else
 [<assembly: InternalsVisibleTo("AltCover.Tests, PublicKey={1}")>]
 [<assembly: InternalsVisibleTo("AltCover.Tests, PublicKey={2}")>]

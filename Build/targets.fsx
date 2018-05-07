@@ -1232,7 +1232,7 @@ Target "Packaging" (fun _ ->
     Directory.ensure "./_Packaging"
 
     let AltCover = Path.getFullName "_Binaries/AltCover/AltCover.exe"
-    let recorder = Path.getFullName "_Binaries/AltCover/Release+AnyCPU/AltCover.Recorder.dll"
+    let recorder = Path.getFullName "_Binaries/AltCover/Release+AnyCPU/AltCover.Recorder.exe"
     let packable = Path.getFullName "./_Binaries/README.html"
     let resources = DirectoryInfo.getMatchingFilesRecursive "AltCover.resources.dll" (DirectoryInfo.ofPath (Path.getFullName "_Binaries/AltCover/Release+AnyCPU"))
 

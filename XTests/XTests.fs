@@ -534,9 +534,15 @@ module XTests =
     let where = Path.Combine(here, Guid.NewGuid().ToString())
     Directory.CreateDirectory(where) |> ignore
     Directory.SetCurrentDirectory where
-    let create = Path.Combine(where, "AltCover.Recorder.g.dll")
+    let suffix = 
+#if NETCOREAPP2_0
+                ".dll"
+#else
+                ".exe"
+#endif
+    let create = Path.Combine(where, "AltCover.Recorder.g" + suffix)
     if create |> File.Exists |> not then do
-        let from = Path.Combine(here, "AltCover.Recorder.dll")
+        let from = Path.Combine(here, "AltCover.Recorder" + suffix)
         let updated = Instrument.PrepareAssembly from
         Instrument.WriteAssembly updated create
 
@@ -548,7 +554,7 @@ module XTests =
     let codedreport =  "coverage.xml" |> Path.GetFullPath
     let alternate =  "not-coverage.xml" |> Path.GetFullPath
     try
-      Runner.RecorderName <- "AltCover.Recorder.g.dll"
+      Runner.RecorderName <- "AltCover.Recorder.g" + suffix
       let payload (rest:string list) =
         Assert.Equal(rest, [|"test"; "1"|])
         255

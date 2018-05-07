@@ -958,9 +958,15 @@ type AltCoverTests() = class
       let where = Path.Combine(here, Guid.NewGuid().ToString())
       Directory.CreateDirectory(where) |> ignore
       Runner.recordingDirectory <- Some where
-      let create = Path.Combine(where, "AltCover.Recorder.g.dll")
+      let suffix = 
+#if NETCOREAPP2_0
+                ".dll"
+#else
+                ".exe"
+#endif
+      let create = Path.Combine(where, "AltCover.Recorder.g" + suffix)
       if create |> File.Exists |> not then do
-        let from = Path.Combine(here, "AltCover.Recorder.dll")
+        let from = Path.Combine(here, "AltCover.Recorder" + suffix)
         use frombytes = new FileStream(from, FileMode.Open, FileAccess.Read)
         use libstream = new FileStream(create, FileMode.Create)
         frombytes.CopyTo libstream
@@ -1147,7 +1153,13 @@ or
     lock self (fun () ->
     try
       Runner.recordingDirectory <- Some where
-      Runner.RecorderName <- "AltCover.Recorder.dll"
+      let suffix = 
+#if NETCOREAPP2_0
+                ".dll"
+#else
+                ".exe"
+#endif
+      Runner.RecorderName <- "AltCover.Recorder" + suffix
       let instance = Runner.RecorderInstance() |> snd
       Assert.That(instance.FullName, Is.EqualTo "AltCover.Recorder.Instance", "should be the instance")
       let token = (Runner.GetMethod instance "get_Token") |> Runner.GetFirstOperandAsString

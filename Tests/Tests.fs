@@ -1730,7 +1730,13 @@ type AltCoverTests() = class
   [<Test>]
   member self.ShouldBeAbleToGetTheVisitReportMethod () =
     let where = Assembly.GetExecutingAssembly().Location
-    let path = Path.Combine(Path.GetDirectoryName(where) + AltCoverTests.Hack(), "AltCover.Recorder.dll")
+    let suffix = 
+#if NETCOREAPP2_0
+                ".dll"
+#else
+                ".exe"
+#endif
+    let path = Path.Combine(Path.GetDirectoryName(where) + AltCoverTests.Hack(), "AltCover.Recorder" + suffix)
     let def = Mono.Cecil.AssemblyDefinition.ReadAssembly path
     let recorder = AltCover.Instrument.RecordingMethod def
     recorder
@@ -2435,7 +2441,13 @@ type AltCoverTests() = class
   [<Test>]
   member self.ShouldNotChangeAnUntrackedMethod () =
     let where = Assembly.GetExecutingAssembly().Location
-    let path = Path.Combine(Path.GetDirectoryName(where) + AltCoverTests.Hack(), "AltCover.Recorder.dll")
+    let suffix = 
+#if NETCOREAPP2_0
+                ".dll"
+#else
+                ".exe"
+#endif
+    let path = Path.Combine(Path.GetDirectoryName(where) + AltCoverTests.Hack(), "AltCover.Recorder" + suffix)
     let def = Mono.Cecil.AssemblyDefinition.ReadAssembly path
     let recorder = AltCover.Instrument.RecordingMethod def
     let state = AltCover.Instrument.Context.Build([])
@@ -2786,9 +2798,15 @@ type AltCoverTests() = class
     ProgramDatabase.ReadSymbols def
     let visited = Node.Module (def.MainModule, Inspect.Instrument)
     let state = Instrument.Context.Build ["nunit.framework"; "nonesuch"]
+    let suffix = 
+#if NETCOREAPP2_0
+                ".dll"
+#else
+                ".exe"
+#endif
 
     let path' = Path.Combine(Path.GetDirectoryName(where) + AltCoverTests.Hack(),
-                             "AltCover.Recorder.dll")
+                             "AltCover.Recorder" + suffix)
     let def' = Mono.Cecil.AssemblyDefinition.ReadAssembly path'
     let visit = def'.MainModule.GetAllTypes()
                 |> Seq.filter (fun t -> t.Name = "Instance")
@@ -2859,9 +2877,15 @@ type AltCoverTests() = class
     ProgramDatabase.ReadSymbols def
     let visited = Node.Module (def.MainModule, Inspect.Instrument)
     let state = Instrument.Context.Build ["nunit.framework"; "nonesuch"]
+    let suffix = 
+#if NETCOREAPP2_0
+                ".dll"
+#else
+                ".exe"
+#endif
 
     let path' = Path.Combine(Path.GetDirectoryName(where) + AltCoverTests.Hack(),
-                             "AltCover.Recorder.dll")
+                             "AltCover.Recorder" + suffix)
     let def' = Mono.Cecil.AssemblyDefinition.ReadAssembly path'
     let visit = def'.MainModule.GetAllTypes()
                 |> Seq.collect (fun t -> t.Methods)

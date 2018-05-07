@@ -12,7 +12,7 @@ type Tracer = {
                 Formatter : System.Runtime.Serialization.Formatters.Binary.BinaryFormatter
               }
   with
-#if NETSTANDARD2_0
+#if NETCOREAPP2_0
     static member Core () =
              typeof<Microsoft.FSharp.Core.CompilationMappingAttribute>.Assembly.Location
 #endif
