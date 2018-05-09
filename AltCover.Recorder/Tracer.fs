@@ -14,7 +14,12 @@ type Tracer = {
   with
 #if NETCOREAPP2_0
     static member Core () =
+            let loaded = System.AppDomain.CurrentDomain.GetAssemblies()
+            [
              typeof<Microsoft.FSharp.Core.CompilationMappingAttribute>.Assembly.Location
+             typeof<System.Object>.Assembly.Location
+             (loaded |> Seq.find(fun a -> a.GetName().Name = "System.Runtime")).Location
+            ]
 #endif
 
     static member Create (name:string) =

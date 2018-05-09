@@ -492,11 +492,13 @@ module Instrument =
                  Directory.GetFiles(Visitor.InstrumentDirectory(), "*.deps.json", SearchOption.TopDirectoryOnly)
                  |> Seq.iter (fun f -> File.WriteAllText(f, (f |> File.ReadAllText |> injectJSON))                                       )
 #if NETCOREAPP2_0
-                 let fsharplib = Path.Combine(Visitor.InstrumentDirectory(), "FSharp.Core.dll")
-                 if not (File.Exists fsharplib) then
-                   use fsharpbytes = new FileStream(AltCover.Recorder.Tracer.Core(), FileMode.Open, FileAccess.Read)
-                   use libstream = new FileStream(fsharplib, FileMode.Create)
-                   fsharpbytes.CopyTo libstream
+                 AltCover.Recorder.Tracer.Core()
+                 |> List.iter( fun f ->
+                     let fsharplib = Path.Combine(Visitor.InstrumentDirectory(), Path.GetFileName f)
+                     if not (File.Exists fsharplib) then
+                       use fsharpbytes = new FileStream(f, FileMode.Open, FileAccess.Read)
+                       use libstream = new FileStream(fsharplib, FileMode.Create)
+                       fsharpbytes.CopyTo libstream)
 #endif
     finally
       (state.RecordingAssembly :>IDisposable).Dispose()
