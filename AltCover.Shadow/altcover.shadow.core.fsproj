@@ -27,6 +27,10 @@
   </ItemGroup>
 
   <ItemGroup>
+    <CompileBefore Include="$(TargetFrameworkMonikerAssemblyAttributesPath)" />
+  </ItemGroup>
+
+  <ItemGroup>
     <EmbeddedResource Include="..\AltCover.Recorder\Strings.resx" Link="Strings.resx">
       <Generator>ResXFileCodeGenerator</Generator>
     </EmbeddedResource>
