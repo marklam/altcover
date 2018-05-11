@@ -342,7 +342,7 @@ module Main =
             let visitors = [ reporter ; Instrument.InstrumentGenerator assemblyNames ]
             Visitor.Visit visitors (assemblies)
             document.Save(report)
-            if Visitor.collect then Runner.SetRecordToFile report
+            if Visitor.collect then Runner.SetRecordToFile report None
 
             CommandLine.ProcessTrailingArguments rest toInfo) 255 true
         CommandLine.ReportErrors "Instrumentation"

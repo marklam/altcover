@@ -5,6 +5,8 @@ open System.Collections.Generic
 open System.Globalization
 open System.IO
 open System.IO.Compression
+open System.Net
+open System.Net.Sockets
 open System.Xml
 open System.Xml.Linq
 
@@ -358,19 +360,30 @@ module Runner =
   let WriteErrorResourceWithFormatItems s x =
     String.Format (CultureInfo.CurrentCulture, s |> CommandLine.resources.GetString, x) |> Output.Error
 
-  let internal SetRecordToFile report =
+  let internal SetRecordToFile report (key:int option) =
     LCov.DoWithFile (fun () ->
           let binpath = report + ".acv"
           File.Create(binpath))
           ignore
+    key |> Option.iter(fun key' ->
+    LCov.DoWithFile (fun () ->
+          let binpath = report + ".acv." + key'.ToString(CultureInfo.InvariantCulture)
+          File.Create(binpath))
+          ignore)
 
-  let internal RunProcess report (payload: string list -> int) (args : string list) =
-      SetRecordToFile report
+  let internal RunProcess (hits:ICollection<(string*int*Base.Track)>) report (payload: string list -> int) (args : string list) =
+      use sink = new UdpClient(0)
+      let key = (sink.Client.LocalEndPoint :?> IPEndPoint).Port
 
-      "Beginning run..." |> WriteResource
-      let result = payload args
-      "Getting results..." |> WriteResource
-      result
+      SetRecordToFile report (Some key)
+
+      try
+        "Beginning run..." |> WriteResource
+        let result = payload args
+        "Getting results..." |> WriteResource
+        result
+      finally
+        File.Delete (report + ".acv." + key.ToString(CultureInfo.InvariantCulture))
 
   let internal CollectResults (hits:ICollection<(string*int*Base.Track)>) report =
       let formatter = System.Runtime.Serialization.Formatters.Binary.BinaryFormatter()
@@ -402,7 +415,7 @@ module Runner =
       WriteResourceWithFormatItems "%d visits recorded" [|hits.Count|]
 
   let internal MonitorBase (hits:ICollection<(string*int*Base.Track)>) report (payload: string list -> int) (args : string list) =
-      let result = if collect then 0 else RunProcess report payload args
+      let result = if collect then 0 else RunProcess hits report payload args
       CollectResults hits report
       result
 
