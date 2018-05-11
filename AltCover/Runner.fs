@@ -33,6 +33,7 @@ type TypeBinder (``type``:Type) =
     | _ -> typeof<Base.Track>
 
 module Runner =
+  open System.Threading
 
   let mutable internal recordingDirectory : Option<string> = None
   let mutable internal workingDirectory : Option<string> = None
@@ -371,23 +372,66 @@ module Runner =
           File.Create(binpath))
           ignore)
 
+  let makeFormatter () = 
+      let formatter = System.Runtime.Serialization.Formatters.Binary.BinaryFormatter()
+      formatter.Binder <- TypeBinder(typeof<(string*int)>)
+      formatter
+
+  let internal ReadEvent (formatter:System.Runtime.Serialization.Formatters.Binary.BinaryFormatter)
+    (hits:ICollection<(string*int*Base.Track)>) (stream:Stream) = 
+    let hit = try
+                    let raw = formatter.Deserialize(stream)
+                    match raw with
+                    | :? (string * int * Base.Track) as x -> x
+                    | _ -> let pair = raw :?> (string * int)
+                           (fst pair, snd pair, Base.Null)
+              with
+              | :? System.InvalidCastException
+              | :? System.ArgumentException
+              | :? System.Runtime.Serialization.SerializationException -> (null, -1, Base.Null)
+    let (key, _, _) = hit
+    if key |> String.IsNullOrWhiteSpace  |> not then
+        hit |> hits.Add
+        true
+    else false
+
   let internal RunProcess (hits:ICollection<(string*int*Base.Track)>) report (payload: string list -> int) (args : string list) =
       use sink = new UdpClient(0)
       let key = (sink.Client.LocalEndPoint :?> IPEndPoint).Port
+      let mutable finished = false
+      use latch = new ManualResetEvent(false)
+      let formatter = makeFormatter ()
 
       SetRecordToFile report (Some key)
+      let rec loop () =
+         async {
+            let! result = sink.ReceiveAsync() |> Async.AwaitTask
+            use stream = new MemoryStream(result.Buffer)
+            ReadEvent formatter hits stream |> ignore
+            if finished then latch.Set() |> ignore
+            else return! loop()
+         }
+       
+      loop() |> Async.Start
 
       try
         "Beginning run..." |> WriteResource
         let result = payload args
         "Getting results..." |> WriteResource
+        finished <- true
+        use stream = new MemoryStream()
+        let makeTuple (s:String) (i:int) = (s,i)
+        formatter.Serialize(stream, (makeTuple null -1))
+        use alt = new UdpClient(0)
+        alt.Connect("localhost", key)
+        alt.Send(stream.GetBuffer(), stream.Position |> int) |> ignore
+        latch.WaitOne() |> ignore
         result
       finally
         File.Delete (report + ".acv." + key.ToString(CultureInfo.InvariantCulture))
 
   let internal CollectResults (hits:ICollection<(string*int*Base.Track)>) report =
-      let formatter = System.Runtime.Serialization.Formatters.Binary.BinaryFormatter()
-      formatter.Binder <- TypeBinder(typeof<(string*int)>)
+      let formatter = makeFormatter ()
 
       Directory.GetFiles( Path.GetDirectoryName(report),
                           Path.GetFileName(report) + ".*.acv")
@@ -395,19 +439,7 @@ module Runner =
           sprintf "... %s" f |> Output.Info
           use results = new DeflateStream(File.OpenRead f, CompressionMode.Decompress)
           let rec sink() =
-            let hit = try
-                          let raw = formatter.Deserialize(results)
-                          match raw with
-                          | :? (string * int * Base.Track) as x -> x
-                          | _ -> let pair = raw :?> (string * int)
-                                 (fst pair, snd pair, Base.Null)
-                      with
-                      | :? System.InvalidCastException
-                      | :? System.ArgumentException
-                      | :? System.Runtime.Serialization.SerializationException -> (null, -1, Base.Null)
-            let (key, _, _) = hit
-            if key |> String.IsNullOrWhiteSpace  |> not then
-              hit |> hits.Add
+            if ReadEvent formatter hits results then
               sink()
           sink()
       )
