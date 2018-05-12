@@ -191,13 +191,7 @@ module Instance =
   let internal Post (stream:MemoryStream) (x : Carrier) =
     match x with
     | SequencePoint (moduleId, hitPointId, context) ->
-      if trace.IsDatagram() then
-      //async {
-        stream.Position <- 0L
-        trace.Formatter.Serialize(stream, (moduleId, hitPointId, context))
-        trace.Client.Send(stream.GetBuffer(), stream.Position |> int) |> ignore
-      //} |> Async.Start
-      else VisitImpl moduleId hitPointId context
+      VisitImpl moduleId hitPointId context
 
   let rec private loop (inbox:MailboxProcessor<Message>) =
     async {
@@ -279,7 +273,14 @@ module Instance =
      mailbox.PostAndReply (fun c -> Item (buffer |> Seq.toArray, c))
     else buffer |> Seq.toArray |> Array.toSeq |> AsyncItem |> mailbox.Post
 
+  let stream = new MemoryStream()
+
   let internal VisitSelection (f: unit -> bool) track moduleId hitPointId =
+    if trace.IsDatagram() then
+        stream.Position <- 0L
+        trace.Formatter.Serialize(stream, (moduleId, hitPointId, track))
+        trace.Client.Send(stream.GetBuffer(), stream.Position |> int) |> ignore
+    else 
     // When writing to file for the runner to process,
     // make this semi-synchronous to avoid choking the mailbox
     // Backlogs of over 90,000 items were observed in self-test
