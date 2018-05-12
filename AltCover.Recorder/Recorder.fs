@@ -188,27 +188,34 @@ module Instance =
   let mutable internal mailbox = MakeDefaultMailbox()
   let mutable internal mailboxOK = false
 
-  let internal Post (x : Carrier) =
+  let internal Post (stream:MemoryStream) (x : Carrier) =
     match x with
     | SequencePoint (moduleId, hitPointId, context) ->
-      VisitImpl moduleId hitPointId context
+      if trace.IsDatagram() then
+      //async {
+        stream.Position <- 0L
+        trace.Formatter.Serialize(stream, (moduleId, hitPointId, context))
+        trace.Client.Send(stream.GetBuffer(), stream.Position |> int) |> ignore
+      //} |> Async.Start
+      else VisitImpl moduleId hitPointId context
 
   let rec private loop (inbox:MailboxProcessor<Message>) =
     async {
       if Object.ReferenceEquals (inbox, mailbox) then
         // release the wait every half second
         let! opt = inbox.TryReceive(500)
+        use stream = new MemoryStream()
         match opt with
         | None -> return! loop inbox
         | Some msg ->
             match msg with
             | AsyncItem s ->
               s |>
-              Seq.iter Post
+              Seq.iter (Post stream)
               return! loop inbox
             | Item (s, channel) ->
               s |>
-              Seq.iter Post
+              Seq.iter (Post stream)
               channel.Reply ()
               return! loop inbox
             | Finish (Pause, channel) ->

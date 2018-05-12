@@ -372,13 +372,13 @@ module Runner =
           File.Create(binpath))
           ignore)
 
-  let makeFormatter () = 
+  let makeFormatter () =
       let formatter = System.Runtime.Serialization.Formatters.Binary.BinaryFormatter()
       formatter.Binder <- TypeBinder(typeof<(string*int)>)
       formatter
 
   let internal ReadEvent (formatter:System.Runtime.Serialization.Formatters.Binary.BinaryFormatter)
-    (hits:ICollection<(string*int*Base.Track)>) (stream:Stream) = 
+    (hits:ICollection<(string*int*Base.Track)>) (stream:Stream) =
     let hit = try
                     let raw = formatter.Deserialize(stream)
                     match raw with
@@ -411,7 +411,7 @@ module Runner =
             if finished then latch.Set() |> ignore
             else return! loop()
          }
-       
+
       loop() |> Async.Start
 
       try

@@ -3,6 +3,7 @@
 open System.Collections.Generic
 open System.IO
 open System.IO.Compression
+open System.Net.Sockets
 
 type Tracer = {
                 Tracer : string
@@ -10,6 +11,7 @@ type Tracer = {
                 Definitive : bool
                 Stream : System.IO.Stream
                 Formatter : System.Runtime.Serialization.Formatters.Binary.BinaryFormatter
+                Client : UdpClient
               }
   with
 #if NETSTANDARD2_0
@@ -24,6 +26,7 @@ type Tracer = {
        Definitive = false
        Stream = null
        Formatter = System.Runtime.Serialization.Formatters.Binary.BinaryFormatter()
+       Client = null
       }
 
     member this.IsConnected () =
@@ -31,8 +34,27 @@ type Tracer = {
       | null -> false
       | _ -> this.Runner
 
+    member this.IsDatagram () =
+      match this.Client with
+      | null -> false
+      | _ -> this.Runner
+
     member this.Connect () =
+      let connect p =
+         let client = new UdpClient()
+         client.Connect("localhost", p)
+         client
+
       if File.Exists this.Tracer then
+        let dir = this.Tracer |> Path.GetDirectoryName
+        let target = (this.Tracer |> Path.GetFileName) + ".*"
+        let port = Directory.GetFiles(dir, target)
+                   |> Seq.map Path.GetExtension
+                   |> Seq.map (fun n -> n.Trim([| '.' |]))
+                   |> Seq.map System.Int32.TryParse
+                   |> Seq.tryFind fst
+        match port with
+        | None ->
         Seq.initInfinite (fun i -> Path.ChangeExtension(this.Tracer,
                                                         sprintf ".%d.acv" i))
         |> Seq.filter (File.Exists >> not)
@@ -40,6 +62,9 @@ type Tracer = {
                              { this with Stream = new BufferedStream(new DeflateStream(fs, CompressionMode.Compress))
                                          Runner = true })
         |> Seq.head
+        | Some (_, p) -> 
+                         { this with Client = connect p
+                                     Runner = true }
       else
         this
 

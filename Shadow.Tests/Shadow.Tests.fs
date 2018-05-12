@@ -78,6 +78,7 @@ type AltCoverTests() = class
         Definitive = false
         Stream = null
         Formatter = null
+        Client = null
     }
     Assert.That(tracer.GetType().Assembly.GetName().Name, Is.EqualTo "AltCover.Shadow")
     self.GetMyMethodName "<="
@@ -114,7 +115,7 @@ type AltCoverTests() = class
     try
       Adapter.VisitsClear()
       Instance.trace <- { Tracer=null; Stream=null; Formatter=null;
-                          Runner = false; Definitive = false  }
+                          Runner = false; Definitive = false; Client=null }
       let key = " "
       Assert.That (Instance.Backlog(), Is.EqualTo 0)
       Thread.Sleep 1000 // provoke a timeout
@@ -182,7 +183,7 @@ type AltCoverTests() = class
       Instance.Visits.Clear()
       Instance.RunMailbox()
       Instance.trace <- { Tracer=null; Stream=null; Formatter=null;
-                          Runner = false; Definitive = false }
+                          Runner = false; Definitive = false; Client=null }
       let key = " "
       Instance.VisitSelection (fun () -> true) Null key 23
       Assert.That (Instance.Visits.Count, Is.EqualTo 1, "A visit that should have happened, didn't")
@@ -522,7 +523,7 @@ type AltCoverTests() = class
       let unique = Path.Combine(where, Guid.NewGuid().ToString())
       let save = Instance.trace
       Instance.trace <- { Tracer=null; Stream=null; Formatter=null;
-                          Runner = false; Definitive = false }
+                          Runner = false; Definitive = false; Client=null }
       try
         Adapter.VisitsClear()
         use stdout = new StringWriter()
@@ -589,7 +590,7 @@ type AltCoverTests() = class
       let unique = Path.Combine(where, Guid.NewGuid().ToString())
       let save = Instance.trace
       let newTrace = { Tracer=null; Stream=null; Formatter=null;
-                          Runner = false; Definitive = false }
+                          Runner = false; Definitive = false; Client=null }
       Instance.trace <- newTrace
       try
         Adapter.VisitsClear()
@@ -656,7 +657,7 @@ type AltCoverTests() = class
       let unique = Path.Combine(where, Guid.NewGuid().ToString())
       let save = Instance.trace
       Instance.trace <- { Tracer=null; Stream=null; Formatter=null;
-                          Runner = false; Definitive = false }
+                          Runner = false; Definitive = false; Client=null }
       try
         Adapter.VisitsClear()
         use stdout = new StringWriter()
