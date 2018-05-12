@@ -6,6 +6,7 @@ namespace AltCover.Recorder
 open System
 open System.Collections.Generic
 open System.IO
+open System.IO.Compression
 open System.Reflection
 open System.Resources
 open System.Runtime.CompilerServices
@@ -188,16 +189,10 @@ module Instance =
   let mutable internal mailbox = MakeDefaultMailbox()
   let mutable internal mailboxOK = false
 
-  let internal Post (stream:MemoryStream) (x : Carrier) =
+  let internal Post (x : Carrier) =
     match x with
     | SequencePoint (moduleId, hitPointId, context) ->
-      if trace.IsDatagram() then
-      //async {
-        stream.Position <- 0L
-        trace.Formatter.Serialize(stream, (moduleId, hitPointId, context))
-        trace.Client.Send(stream.GetBuffer(), stream.Position |> int) |> ignore
-      //} |> Async.Start
-      else VisitImpl moduleId hitPointId context
+      VisitImpl moduleId hitPointId context
 
   let rec private loop (inbox:MailboxProcessor<Message>) =
     async {
@@ -205,17 +200,35 @@ module Instance =
         // release the wait every half second
         let! opt = inbox.TryReceive(500)
         use stream = new MemoryStream()
+        use wrapper = new BufferedStream(new DeflateStream(stream, CompressionMode.Compress))
         match opt with
         | None -> return! loop inbox
         | Some msg ->
             match msg with
             | AsyncItem s ->
+              if trace.IsDatagram() then
+                let a = s |> Seq.map (fun x -> match x with
+                                               | SequencePoint (moduleId, hitPointId, context) -> (moduleId, hitPointId, context))
+                        |> Seq.toArray
+                  
+                trace.Formatter.Serialize(wrapper, a)
+                trace.Client.Send(stream.GetBuffer(), stream.Position |> int) |> ignore
+              else
               s |>
-              Seq.iter (Post stream)
+              Seq.iter Post
               return! loop inbox
             | Item (s, channel) ->
+              if trace.IsDatagram() then
+                let a = s |> Seq.map (fun x -> match x with
+                                               | SequencePoint (moduleId, hitPointId, context) -> (moduleId, hitPointId, context))
+                        |> Seq.toArray
+                  
+                trace.Formatter.Serialize(wrapper, a)
+                wrapper.Flush()
+                trace.Client.Send(stream.GetBuffer(), stream.Position |> int) |> ignore
+              else
               s |>
-              Seq.iter (Post stream)
+              Seq.iter Post
               channel.Reply ()
               return! loop inbox
             | Finish (Pause, channel) ->
@@ -272,7 +285,7 @@ module Instance =
   let internal PayloadSelector enable =
     PayloadControl Granularity enable
 
-  let mutable internal Capacity = 1023
+  let mutable internal Capacity = 100 //1023
 
   let UnbufferedVisit (f: unit -> bool)  =
     if f() then

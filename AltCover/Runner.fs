@@ -382,6 +382,11 @@ module Runner =
     let hit = try
                     let raw = formatter.Deserialize(stream)
                     match raw with
+                    | :? ((string * int * Base.Track)[]) as a -> 
+                        let b = Seq.toList a
+                        for i in 0 .. (b.Length - 2) do 
+                          hits.Add b.[i]
+                        a |> Seq.last
                     | :? (string * int * Base.Track) as x -> x
                     | _ -> let pair = raw :?> (string * int)
                            (fst pair, snd pair, Base.Null)
@@ -406,7 +411,8 @@ module Runner =
       let rec loop () =
          async {
             let! result = sink.ReceiveAsync() |> Async.AwaitTask
-            use stream = new MemoryStream(result.Buffer)
+            use stream0 = new MemoryStream(result.Buffer)
+            use stream = new DeflateStream(stream0, CompressionMode.Decompress)
             ReadEvent formatter hits stream |> ignore
             if finished then latch.Set() |> ignore
             else return! loop()
@@ -419,12 +425,14 @@ module Runner =
         let result = payload args
         "Getting results..." |> WriteResource
         finished <- true
-        use stream = new MemoryStream()
+        use stream0 = new MemoryStream()
+        use stream = new DeflateStream(stream0, CompressionMode.Compress)
         let makeTuple (s:String) (i:int) = (s,i)
         formatter.Serialize(stream, (makeTuple null -1))
+        stream.Flush()
         use alt = new UdpClient(0)
         alt.Connect("localhost", key)
-        alt.Send(stream.GetBuffer(), stream.Position |> int) |> ignore
+        alt.Send(stream0.GetBuffer(), stream0.Position |> int) |> ignore
         latch.WaitOne() |> ignore
         result
       finally
