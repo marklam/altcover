@@ -1304,20 +1304,21 @@ _Target "Packaging" (fun _ ->
     printfn "Executing on %A" Environment.OSVersion
 
     [
-        (List.concat [applicationFiles; resourceFiles; netcoreFiles "tools/netcoreapp2.0/"; poshFiles; otherFiles],
+        (List.concat [
+            applicationFiles
+            resourceFiles
+            netcoreFiles "tools/netcoreapp2.0/"
+            poshFiles
+            otherFiles
+            netcoreFiles "lib/netcoreapp2.0/"
+            dotnetFiles
+            globalFiles
+            netcoreFiles "tools/netcoreapp2.1/any/"
+            auxFiles
+            ],
          "_Packaging",
          "./Build/AltCover.nuspec",
          "altcover"
-        )
-        (List.concat[netcoreFiles "lib/netcoreapp2.0/"; dotnetFiles],
-         "_Packaging.dotnet",
-         "./_Generated/altcover.dotnet.nuspec",
-         "altcover.dotnet"
-        )
-        (List.concat [globalFiles; netcoreFiles "tools/netcoreapp2.1/any/"; auxFiles],
-         "_Packaging.global",
-         "./_Generated/altcover.global.nuspec",
-         "altcover.global"
         )
     ]
     |> List.iter (fun (files, output, nuspec, project) ->
@@ -1377,28 +1378,11 @@ _Target "PrepareFrameworkBuild" (fun _ ->
 )
 
 _Target "PrepareDotNetBuild" (fun _ ->
-    let netcoresource =  Path.getFullName "./AltCover/altcover.core.fsproj" //  "./altcover.dotnet.sln"
+    let netcoresource =  Path.getFullName "./AltCover/altcover.core.fsproj"
     let publish = Path.getFullName "./_Publish"
     DotNet.publish (fun options -> { options with OutputPath = Some publish
                                                   Configuration = DotNet.BuildConfiguration.Release})
                                                   netcoresource
-
-    // dotnet tooling mods
-    [
-        ("DotnetCliTool", "./_Generated/altcover.dotnet.nuspec", "AltCover (dotnet CLI tool install)")
-        ("DotnetTool", "./_Generated/altcover.global.nuspec", "AltCover (dotnet global tool install)")
-    ]
-    |> List.iter (fun (ptype, path, caption) ->
-        let x s = XName.Get(s, "http://schemas.microsoft.com/packaging/2010/07/nuspec.xsd")
-        let dotnetNupkg = XDocument.Load "./Build/AltCover.nuspec"
-        let title = dotnetNupkg.Descendants(x "title") |> Seq.head
-        title.ReplaceNodes caption
-        let tag = dotnetNupkg.Descendants(x "tags") |> Seq.head
-        let insert = XElement(x "packageTypes")
-        insert.Add(XElement(x "packageType",
-                            XAttribute (XName.Get "name", ptype)))
-        tag.AddAfterSelf insert
-        dotnetNupkg.Save path)
 )
 
 _Target "PrepareReadMe" (fun _ ->
@@ -1973,7 +1957,7 @@ _Target "DotnetCLIIntegration" ( fun _ ->
     let fsproj = XDocument.Load "./Sample4/sample4.core.fsproj"
     let pack = fsproj.Descendants(XName.Get("PackageReference")) |> Seq.head
     let inject = XElement(XName.Get "DotNetCliToolReference",
-                          XAttribute (XName.Get "Include", "altcover.dotnet"),
+                          XAttribute (XName.Get "Include", "altcover"),
                           XAttribute (XName.Get "Version", !Version) )
     pack.AddBeforeSelf inject
     fsproj.Save "./_DotnetCLITest/dotnetcli.fsproj"
@@ -2056,7 +2040,7 @@ _Target "DotnetCLIIntegration" ( fun _ ->
                                      "<TrackedMethodRef uid=\"2\" vc=\"1\" />"
                     ])
   finally
-    let folder = (nugetCache @@ "altcover.dotnet") @@ !Version
+    let folder = (nugetCache @@ "altcover") @@ !Version
     Shell.mkdir folder
     Shell.deleteDir folder
 )
@@ -2073,7 +2057,7 @@ _Target "DotnetGlobalIntegration" ( fun _ ->
     Shell.copy "./_DotnetGlobalTest" (!! "./Sample4/*.fs")
 
     Actions.RunDotnet (fun o' -> {dotnetOptions o' with WorkingDirectory = working} ) "tool"
-                       ("install -g altcover.global --add-source " + (Path.getFullName "./_Packaging.global") + " --version " + !Version) "Installed"
+                       ("install -g altcover --add-source " + (Path.getFullName "./_Packaging.global") + " --version " + !Version) "Installed"
 
     Actions.RunDotnet (fun o' -> {dotnetOptions o' with WorkingDirectory = working} ) "tool"
                        ("list -g ") "Checked"
@@ -2159,8 +2143,8 @@ _Target "DotnetGlobalIntegration" ( fun _ ->
                     ])
   finally
     if set then Actions.RunDotnet (fun o' -> {dotnetOptions o' with WorkingDirectory = working} ) "tool"
-                                             ("uninstall -g altcover.global") "uninstalled"
-    let folder = (nugetCache @@ "altcover.global") @@ !Version
+                                             ("uninstall -g altcover") "uninstalled"
+    let folder = (nugetCache @@ "altcover") @@ !Version
     Shell.mkdir folder
     Shell.deleteDir folder
 )
