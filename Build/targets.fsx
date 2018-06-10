@@ -718,7 +718,7 @@ Target "All" ignore
 "Compilation"
 ?=> "UnitTest"
 
-"Compilation"
+"UnitTestDotNet"
 ==> "JustUnitTest"
 ==> "UnitTest"
 
