@@ -709,7 +709,7 @@ Target "All" ignore
 
 "Compilation"
 ==> "FxCop"
-=?> ("Analysis", not runningInMono) // not supported
+// =?> ("Analysis", not runningInMono) // not supported
 
 "Compilation"
 ==> "Gendarme"
