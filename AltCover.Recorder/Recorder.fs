@@ -224,32 +224,34 @@ module Instance =
     | SequencePoint (moduleId, hitPointId, context) ->
       VisitImpl moduleId hitPointId context
 
-  let rec private loop (inbox:MailboxProcessor<Message>) =
+  let mutable internal closedown = false
+
+  let rec private loop (main:bool) (inbox:MailboxProcessor<Message>) =
     async {
-      if Object.ReferenceEquals (inbox, mailbox) then
+      if Object.ReferenceEquals (inbox, mailbox) && (main && closedown) |> not then
         // release the wait every half second
         let! opt = inbox.TryReceive(500)
         match opt with
-        | None -> return! loop inbox
+        | None -> return! loop main inbox
         | Some msg ->
             match msg with
             | AsyncItem s ->
               s |>
               Seq.iter Post
-              return! loop inbox
+              return! loop main inbox
             | Item (s, channel) ->
               s |>
               Seq.iter Post
               channel.Reply ()
-              return! loop inbox
+              return! loop main inbox
             | Finish (Pause, channel) ->
                 FlushPause()
                 channel.Reply ()
-                return! loop inbox
+                return! loop main inbox
             | Finish (Resume, channel) ->
                 FlushResume ()
                 channel.Reply ()
-                return! loop inbox
+                return! loop main inbox
             | Finish (_, channel) ->
                 FlushAll ()
                 channel.Reply ()
@@ -258,7 +260,7 @@ module Instance =
         }
 
   let internal MakeMailbox () =
-    new MailboxProcessor<Message>(loop)
+    new MailboxProcessor<Message>(loop true)
 
   let internal Backlog () =
     mailbox.CurrentQueueLength
@@ -327,9 +329,14 @@ module Instance =
        Recording <- finish = Resume
        lock (buffer) (fun () ->
        if not Recording then UnbufferedVisit (fun _ -> true)
-       buffer.Clear()
        buffer.Clear())
-       mailbox.TryPostAndReply ((fun c -> Finish (finish, c)), 2000) |> ignore
+       match finish with
+       | Pause
+       | Resume -> mailbox.TryPostAndReply ((fun c -> Finish (finish, c)), 2000) |> ignore
+       | _ -> closedown <- true
+              mailbox.TryPostAndReply ((fun c -> Finish (finish, c)), 0) |> ignore
+              mailbox.TryPostAndReply ((fun c -> Finish (finish, c)), 0) |> ignore
+              loop false mailbox |> Async.RunSynchronously
 
   let internal AddErrorHandler (box:MailboxProcessor<'a>) =
     box.Error.Add MailboxError

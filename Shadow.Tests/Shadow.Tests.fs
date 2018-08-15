@@ -869,16 +869,16 @@ type AltCoverTests() = class
       Console.SetOut (fst saved)
       Console.SetError (snd saved)
 
-#if NET2
-#else
-  // Dead simple sequential operation
-  // run only once in Framework mode to avoid contention
-  [<Test>]
-  member self.MailboxFunctionsAsExpected() =
-    Instance.Capacity <- 0
-    self.RealIdShouldIncrementCount()
-    self.PauseLeavesExpectedTraces()
-    self.ResumeLeavesExpectedTraces()
-    self.FlushLeavesExpectedTraces()
-#endif
+////#if NET2
+////#else
+////  // Dead simple sequential operation
+////  // run only once in Framework mode to avoid contention
+////  [<Test>]
+////  member self.MailboxFunctionsAsExpected() =
+////    Instance.Capacity <- 0
+////    self.RealIdShouldIncrementCount()
+////    self.PauseLeavesExpectedTraces()
+////    self.ResumeLeavesExpectedTraces()
+////    self.FlushLeavesExpectedTraces()
+////#endif
 end
