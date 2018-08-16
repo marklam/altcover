@@ -33,16 +33,18 @@ open System
 [<TestFixture>]
 type AltCoverTests() = class
 
+  let lockable = Object()
+
   [<MethodImpl(MethodImplOptions.NoInlining)>]
   member private self.GetMyMethodName tag =
     ignore tag
-    let st = StackTrace(StackFrame(1))
-    st.GetFrame(0).GetMethod().Name |>
-#if NET2
-    printfn "%s %s 2" tag
-#else
-    printfn "%s %s" tag
-#endif
+//    let st = StackTrace(StackFrame(1))
+//    st.GetFrame(0).GetMethod().Name |>
+//#if NET2
+//    printfn "%s %s 2" tag
+//#else
+//    printfn "%s %s" tag
+//#endif
 
   member self.resource = Assembly.GetExecutingAssembly().GetManifestResourceNames()
                          |> Seq.find (fun n -> n.EndsWith("SimpleCoverage.xml", StringComparison.Ordinal))
@@ -192,9 +194,13 @@ type AltCoverTests() = class
     Assert.That (Instance.CallerId(), Is.EqualTo 0)
     self.GetMyMethodName "<="
 
+#if NETCOREAPP2_0
+#else
   [<Test>]
+#endif
   member self.RealIdShouldIncrementCountSynchronously() =
     self.GetMyMethodName "=>"
+    lock lockable (fun () ->
     lock Instance.Visits (fun () ->
     Instance.Capacity <- 0
     let save = Instance.trace
@@ -210,7 +216,7 @@ type AltCoverTests() = class
       Assert.That (Instance.Visits.[key].[23], Is.EqualTo (1, []))
     finally
       Instance.Visits.Clear()
-      Instance.trace <- save)
+      Instance.trace <- save))
     self.GetMyMethodName "<="
 
   [<Test>]
@@ -794,6 +800,7 @@ type AltCoverTests() = class
   [<Test>]
 #endif
   member self.MailboxHandlesErrors() =
+    lock lockable (fun () ->
     self.GetMyMethodName "=>"
     let save = Instance.mailboxOK
     let saved = (Console.Out, Console.Error)
@@ -822,7 +829,7 @@ type AltCoverTests() = class
     finally
       Instance.mailboxOK <- save
       Console.SetOut (fst saved)
-      Console.SetError (snd saved)
+      Console.SetError (snd saved))
     self.GetMyMethodName "<="
 
 #if NET4
@@ -889,13 +896,17 @@ type AltCoverTests() = class
   // run only once in Framework mode to avoid contention
   [<Test>]
   member self.MailboxFunctionsAsExpected() =
+    lock lockable (fun () ->
     self.GetMyMethodName "=>"
     Instance.Capacity <- 0
     self.RealIdShouldIncrementCount()
+#if NETCOREAPP2_0
+    self.RealIdShouldIncrementCountSynchronously()
+#endif
     self.PauseLeavesExpectedTraces()
     self.ResumeLeavesExpectedTraces()
     self.FlushLeavesExpectedTraces()
     Instance.mailboxOK <- false
-    self.GetMyMethodName "<="
+    self.GetMyMethodName "<=")
 #endif
 end

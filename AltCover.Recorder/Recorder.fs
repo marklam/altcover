@@ -228,7 +228,7 @@ module Instance =
 
   let rec private loop (main:bool) (inbox:MailboxProcessor<Message>) =
     async {
-      if Object.ReferenceEquals (inbox, mailbox) && 
+      if Object.ReferenceEquals (inbox, mailbox) &&
          (main && closedown) |> not &&
          mailboxOK then
         // release the wait every half second

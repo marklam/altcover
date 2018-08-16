@@ -33,13 +33,13 @@ type AltCoverCoreTests() = class
   [<MethodImpl(MethodImplOptions.NoInlining)>]
   member private self.GetMyMethodName tag =
     ignore tag
-    let st = StackTrace(StackFrame(1))
-    st.GetFrame(0).GetMethod().Name |>
-#if NET2
-    printfn "%s %s 2" tag
-#else
-    printfn "%s %s" tag
-#endif
+//    let st = StackTrace(StackFrame(1))
+//    st.GetFrame(0).GetMethod().Name |>
+//#if NET2
+//    printfn "%s %s 2" tag
+//#else
+//    printfn "%s %s" tag
+//#endif
 
   [<Test>]
   member self.WillNotConnectSpontaneously () =
