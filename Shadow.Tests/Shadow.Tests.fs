@@ -196,7 +196,10 @@ type AltCoverTests() = class
 
 #if NETCOREAPP2_0
 #else
+#if MONO
+#else
   [<Test>]
+#endif
 #endif
   member self.RealIdShouldIncrementCountSynchronously() =
     self.GetMyMethodName "=>"
@@ -901,6 +904,9 @@ type AltCoverTests() = class
     Instance.Capacity <- 0
     self.RealIdShouldIncrementCount()
 #if NETCOREAPP2_0
+    self.RealIdShouldIncrementCountSynchronously()
+#endif
+#if MONO
     self.RealIdShouldIncrementCountSynchronously()
 #endif
     self.PauseLeavesExpectedTraces()
