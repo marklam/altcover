@@ -18,9 +18,11 @@ namespace Tests.Shadow.Unknown
 
 open System
 open System.Collections.Generic
+open System.Diagnostics
 open System.IO
 open System.IO.Compression
 open System.Reflection
+open System.Runtime.CompilerServices
 
 open AltCover.Recorder
 open AltCover.Shadow
@@ -28,9 +30,20 @@ open NUnit.Framework
 
 [<TestFixture>]
 type AltCoverCoreTests() = class
+  [<MethodImpl(MethodImplOptions.NoInlining)>]
+  member private self.GetMyMethodName tag =
+    ignore tag
+    let st = StackTrace(StackFrame(1))
+    st.GetFrame(0).GetMethod().Name |>
+#if NET2
+    printfn "%s %s 2" tag
+#else
+    printfn "%s %s" tag
+#endif
 
   [<Test>]
   member self.WillNotConnectSpontaneously () =
+    self.GetMyMethodName "=>"
     let where = Assembly.GetExecutingAssembly().Location |> Path.GetDirectoryName
     let unique = Path.Combine(where, Guid.NewGuid().ToString())
     let mutable client = Tracer.Create unique
@@ -40,9 +53,11 @@ type AltCoverCoreTests() = class
     with
     | _ -> client.Close()
            reraise()
+    self.GetMyMethodName "<="
 
   [<Test>]
   member self.ValidTokenWillConnect () =
+    self.GetMyMethodName "=>"
     let where = Assembly.GetExecutingAssembly().Location |> Path.GetDirectoryName
     let unique = Path.Combine(where, Guid.NewGuid().ToString())
     do
@@ -55,6 +70,7 @@ type AltCoverCoreTests() = class
         Assert.That (client.IsConnected(), Is.True)
     finally
       client.Close()
+    self.GetMyMethodName "<="
 
   member internal self.ReadResults (stream:Stream) =
     let hits = List<(string*int*Track)>()
@@ -81,6 +97,7 @@ type AltCoverCoreTests() = class
 
   [<Test>]
   member self.VisitShouldSignal() =
+    self.GetMyMethodName "=>"
     let save = Instance.trace
     let where = Assembly.GetExecutingAssembly().Location |> Path.GetDirectoryName
     let unique = Path.Combine(where, Guid.NewGuid().ToString())
@@ -110,9 +127,11 @@ type AltCoverCoreTests() = class
 
     finally
       Adapter.VisitsClear()
+    self.GetMyMethodName "<="
 
   [<Test>]
   member self.VisitShouldSignalTrack() =
+    self.GetMyMethodName "=>"
     let save = Instance.trace
     let where = Assembly.GetExecutingAssembly().Location |> Path.GetDirectoryName
     let unique = Path.Combine(where, Guid.NewGuid().ToString())
@@ -155,9 +174,11 @@ type AltCoverCoreTests() = class
 
     finally
       Adapter.VisitsClear()
+    self.GetMyMethodName "<="
 
   [<Test>]
   member self.FlushShouldTidyUp() = // also throw a bone to OpenCover 615
+    self.GetMyMethodName "=>"
     let save = Instance.trace
     let where = Assembly.GetExecutingAssembly().Location |> Path.GetDirectoryName
     let root = Path.Combine(where, Guid.NewGuid().ToString())
@@ -194,12 +215,15 @@ type AltCoverCoreTests() = class
 
     finally
       Adapter.VisitsClear()
+    self.GetMyMethodName "<="
 
 #if NETCOREAPP2_0
   [<Test>]
   member self.CoreFindsThePlace() =
+    self.GetMyMethodName "=>"
     Assert.That (AltCover.Recorder.Tracer.Core(),
                  Does.EndWith("FSharp.Core.dll"))
+    self.GetMyMethodName "<="
 #endif
 
 end

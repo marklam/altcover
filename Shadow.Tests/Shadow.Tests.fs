@@ -36,38 +36,42 @@ type AltCoverTests() = class
   [<MethodImpl(MethodImplOptions.NoInlining)>]
   member private self.GetMyMethodName tag =
     ignore tag
-//    let st = StackTrace(StackFrame(1))
-//    st.GetFrame(0).GetMethod().Name |>
-//#if NET2
-//    printfn "%s %s 2" tag
-//#else
-//    printfn "%s %s" tag
-//#endif
+    let st = StackTrace(StackFrame(1))
+    st.GetFrame(0).GetMethod().Name |>
+#if NET2
+    printfn "%s %s 2" tag
+#else
+    printfn "%s %s" tag
+#endif
 
-   member self.resource = Assembly.GetExecutingAssembly().GetManifestResourceNames()
+  member self.resource = Assembly.GetExecutingAssembly().GetManifestResourceNames()
                          |> Seq.find (fun n -> n.EndsWith("SimpleCoverage.xml", StringComparison.Ordinal))
 
   member private self.UpdateReport a b =
     Counter.UpdateReport ignore (fun _ _ -> ()) true a ReportFormat.NCover b b
     |> ignore
 
-   member self.resource2 = Assembly.GetExecutingAssembly().GetManifestResourceNames()
+  member self.resource2 = Assembly.GetExecutingAssembly().GetManifestResourceNames()
                           |> Seq.find (fun n -> n.EndsWith("Sample1WithModifiedOpenCover.xml", StringComparison.Ordinal))
 
   [<Test>]
   member self.SafeDisposalProtects() =
+    self.GetMyMethodName "=>"
     let obj1 = { new System.IDisposable with member x.Dispose() = ObjectDisposedException("Bang!") |> raise }
     Assist.SafeDispose obj1
+    self.GetMyMethodName "<="
     Assert.Pass()
 
   [<Test>]
   member self.DefaultAccessorsBehaveAsExpected() =
+    self.GetMyMethodName "=>"
     let v1 = DateTime.UtcNow.Ticks
     let probe = Instance.Clock()
     let v2 = DateTime.UtcNow.Ticks
     Assert.That (Instance.Granularity(), Is.EqualTo 0)
     Assert.That (probe, Is.GreaterThanOrEqualTo v1)
     Assert.That (probe, Is.LessThanOrEqualTo v2)
+    self.GetMyMethodName "<="
 
   [<Test>]
   member self.ShouldBeLinkingTheCorrectCopyOfThisCode() =
@@ -152,6 +156,7 @@ type AltCoverTests() = class
 #else
   [<Test>]
   member self.PayloadGeneratedIsAsExpected() =
+    self.GetMyMethodName "=>"
     try
       Assert.That (Instance.CallerId(), Is.EqualTo 0)
       Assert.That(Instance.PayloadSelector (fun _ -> true),
@@ -185,6 +190,7 @@ type AltCoverTests() = class
     Assert.That (Instance.CallerId(), Is.EqualTo 0)
     Instance.Pop()
     Assert.That (Instance.CallerId(), Is.EqualTo 0)
+    self.GetMyMethodName "<="
 
   [<Test>]
   member self.RealIdShouldIncrementCountSynchronously() =
@@ -735,6 +741,7 @@ type AltCoverTests() = class
   [<Test>]
 #endif
   member self.FlushLeavesExpectedTracesWhenDiverted() =
+    self.GetMyMethodName "=>"
     let saved = Console.Out
     let here = Directory.GetCurrentDirectory()
     let where = Assembly.GetExecutingAssembly().Location |> Path.GetDirectoryName
@@ -780,12 +787,14 @@ type AltCoverTests() = class
         Directory.Delete(unique)
       with
       | :? IOException -> ()
+    self.GetMyMethodName "<="
 
 #if NET4
 #else
   [<Test>]
 #endif
   member self.MailboxHandlesErrors() =
+    self.GetMyMethodName "=>"
     let save = Instance.mailboxOK
     let saved = (Console.Out, Console.Error)
     let e0 = Console.Out.Encoding
@@ -814,12 +823,14 @@ type AltCoverTests() = class
       Instance.mailboxOK <- save
       Console.SetOut (fst saved)
       Console.SetError (snd saved)
+    self.GetMyMethodName "<="
 
 #if NET4
 #else
   [<Test>]
 #endif
   member self.DefaultMailboxWorks() =
+    self.GetMyMethodName "=>"
     let saved = (Console.Out, Console.Error)
     let e0 = Console.Out.Encoding
     let e1 = Console.Error.Encoding
@@ -844,8 +855,10 @@ type AltCoverTests() = class
       Instance.SetErrorAction()
       Console.SetOut (fst saved)
       Console.SetError (snd saved)
+    self.GetMyMethodName "<="
 
   member self.ReplacementMailboxWorks() =
+    self.GetMyMethodName "=>"
     let save = Instance.mailboxOK
     let saved = (Console.Out, Console.Error)
     let e0 = Console.Out.Encoding
@@ -868,17 +881,21 @@ type AltCoverTests() = class
       Instance.mailboxOK <- save
       Console.SetOut (fst saved)
       Console.SetError (snd saved)
+    self.GetMyMethodName "<="
 
-////#if NET2
-////#else
-////  // Dead simple sequential operation
-////  // run only once in Framework mode to avoid contention
-////  [<Test>]
-////  member self.MailboxFunctionsAsExpected() =
-////    Instance.Capacity <- 0
-////    self.RealIdShouldIncrementCount()
-////    self.PauseLeavesExpectedTraces()
-////    self.ResumeLeavesExpectedTraces()
-////    self.FlushLeavesExpectedTraces()
-////#endif
+#if NET2
+#else
+  // Dead simple sequential operation
+  // run only once in Framework mode to avoid contention
+  [<Test>]
+  member self.MailboxFunctionsAsExpected() =
+    self.GetMyMethodName "=>"
+    Instance.Capacity <- 0
+    self.RealIdShouldIncrementCount()
+    self.PauseLeavesExpectedTraces()
+    self.ResumeLeavesExpectedTraces()
+    self.FlushLeavesExpectedTraces()
+    Instance.mailboxOK <- false
+    self.GetMyMethodName "<="
+#endif
 end

@@ -228,7 +228,9 @@ module Instance =
 
   let rec private loop (main:bool) (inbox:MailboxProcessor<Message>) =
     async {
-      if Object.ReferenceEquals (inbox, mailbox) && (main && closedown) |> not then
+      if Object.ReferenceEquals (inbox, mailbox) && 
+         (main && closedown) |> not &&
+         mailboxOK then
         // release the wait every half second
         let! opt = inbox.TryReceive(500)
         match opt with
@@ -334,7 +336,6 @@ module Instance =
        | Pause
        | Resume -> mailbox.TryPostAndReply ((fun c -> Finish (finish, c)), 2000) |> ignore
        | _ -> closedown <- true
-              mailbox.TryPostAndReply ((fun c -> Finish (finish, c)), 0) |> ignore
               mailbox.TryPostAndReply ((fun c -> Finish (finish, c)), 0) |> ignore
               loop false mailbox |> Async.RunSynchronously
 
