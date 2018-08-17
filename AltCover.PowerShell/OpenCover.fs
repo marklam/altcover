@@ -13,6 +13,58 @@ open System.Xml.XPath
 
 open AltCover.PowerShell
 
+[<Cmdlet(VerbsData.Merge, "Coverage")>]
+[<OutputType(typeof<XmlDocument>)>]
+type MergeCoverageCommand(outputFile:String) =
+  inherit PSCmdlet()
+
+  new () = MergeCoverageCommand(String.Empty)
+
+  [<Parameter(ParameterSetName = "XmlDoc", Mandatory = true, Position = 1,
+      ValueFromPipeline = true, ValueFromPipelineByPropertyName = false)>]
+  [<ValidateNotNull;ValidateCount(1,Int32.MaxValue)>]
+  member val XmlDocument:IXPathNavigable array = [| |] with get, set
+
+  [<Parameter(ParameterSetName = "Files", Mandatory = true, Position = 1,
+      ValueFromPipeline = true, ValueFromPipelineByPropertyName = false)>]
+  [<ValidateNotNull;ValidateCount(1,Int32.MaxValue)>]
+  member val InputFile:string array = [| |] with get, set
+
+  [<Parameter(Mandatory = false,
+      ValueFromPipeline = false, ValueFromPipelineByPropertyName = false)>]
+  member val OutputFile:string = outputFile with get, set
+
+  [<Parameter(Mandatory = false)>]
+  member val AsNCover : SwitchParameter = SwitchParameter(false) with get, set
+
+  override self.ProcessRecord() =
+    let here = Directory.GetCurrentDirectory()
+    try
+      let where = self.SessionState.Path.CurrentLocation.Path
+      Directory.SetCurrentDirectory where
+      if self.ParameterSetName.StartsWith("File", StringComparison.Ordinal) then
+        self.XmlDocument <- self.InputFile 
+                            |>  Array.map (fun x -> XPathDocument(x) :> IXPathNavigable)
+
+      // Validate
+      let xmlDocument =  new XmlDocument()
+      (self.XmlDocument
+      |> Seq.head).CreateNavigator().ReadSubtree() |> xmlDocument.Load
+      xmlDocument.Schemas <- XmlUtilities.LoadSchema AltCover.Base.ReportFormat.OpenCover
+      xmlDocument.Validate (null)
+
+      // tidy up here
+      AltCover.Runner.PostProcess null AltCover.Base.ReportFormat.OpenCover xmlDocument
+      XmlUtilities.PrependDeclaration xmlDocument
+
+      if self.OutputFile |> String.IsNullOrWhiteSpace |> not then
+        xmlDocument.Save(self.OutputFile)
+
+      self.WriteObject xmlDocument
+    finally
+      Directory.SetCurrentDirectory here
+
+
 [<Cmdlet(VerbsData.Compress, "Branching")>]
 [<OutputType(typeof<XmlDocument>)>]
 type CompressBranchingCommand(outputFile:String) =
