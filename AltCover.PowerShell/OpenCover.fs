@@ -37,33 +37,48 @@ type MergeCoverageCommand(outputFile:String) =
   [<Parameter(Mandatory = false)>]
   member val AsNCover : SwitchParameter = SwitchParameter(false) with get, set
 
+  member val private Files = new List<IXPathNavigable>() with get, set
+
+  override self.BeginProcessing() =
+    printfn "Begin processing %A %A" self.XmlDocument self.InputFile
+    self.Files.Clear()
+
   override self.ProcessRecord() =
-    let here = Directory.GetCurrentDirectory()
-    try
-      let where = self.SessionState.Path.CurrentLocation.Path
-      Directory.SetCurrentDirectory where
-      if self.ParameterSetName.StartsWith("File", StringComparison.Ordinal) then
-        self.XmlDocument <- self.InputFile 
-                            |>  Array.map (fun x -> XPathDocument(x) :> IXPathNavigable)
+    printfn "ProcessRecord %A %A %d" self.XmlDocument self.InputFile self.Files.Count
+    if self.ParameterSetName.StartsWith("File", StringComparison.Ordinal) then
+      self.XmlDocument <- self.InputFile
+                          |>  Array.map (fun x -> XPathDocument(x) :> IXPathNavigable)
+    self.Files.AddRange self.XmlDocument
 
-      // Validate
-      let xmlDocument =  new XmlDocument()
-      (self.XmlDocument
-      |> Seq.head).CreateNavigator().ReadSubtree() |> xmlDocument.Load
-      xmlDocument.Schemas <- XmlUtilities.LoadSchema AltCover.Base.ReportFormat.OpenCover
-      xmlDocument.Validate (null)
 
-      // tidy up here
-      AltCover.Runner.PostProcess null AltCover.Base.ReportFormat.OpenCover xmlDocument
-      XmlUtilities.PrependDeclaration xmlDocument
+  override self.EndProcessing() =
+    printfn "End processing %A %A %d" self.XmlDocument self.InputFile self.Files.Count
 
-      if self.OutputFile |> String.IsNullOrWhiteSpace |> not then
-        xmlDocument.Save(self.OutputFile)
+    //let here = Directory.GetCurrentDirectory()
+    //try
+    //  let where = self.SessionState.Path.CurrentLocation.Path
+    //  Directory.SetCurrentDirectory where
+    //  if self.ParameterSetName.StartsWith("File", StringComparison.Ordinal) then
+    //    self.XmlDocument <- self.InputFile
+    //                        |>  Array.map (fun x -> XPathDocument(x) :> IXPathNavigable)
 
-      self.WriteObject xmlDocument
-    finally
-      Directory.SetCurrentDirectory here
+    //  // Validate
+    //  let xmlDocument =  new XmlDocument()
+    //  (self.XmlDocument
+    //  |> Seq.head).CreateNavigator().ReadSubtree() |> xmlDocument.Load
+    //  xmlDocument.Schemas <- XmlUtilities.LoadSchema AltCover.Base.ReportFormat.OpenCover
+    //  xmlDocument.Validate (null)
 
+    //  // tidy up here
+    //  AltCover.Runner.PostProcess null AltCover.Base.ReportFormat.OpenCover xmlDocument
+    //  XmlUtilities.PrependDeclaration xmlDocument
+
+    //  if self.OutputFile |> String.IsNullOrWhiteSpace |> not then
+    //    xmlDocument.Save(self.OutputFile)
+
+    //  self.WriteObject xmlDocument
+    //finally
+    //  Directory.SetCurrentDirectory here
 
 [<Cmdlet(VerbsData.Compress, "Branching")>]
 [<OutputType(typeof<XmlDocument>)>]

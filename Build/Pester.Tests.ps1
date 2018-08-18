@@ -637,3 +637,9 @@ Describe "Compress-Branching" {
 	$fail | Should -BeFalse
   }
 }
+
+Describe "MergeCoverage" {
+  It "Processes Files" {
+    dir -recurse "./Tests/*.xml" | Merge-Coverage
+  }
+}
