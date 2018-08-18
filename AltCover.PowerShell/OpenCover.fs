@@ -40,34 +40,41 @@ type MergeCoverageCommand(outputFile:String) =
   member val private Files = new List<IXPathNavigable>() with get, set
 
   override self.BeginProcessing() =
-    printfn "Begin processing %A %A" self.XmlDocument self.InputFile
     self.Files.Clear()
 
   override self.ProcessRecord() =
-    printfn "ProcessRecord %A %A %d" self.XmlDocument self.InputFile self.Files.Count
-    if self.ParameterSetName.StartsWith("File", StringComparison.Ordinal) then
-      self.XmlDocument <- self.InputFile
-                          |>  Array.map (fun x -> XPathDocument(x) :> IXPathNavigable)
-    self.Files.AddRange self.XmlDocument
+    let here = Directory.GetCurrentDirectory()
+    try
+      let where = self.SessionState.Path.CurrentLocation.Path
+      Directory.SetCurrentDirectory where
 
+      if self.ParameterSetName.StartsWith("File", StringComparison.Ordinal) then
+        self.XmlDocument <- self.InputFile
+                            |>  Array.map (fun x -> XPathDocument(x) :> IXPathNavigable)
+      self.Files.AddRange self.XmlDocument
+    finally
+      Directory.SetCurrentDirectory here
 
   override self.EndProcessing() =
-    printfn "End processing %A %A %d" self.XmlDocument self.InputFile self.Files.Count
+    let here = Directory.GetCurrentDirectory()
+    try
+      let where = self.SessionState.Path.CurrentLocation.Path
+      Directory.SetCurrentDirectory where
 
-    //let here = Directory.GetCurrentDirectory()
-    //try
-    //  let where = self.SessionState.Path.CurrentLocation.Path
-    //  Directory.SetCurrentDirectory where
-    //  if self.ParameterSetName.StartsWith("File", StringComparison.Ordinal) then
-    //    self.XmlDocument <- self.InputFile
-    //                        |>  Array.map (fun x -> XPathDocument(x) :> IXPathNavigable)
-
-    //  // Validate
-    //  let xmlDocument =  new XmlDocument()
-    //  (self.XmlDocument
-    //  |> Seq.head).CreateNavigator().ReadSubtree() |> xmlDocument.Load
-    //  xmlDocument.Schemas <- XmlUtilities.LoadSchema AltCover.Base.ReportFormat.OpenCover
-    //  xmlDocument.Validate (null)
+      let inputs = self.Files
+                   |> Seq.map (fun x -> let xmlDocument =  new XmlDocument()
+                                        x.CreateNavigator().ReadSubtree() |> xmlDocument.Load
+                                        try
+                                          let format = XmlUtilities.DiscoverFormat xmlDocument
+                                          if self.AsNCover.IsPresent then // TODO
+                                            Some xmlDocument
+                                          else
+                                            Some xmlDocument
+                                        with
+                                        | _ -> None
+                   )
+                   |> Seq.choose id
+      ()
 
     //  // tidy up here
     //  AltCover.Runner.PostProcess null AltCover.Base.ReportFormat.OpenCover xmlDocument
@@ -77,8 +84,8 @@ type MergeCoverageCommand(outputFile:String) =
     //    xmlDocument.Save(self.OutputFile)
 
     //  self.WriteObject xmlDocument
-    //finally
-    //  Directory.SetCurrentDirectory here
+    finally
+      Directory.SetCurrentDirectory here
 
 [<Cmdlet(VerbsData.Compress, "Branching")>]
 [<OutputType(typeof<XmlDocument>)>]
