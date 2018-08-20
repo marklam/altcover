@@ -893,6 +893,14 @@ type AltCoverTests() = class
       Console.SetError (snd saved)
     self.GetMyMethodName "<="
 
+#if NET4
+#else
+  [<Test>]
+  member self.ReplyNone() =
+    Instance.Reply None
+    Assert.Pass()
+#endif
+
 #if NET2
 #else
   // Dead simple sequential operation
