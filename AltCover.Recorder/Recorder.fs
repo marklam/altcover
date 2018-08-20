@@ -37,7 +37,7 @@ type internal Carrier =
 type internal Message =
     | AsyncItem of Carrier seq
     | Item of Carrier seq*AsyncReplyChannel<unit>
-    | Finish of Close * AsyncReplyChannel<unit> option
+    | Finish of Close * AsyncReplyChannel<unit>
 
 module Instance =
 
@@ -226,11 +226,6 @@ module Instance =
 
   let mutable internal closedown = false
 
-  let Reply (channel : AsyncReplyChannel<unit> option)  =
-    match channel with
-    | Some c -> c.Reply()
-    | None -> ()
-
   let rec private loop (main:bool) (inbox:MailboxProcessor<Message>) =
     async {
       if Object.ReferenceEquals (inbox, mailbox) &&
@@ -253,16 +248,16 @@ module Instance =
               return! loop main inbox
             | Finish (Pause, channel) ->
                 FlushPause()
-                Reply channel
+                channel.Reply ()
                 return! loop main inbox
             | Finish (Resume, channel) ->
                 FlushResume ()
-                Reply channel
+                channel.Reply ()
                 return! loop main inbox
             | Finish (_, channel) ->
                 FlushAll ()
                 printfn "Coverage flushed"
-                Reply channel
+                channel.Reply ()
                 mailboxOK <- false
                 Assist.SafeDispose inbox
         }
@@ -336,14 +331,14 @@ module Instance =
    if mailboxOK then
        Recording <- finish = Resume
        lock (buffer) (fun () ->
-       if not Recording then UnbufferedVisit (fun _ -> finish = Pause)
+       if not Recording then UnbufferedVisit (fun _ -> true)
        buffer.Clear())
        match finish with
        | Pause
-       | Resume -> mailbox.TryPostAndReply ((fun c -> Finish (finish, Some c)), 2000) |> ignore
+       | Resume -> mailbox.TryPostAndReply ((fun c -> Finish (finish, c)), 2000) |> ignore
        | _ -> closedown <- true
               printfn "Closedown begun..."
-              (finish, None) |> Finish |> mailbox.Post
+              mailbox.TryPostAndReply ((fun c -> Finish (finish, c)), 0) |> ignore
               loop false mailbox |> Async.RunSynchronously
               printfn "Coverage complete"
 
