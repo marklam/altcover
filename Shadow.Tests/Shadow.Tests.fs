@@ -854,7 +854,7 @@ type AltCoverTests() = class
       Instance.ErrorAction <- (fun _ -> latch.Set() |> ignore)
       Instance.AddErrorHandler dummy
       dummy.Start()
-      dummy.TryPostAndReply ((fun c -> Finish (ProcessExit, c)), 100) |> ignore
+      dummy.TryPostAndReply ((fun c -> Finish (ProcessExit, Some c)), 100) |> ignore
       Assert.That(stdout.ToString(), Is.Empty)
       Assert.That(stderr.ToString(), Is.Empty)
 
@@ -882,7 +882,7 @@ type AltCoverTests() = class
       Instance.AddErrorHandler dummy
       dummy.Start()
       Instance.mailboxOK <- true
-      dummy.TryPostAndReply ((fun c -> Finish (ProcessExit, c)), 100) |> ignore
+      dummy.TryPostAndReply ((fun c -> Finish (ProcessExit, Some c)), 100) |> ignore
       Assert.That(stdout.ToString(), Is.Empty)
       Assert.That(stderr.ToString(), Is.Empty)
       Assert.That(Instance.mailboxOK, Is.True)
