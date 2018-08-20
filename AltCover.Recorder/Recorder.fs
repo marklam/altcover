@@ -256,6 +256,7 @@ module Instance =
                 return! loop main inbox
             | Finish (_, channel) ->
                 FlushAll ()
+                printfn "Coverage flushed"
                 channel.Reply ()
                 mailboxOK <- false
                 Assist.SafeDispose inbox
@@ -336,8 +337,10 @@ module Instance =
        | Pause
        | Resume -> mailbox.TryPostAndReply ((fun c -> Finish (finish, c)), 2000) |> ignore
        | _ -> closedown <- true
+              printfn "Closedown begun..."
               mailbox.TryPostAndReply ((fun c -> Finish (finish, c)), 0) |> ignore
               loop false mailbox |> Async.RunSynchronously
+              printfn "Coverage complete"
 
   let internal AddErrorHandler (box:MailboxProcessor<'a>) =
     box.Error.Add MailboxError
