@@ -1020,7 +1020,7 @@ _Target "FSharpTypesDotNetCollecter" ( fun _ ->
 
     printfn "Execute the instrumented tests"
     Actions.RunDotnet (fun o -> {dotnetOptions o with WorkingDirectory = Path.getFullName "Sample2"}) "test"
-                            ("--no-build --configuration Debug sample2.core.fsproj")
+                            ("--no-build --configuration Debug sample2.core.fsproj -v m")
                              "sample coverage test returned with a non-zero exit code"
 
     Actions.RunDotnet (fun o -> {dotnetOptions o with WorkingDirectory = sampleRoot}) ""
