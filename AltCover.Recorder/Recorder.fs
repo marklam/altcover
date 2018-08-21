@@ -250,7 +250,7 @@ module Instance =
                 return! loop main inbox
             | Finish (_, channel) ->
                 FlushAll ()
-                Console.WriteLine CoverageFlushed
+                printfn "%s" CoverageFlushed
                 channel.Reply ()
                 mailboxOK <- false
                 Assist.SafeDispose inbox
@@ -334,7 +334,9 @@ module Instance =
        | Pause
        | Resume -> mailbox.TryPostAndReply ((fun c -> Finish (finish, c)), 2000) |> ignore
        | _ -> closedown <- true
-              Console.WriteLine(ClosedownBegun, finish.ToString())
+              String.Format(System.Globalization.CultureInfo.InvariantCulture,
+                            ClosedownBegun, finish.ToString())
+              |> printfn "%s"
               mailbox.TryPostAndReply ((fun c -> Finish (finish, c)), 0) |> ignore
               loop false mailbox |> Async.RunSynchronously
               // printfn "Coverage complete"
