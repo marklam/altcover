@@ -177,4 +177,16 @@
   <data name="Recorder error.eo" xml:space="preserve">
     <value>Registra eraro</value>
   </data>
+  <data name="Closedown begun.en" xml:space="preserve">
+    <value>Flushing coverage data to file for {0}</value>
+  </data>
+  <data name="Closedown begun.eo" xml:space="preserve">
+    <value>Flugas pri kovraĵaj datumoj al dosiero por {0}</value>
+  </data>
+  <data name="Coverage flushed.en" xml:space="preserve">
+    <value>All coverage data have been written to file</value>
+  </data>
+  <data name="Coverage flushed.eo" xml:space="preserve">
+    <value>Ĉiuj kovraj datumoj estas skribitaj por registri</value>
+  </data>
 </root>

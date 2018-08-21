@@ -112,21 +112,13 @@ module Instance =
         CallStack.instance.Value
 
     member self.Push x =  self.caller <- x :: self.caller
-                          //let s = sprintf "push %d -> %A" x self.caller
-                          //System.Diagnostics.Debug.WriteLine(s)
 
     member self.Pop () = self.caller <- match self.caller with
                                          | []
                                          | [0] -> [0]
                                          | _::xs -> xs
-                         //let s = sprintf "pop -> %A"self.caller
-                         //System.Diagnostics.Debug.WriteLine(s)
 
     member self.CallerId () = Seq.head self.caller
-                              (*let x = Seq.head self.caller
-                              let s = sprintf "peek %d" x
-                              System.Diagnostics.Debug.WriteLine(s)
-                              x*)
 
   let Push x = CallStack.Instance.Push x
   let Pop () = CallStack.Instance.Pop ()
@@ -226,6 +218,8 @@ module Instance =
 
   let mutable internal closedown = false
 
+  let CoverageFlushed = "Coverage flushed" |> GetResource |> Option.get
+
   let rec private loop (main:bool) (inbox:MailboxProcessor<Message>) =
     async {
       if Object.ReferenceEquals (inbox, mailbox) &&
@@ -256,7 +250,7 @@ module Instance =
                 return! loop main inbox
             | Finish (_, channel) ->
                 FlushAll ()
-                printfn "Coverage flushed"
+                Console.WriteLine CoverageFlushed
                 channel.Reply ()
                 mailboxOK <- false
                 Assist.SafeDispose inbox
@@ -327,6 +321,9 @@ module Instance =
      VisitSelection (fun () -> trace.IsConnected() || Backlog() > 0)
                      (PayloadSelector IsOpenCoverRunner) moduleId hitPointId
 
+
+  let ClosedownBegun = "Closedown begun"  |> GetResource |> Option.get
+
   let internal FlushCounter (finish:Close) _ =
    if mailboxOK then
        Recording <- finish = Resume
@@ -337,10 +334,10 @@ module Instance =
        | Pause
        | Resume -> mailbox.TryPostAndReply ((fun c -> Finish (finish, c)), 2000) |> ignore
        | _ -> closedown <- true
-              printfn "Closedown begun..."
+              Console.WriteLine(ClosedownBegun, finish.ToString())
               mailbox.TryPostAndReply ((fun c -> Finish (finish, c)), 0) |> ignore
               loop false mailbox |> Async.RunSynchronously
-              printfn "Coverage complete"
+              // printfn "Coverage complete"
 
   let internal AddErrorHandler (box:MailboxProcessor<'a>) =
     box.Error.Add MailboxError

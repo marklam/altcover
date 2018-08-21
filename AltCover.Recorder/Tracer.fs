@@ -37,7 +37,6 @@ type Tracer = {
                                                         sprintf ".%d.acv" i))
         |> Seq.filter (File.Exists >> not)
         |> Seq.map (fun f -> let fs = File.OpenWrite f
-                             printfn "Recording to %s" f
                              let s = new BufferedStream(new DeflateStream(fs, CompressionMode.Compress))
                              { this with Stream = s
                                          Formatter = new BinaryWriter(s)
