@@ -220,8 +220,51 @@ module Instance =
 
   let CoverageFlushed = "Coverage flushed" |> GetResource |> Option.get
 
+  let latch = new System.Threading.ManualResetEvent(false)
+
+  let internal DispatchVisit msg =
+    System.Diagnostics.Debug.WriteLine ("Dispatching " + msg.ToString())
+    match msg with
+    | AsyncItem s ->
+        s |>
+        Seq.iter Post
+        trace.OnConnected (fun () -> trace.Formatter.Flush()
+                                     if File.Exists trace.Tracer then
+                                       System.Diagnostics.Debug.WriteLine ("trace = " + FileInfo(trace.Tracer).Length.ToString())
+                                                 )
+                          ignore
+        true
+    | Item (s, channel) ->
+        s |>
+        Seq.iter Post
+        trace.OnConnected (fun () -> trace.Formatter.Flush()
+                                     if File.Exists trace.Tracer then
+                                       System.Diagnostics.Debug.WriteLine ("trace = " + FileInfo(trace.Tracer).Length.ToString())
+                                                 )
+                          ignore
+        channel.Reply ()
+        true
+    | Finish (Pause, channel) ->
+        FlushPause()
+        channel.Reply ()
+        true
+    | Finish (Resume, channel) ->
+        FlushResume ()
+        channel.Reply ()
+        true
+    | Finish (_, channel) ->
+        FlushAll ()
+        //printfn "%s" CoverageFlushed
+        CoverageFlushed |> System.Diagnostics.Debug.WriteLine
+        channel.Reply ()
+        mailboxOK <- false
+        Assist.SafeDispose mailbox
+        latch.Set() |> ignore
+        false
+
   let rec private loop (main:bool) (inbox:MailboxProcessor<Message>) =
     async {
+      System.Diagnostics.Debug.WriteLine "loop"
       if Object.ReferenceEquals (inbox, mailbox) &&
          (main && closedown) |> not &&
          mailboxOK then
@@ -230,30 +273,8 @@ module Instance =
         match opt with
         | None -> return! loop main inbox
         | Some msg ->
-            match msg with
-            | AsyncItem s ->
-              s |>
-              Seq.iter Post
-              return! loop main inbox
-            | Item (s, channel) ->
-              s |>
-              Seq.iter Post
-              channel.Reply ()
-              return! loop main inbox
-            | Finish (Pause, channel) ->
-                FlushPause()
-                channel.Reply ()
-                return! loop main inbox
-            | Finish (Resume, channel) ->
-                FlushResume ()
-                channel.Reply ()
-                return! loop main inbox
-            | Finish (_, channel) ->
-                FlushAll ()
-                printfn "%s" CoverageFlushed
-                channel.Reply ()
-                mailboxOK <- false
-                Assist.SafeDispose inbox
+          if DispatchVisit msg then
+           return! loop main inbox
         }
 
   let internal MakeMailbox () =
@@ -266,6 +287,7 @@ module Instance =
   let mutable internal ErrorAction = DefaultErrorAction
 
   let MailboxError x =
+    System.Diagnostics.Debug.WriteLine ("MailboxError " + x.ToString())
     mailboxOK <- false
     ErrorAction x
 
@@ -295,12 +317,14 @@ module Instance =
   let internal PayloadSelector enable =
     PayloadControl Granularity enable
 
-  let mutable internal Capacity = 1023
+  let mutable internal Capacity = 1
 
   let UnbufferedVisit (f: unit -> bool)  =
     if f() then
+     System.Diagnostics.Debug.WriteLine "unbuffered +"
      mailbox.PostAndReply (fun c -> Item (buffer |> Seq.toArray, c))
-    else buffer |> Seq.toArray |> Array.toSeq |> AsyncItem |> mailbox.Post
+    else System.Diagnostics.Debug.WriteLine "unbuffered -"
+         buffer |> Seq.toArray |> Array.toSeq |> AsyncItem |> mailbox.Post
 
   let internal VisitSelection (f: unit -> bool) track moduleId hitPointId =
     // When writing to file for the runner to process,
@@ -312,12 +336,15 @@ module Instance =
     lock (buffer) (fun () ->
     buffer.Add message
     if buffer.Count > Capacity then
+      System.Diagnostics.Debug.WriteLine "writing"
       UnbufferedVisit f
       buffer.Clear()
+      if Capacity < 1000 then Capacity <- (Capacity + 1) * 2 - 1
       )
 
   let Visit moduleId hitPointId =
     if Recording && mailboxOK then
+     System.Diagnostics.Debug.WriteLine "visiting"
      VisitSelection (fun () -> trace.IsConnected() || Backlog() > 0)
                      (PayloadSelector IsOpenCoverRunner) moduleId hitPointId
 
@@ -325,20 +352,37 @@ module Instance =
   let ClosedownBegun = "Closedown begun"  |> GetResource |> Option.get
 
   let internal FlushCounter (finish:Close) _ =
+   System.Diagnostics.Debug.WriteLine ("Flush Counter entry " + finish.ToString())
    if mailboxOK then
+       System.Diagnostics.Debug.WriteLine "mailbox OK"
        Recording <- finish = Resume
        lock (buffer) (fun () ->
        if not Recording then UnbufferedVisit (fun _ -> true)
        buffer.Clear())
+       System.Diagnostics.Debug.WriteLine "matching"
        match finish with
        | Pause
-       | Resume -> mailbox.TryPostAndReply ((fun c -> Finish (finish, c)), 2000) |> ignore
-       | _ -> closedown <- true
-              String.Format(System.Globalization.CultureInfo.InvariantCulture,
-                            ClosedownBegun, finish.ToString())
-              |> printfn "%s"
+       | Resume -> System.Diagnostics.Debug.WriteLine "pause/resume"
+                   mailbox.TryPostAndReply ((fun c -> Finish (finish, c)), 2000) |> ignore
+       | _ -> System.Diagnostics.Debug.WriteLine "closing down"
+              closedown <- true
               mailbox.TryPostAndReply ((fun c -> Finish (finish, c)), 0) |> ignore
-              loop false mailbox |> Async.RunSynchronously
+              let rec DrainVisits () =
+                try
+                  let mutable msg : Message option = None
+                  let a = mailbox.Receive 0
+                  async {
+                    let! a' = a
+                    msg <- Some a'
+                  } |> Async.RunSynchronously
+                  if Option.isSome msg && msg |> Option.get |> DispatchVisit  then
+                    DrainVisits()
+                with
+                  | :? TimeoutException as x -> ()
+              DrainVisits()
+              let m = String.Format(System.Globalization.CultureInfo.InvariantCulture,
+                            ClosedownBegun, finish.ToString())
+              m |> System.Diagnostics.Debug.WriteLine
               // printfn "Coverage complete"
 
   let internal AddErrorHandler (box:MailboxProcessor<'a>) =
@@ -371,8 +415,16 @@ module Instance =
      Watcher.EnableRaisingEvents <- Watcher.Path |> String.IsNullOrEmpty |> not
 
   do
+    System.Diagnostics.Debug.WriteLine "doing setup"
     AppDomain.CurrentDomain.DomainUnload.Add(FlushCounter DomainUnload)
     AppDomain.CurrentDomain.ProcessExit.Add(FlushCounter ProcessExit)
     StartWatcher ()
     InitialiseTrace ()
     RunMailbox ()
+    System.Diagnostics.Debug.WriteLine "done setup "
+    async {
+        System.Diagnostics.Debug.WriteLine "Waiting"
+        if trace.IsConnected() |> not then latch.Set() |> ignore
+        latch.WaitOne() |> ignore
+        System.Diagnostics.Debug.WriteLine "Released"
+    } |> Async.Start
