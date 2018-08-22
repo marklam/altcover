@@ -224,6 +224,8 @@ module Instance =
     | SequencePoint (moduleId, hitPointId, context) ->
       VisitImpl moduleId hitPointId context
 
+  let latch = new System.Threading.ManualResetEvent(false)
+
   let rec private loop (inbox:MailboxProcessor<Message>) =
     async {
       if Object.ReferenceEquals (inbox, mailbox) then
@@ -255,6 +257,7 @@ module Instance =
                 channel.Reply ()
                 mailboxOK <- false
                 Assist.SafeDispose inbox
+                latch.Set() |> ignore
         }
 
   let internal MakeMailbox () =
@@ -366,3 +369,7 @@ module Instance =
     StartWatcher ()
     InitialiseTrace ()
     RunMailbox ()
+    async {
+        if trace.IsConnected() |> not then latch.Set() |> ignore
+        latch.WaitOne() |> ignore
+    } |> Async.Start
