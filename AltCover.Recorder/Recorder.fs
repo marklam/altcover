@@ -366,6 +366,8 @@ module Instance =
   do
     AppDomain.CurrentDomain.DomainUnload.Add(FlushCounter DomainUnload)
     AppDomain.CurrentDomain.ProcessExit.Add(FlushCounter ProcessExit)
+    AppDomain.CurrentDomain.ProcessExit.Add(fun _ -> if mailboxOK then 
+                                                        InvalidOperationException() |> raise )
     StartWatcher ()
     InitialiseTrace ()
     RunMailbox ()
