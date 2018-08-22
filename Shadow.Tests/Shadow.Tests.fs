@@ -144,7 +144,7 @@ type AltCoverTests() = class
         Thread.Sleep 100
         Assert.That(Instance.Backlog(), Is.LessThan 2)
 
-      Thread.Sleep 1000
+      Thread.Sleep 100
       Assert.That (Adapter.VisitsSeq() |> Seq.length, Is.EqualTo 1)
       Assert.That (Adapter.VisitsEntrySeq key |> Seq.length, Is.EqualTo 1)
       Assert.That (Adapter.VisitCount key 23, Is.EqualTo 1)

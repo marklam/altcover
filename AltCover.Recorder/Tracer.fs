@@ -39,7 +39,6 @@ type Tracer = {
         |> Seq.map (fun f -> let fs = File.OpenWrite f
                              let s = new BufferedStream(new DeflateStream(fs, CompressionMode.Compress))
                              { this with Stream = s
-                                         Tracer = f
                                          Formatter = new BinaryWriter(s)
                                          Runner = true })
         |> Seq.head
