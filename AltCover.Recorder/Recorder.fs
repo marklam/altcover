@@ -299,7 +299,7 @@ module Instance =
   let internal PayloadSelector enable =
     PayloadControl Granularity enable
 
-  let mutable internal Capacity = 0
+  let mutable internal Capacity = 1023
 
   let UnbufferedVisit (f: unit -> bool)  =
     if f() then
