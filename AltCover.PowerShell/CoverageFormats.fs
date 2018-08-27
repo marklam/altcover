@@ -13,6 +13,36 @@ open System.Xml.XPath
 
 open AltCover.PowerShell
 
+[<System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.PowerShell",
+  "PS1101:AllCmdletsShouldAcceptPipelineInput", 
+  Justification = "TODO")>]
+[<Cmdlet(VerbsCommon.Set, "GeneratedCode")>]
+[<OutputType(typeof<XmlDocument>)>]
+[<SuppressMessage("Microsoft.PowerShell", "PS1008", Justification = "Cobertura is OK")>]
+type SetGeneratedCodeCommand(outputFile:String) =
+  inherit PSCmdlet()
+
+  new () = SetGeneratedCodeCommand(String.Empty)
+
+  [<Parameter(Mandatory = false,
+      ValueFromPipeline = false, ValueFromPipelineByPropertyName = false)>]
+  member val OutputFile:string = outputFile with get, set
+
+[<System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.PowerShell",
+  "PS1101:AllCmdletsShouldAcceptPipelineInput", 
+  Justification = "TODO")>]
+[<Cmdlet(VerbsCommon.Remove, "ByFilter")>]
+[<OutputType(typeof<XmlDocument>)>]
+[<SuppressMessage("Microsoft.PowerShell", "PS1008", Justification = "Cobertura is OK")>]
+type RemoveByFilterCommand(outputFile:String) =
+  inherit PSCmdlet()
+
+  new () = RemoveByFilterCommand(String.Empty)
+
+  [<Parameter(Mandatory = false,
+      ValueFromPipeline = false, ValueFromPipelineByPropertyName = false)>]
+  member val OutputFile:string = outputFile with get, set
+
 [<Cmdlet(VerbsData.ConvertTo, "XmlDocument")>]
 [<OutputType(typeof<XmlDocument>)>]
 type ConvertToXmlDocumentCommand(xdocument:XDocument) =

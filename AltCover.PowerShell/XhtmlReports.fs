@@ -10,6 +10,21 @@ open System.Xml.XPath
 
 open AltCover.PowerShell
 
+[<System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.PowerShell",
+  "PS1101:AllCmdletsShouldAcceptPipelineInput", 
+  Justification = "TODO")>]
+[<Cmdlet(VerbsData.ConvertTo, "SourceMap")>]
+[<OutputType(typeof<XmlDocument>)>]
+[<SuppressMessage("Microsoft.PowerShell", "PS1008", Justification = "Cobertura is OK")>]
+type ConvertToSourceMapCommand(outputFile:String) =
+  inherit PSCmdlet()
+
+  new () = ConvertToSourceMapCommand(String.Empty)
+
+  [<Parameter(Mandatory = false,
+      ValueFromPipeline = false, ValueFromPipelineByPropertyName = false)>]
+  member val OutputFile:string = outputFile with get, set
+
 [<Cmdlet(VerbsData.ConvertTo, "BarChart")>]
 [<OutputType(typeof<XmlDocument>)>]
 [<SuppressMessage("Microsoft.PowerShell", "PS1008", Justification = "Cobertura is OK")>]
