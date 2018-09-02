@@ -8,7 +8,7 @@ open System.Xml
 open System.Xml.XPath
 
 [<System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.PowerShell",
-  "PS1101:AllCmdletsShouldAcceptPipelineInput", 
+  "PS1101:AllCmdletsShouldAcceptPipelineInput",
   Justification = "TODO")>]
 [<Cmdlet(VerbsCommon.Select, "ByTracking")>]
 [<OutputType(typeof<XmlDocument>)>]
@@ -69,29 +69,11 @@ type MergeCoverageCommand(outputFile:String) =
       let where = self.SessionState.Path.CurrentLocation.Path
       Directory.SetCurrentDirectory where
 
-      //let inputs = self.Files
-      //             |> Seq.map (fun x -> let xmlDocument =  new XmlDocument()
-      //                                  x.CreateNavigator().ReadSubtree() |> xmlDocument.Load
-      //                                  try
-      //                                    let format = XmlUtilities.DiscoverFormat xmlDocument
-      //                                    if self.AsNCover.IsPresent then // TODO
-      //                                      Some xmlDocument
-      //                                    else
-      //                                      Some xmlDocument
-      //                                  with
-      //                                  | _ -> None
-      //             )
-      //             |> Seq.choose id
-      //()
+      let xmlDocument = AltCover.OpenCoverUtilities.MergeCoverage self.Files self.AsNCover.IsPresent
+      if self.OutputFile |> String.IsNullOrWhiteSpace |> not then
+        xmlDocument.Save(self.OutputFile)
 
-    //  // tidy up here
-    //  AltCover.Runner.PostProcess null AltCover.Base.ReportFormat.OpenCover xmlDocument
-    //  XmlUtilities.PrependDeclaration xmlDocument
-
-    //  if self.OutputFile |> String.IsNullOrWhiteSpace |> not then
-    //    xmlDocument.Save(self.OutputFile)
-
-    //  self.WriteObject xmlDocument
+      self.WriteObject xmlDocument
     finally
       Directory.SetCurrentDirectory here
 

@@ -9,6 +9,32 @@ open System.Xml.XPath
 
 module OpenCoverUtilities =
 
+  [<SuppressMessage("Microsoft.Design", "CA1059",
+    Justification="Premature abstraction")>]
+  let MergeCoverage documents ncover =
+      //let inputs = documents
+      //             |> Seq.map (fun x -> let xmlDocument =  new XmlDocument()
+      //                                  x.CreateNavigator().ReadSubtree() |> xmlDocument.Load
+      //                                  try
+      //                                    let format = XmlUtilities.DiscoverFormat xmlDocument
+      //                                    if ncover then // TODO
+      //                                      Some xmlDocument
+      //                                    else
+      //                                      Some xmlDocument
+      //                                  with
+      //                                  | _ -> None
+      //             )
+      //             |> Seq.choose id
+      //()
+
+    //  // tidy up here
+    //  AltCover.Runner.PostProcess null AltCover.Base.ReportFormat.OpenCover xmlDocument
+    //  XmlUtilities.PrependDeclaration xmlDocument
+    let doc = XmlDocument()
+    doc.CreateComment(documents.ToString()) |> doc.AppendChild |> ignore
+    doc.CreateComment(ncover.ToString()) |> doc.AppendChild |> ignore
+    doc
+
   let private CompressMethod withinSequencePoint sameSpan (m:XmlElement) =
     let sp = m.GetElementsByTagName("SequencePoint").OfType<XmlElement>() |> Seq.toList
     let bp = m.GetElementsByTagName("BranchPoint").OfType<XmlElement>() |> Seq.toList
