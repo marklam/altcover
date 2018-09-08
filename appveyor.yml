@@ -2,25 +2,3 @@ image:
   - Ubuntu  
 
 version: 4.0.{build}-pre
-branches:
-  except:
-  - /develop.*/
-skip_tags: true
-init:
-  - sh: pwd
-  - sh: ls -al    
-  - sh: mkdir appveyor
-  - sh: mkdir appveyor/projects
-  - sh: mkdir appveyor/projects/altcover
-build_script:
-- ps: >-
-    $ErrorActionPreference = 'Continue'
-
-    & dotnet restore dotnet-fake.fsproj
-
-test:
-  assemblies:
-    only:
-    - _Binaries\AltCover.Tests\Debug+AnyCPU\*.Tests.dll
-    - _Binaries\AltCover.Shadow.Tests\Debug+AnyCPU\*.Tests.dll
-    - _Binaries\AltCover.WeakNameTests\Debug+AnyCPU\*Tests.dll
