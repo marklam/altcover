@@ -5,6 +5,7 @@ branches:
 skip_tags: true
 image: 
   - Ubuntu  
+build: off
 init:
   - sh: pwd
   - sh: ls -al    
