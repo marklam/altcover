@@ -1,4 +1,4 @@
 image: 
-  - Ubuntu  
+  - ubuntu  
 
 version: 4.0.{build}-pre
