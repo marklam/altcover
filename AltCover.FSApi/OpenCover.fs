@@ -5,35 +5,55 @@ open System.Diagnostics.CodeAnalysis
 open System.Globalization
 open System.Linq
 open System.Xml
+open System.Xml.Schema
 open System.Xml.XPath
 
 module OpenCoverUtilities =
 
   [<SuppressMessage("Microsoft.Design", "CA1059",
     Justification="Premature abstraction")>]
-  let MergeCoverage documents ncover =
-      //let inputs = documents
-      //             |> Seq.map (fun x -> let xmlDocument =  new XmlDocument()
-      //                                  x.CreateNavigator().ReadSubtree() |> xmlDocument.Load
-      //                                  try
-      //                                    let format = XmlUtilities.DiscoverFormat xmlDocument
-      //                                    if ncover then // TODO
-      //                                      Some xmlDocument
-      //                                    else
-      //                                      Some xmlDocument
-      //                                  with
-      //                                  | _ -> None
-      //             )
-      //             |> Seq.choose id
-      //()
+  let MergeNCover inputs =
+    let doc = XmlDocument()
+    doc.CreateComment(inputs.ToString()) |> doc.AppendChild |> ignore
+    doc
+
+  [<SuppressMessage("Microsoft.Design", "CA1059",
+    Justification="Premature abstraction")>]
+  let MergeOpenCover inputs =
+    let doc = XmlDocument()
+    doc.CreateComment(inputs.ToString()) |> doc.AppendChild |> ignore
+    doc
+
+  [<SuppressMessage("Microsoft.Design", "CA1059",
+    Justification="Premature abstraction")>]
+  let MergeCoverage (documents: IXPathNavigable seq) ncover =
+    let inputs = documents
+                 |> Seq.map (fun x -> let xmlDocument =  new XmlDocument()
+                                      x.CreateNavigator().ReadSubtree() |> xmlDocument.Load
+                                      try
+                                        let format = XmlUtilities.DiscoverFormat xmlDocument
+                                        match (ncover, format) with
+                                        | (true, Base.ReportFormat.NCover)
+                                        | (false, Base.ReportFormat.OpenCover) ->
+                                          Some xmlDocument
+                                        | _ -> None
+                                      with
+                                      | :? XmlSchemaValidationException -> None
+                 )
+                 |> Seq.choose id
+                 |> Seq.toList
+    match inputs with
+    | [] -> let doc = XmlDocument()
+            //if ncover then 
+            //else 
+            doc
+    | [x] -> x
+    | _ -> if ncover then MergeNCover inputs
+           else MergeOpenCover inputs
 
     //  // tidy up here
     //  AltCover.Runner.PostProcess null AltCover.Base.ReportFormat.OpenCover xmlDocument
     //  XmlUtilities.PrependDeclaration xmlDocument
-    let doc = XmlDocument()
-    doc.CreateComment(documents.ToString()) |> doc.AppendChild |> ignore
-    doc.CreateComment(ncover.ToString()) |> doc.AppendChild |> ignore
-    doc
 
   let private CompressMethod withinSequencePoint sameSpan (m:XmlElement) =
     let sp = m.GetElementsByTagName("SequencePoint").OfType<XmlElement>() |> Seq.toList
