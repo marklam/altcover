@@ -639,7 +639,27 @@ Describe "Compress-Branching" {
 }
 
 Describe "MergeCoverage" {
-  It "Processes Files" {
-    dir -recurse "./Tests/*.xml" | Merge-Coverage
+  It "Absorbs Unsupported Xml Files" {
+    $xml = dir -recurse "./Tests/*.cobertura" | Merge-Coverage
+	$xml | Should -BeOfType "System.Xml.XmlDocument"
+	$xml.OuterXml | Should -BeFalse
+  }
+
+  It "Selects Single OpenCover Files" {
+    $files = ("./Tests/HandRolledMonoCoverage.xml", "./Tests/Sample1WithNCover.xml","./Tests/OpenCover.cobertura")
+    $xml = $files | Merge-Coverage
+	$xml | Should -BeOfType "System.Xml.XmlDocument"
+	$expected = [xml](Get-Content "./Tests/HandRolledMonoCoverage.xml")
+	$xml.OuterXml | Should -BeExactly $expected.OuterXml.Replace(' standalone="yes"', '')
+  }
+
+  It "Selects Single NCoverCover Files" {
+    $files = ("./Tests/HandRolledMonoCoverage.xml", "./Tests/Sample1WithNCover.xml","./Tests/OpenCover.cobertura")
+    $xml = $files | Merge-Coverage -AsNCover -OutputFile "./_Packaging/Sample1WithNCoverOnly.xml"
+	$xml | Should -BeOfType "System.Xml.XmlDocument"
+	$expected = [xml](Get-Content "./Tests/Sample1WithNCover.xml")
+	$xml.OuterXml | Should -BeExactly $expected.OuterXml
+	$result = [xml](Get-Content "./_Packaging/Sample1WithNCoverOnly.xml")
+	$result.OuterXml | Should -BeExactly $expected.OuterXml
   }
 }

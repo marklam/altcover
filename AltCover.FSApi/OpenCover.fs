@@ -15,6 +15,7 @@ module OpenCoverUtilities =
   let MergeNCover inputs =
     let doc = XmlDocument()
     doc.CreateComment(inputs.ToString()) |> doc.AppendChild |> ignore
+    //  XmlUtilities.PrependDeclaration xmlDocument
     doc
 
   [<SuppressMessage("Microsoft.Design", "CA1059",
@@ -22,6 +23,10 @@ module OpenCoverUtilities =
   let MergeOpenCover inputs =
     let doc = XmlDocument()
     doc.CreateComment(inputs.ToString()) |> doc.AppendChild |> ignore
+
+    //  // tidy up here
+    //  AltCover.Runner.PostProcess null AltCover.Base.ReportFormat.OpenCover xmlDocument
+    //  XmlUtilities.PrependDeclaration xmlDocument
     doc
 
   [<SuppressMessage("Microsoft.Design", "CA1059",
@@ -38,22 +43,18 @@ module OpenCoverUtilities =
                                           Some xmlDocument
                                         | _ -> None
                                       with
-                                      | :? XmlSchemaValidationException -> None
+                                      | :? XmlSchemaValidationException as x ->
+                                               None
                  )
                  |> Seq.choose id
                  |> Seq.toList
+
     match inputs with
-    | [] -> let doc = XmlDocument()
-            //if ncover then 
-            //else 
-            doc
-    | [x] -> x
+    | [] -> XmlDocument()
+    | [x] -> XmlUtilities.PrependDeclaration x
+             x
     | _ -> if ncover then MergeNCover inputs
            else MergeOpenCover inputs
-
-    //  // tidy up here
-    //  AltCover.Runner.PostProcess null AltCover.Base.ReportFormat.OpenCover xmlDocument
-    //  XmlUtilities.PrependDeclaration xmlDocument
 
   let private CompressMethod withinSequencePoint sameSpan (m:XmlElement) =
     let sp = m.GetElementsByTagName("SequencePoint").OfType<XmlElement>() |> Seq.toList
