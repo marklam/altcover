@@ -8,8 +8,9 @@ open System.Xml
 open System.Xml.Linq
 open System.Xml.XPath
 
+#if TODO
 [<System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.PowerShell",
-  "PS1101:AllCmdletsShouldAcceptPipelineInput", 
+  "PS1101:AllCmdletsShouldAcceptPipelineInput",
   Justification = "TODO")>]
 [<Cmdlet(VerbsCommon.Set, "GeneratedCode")>]
 [<OutputType(typeof<XmlDocument>)>]
@@ -24,7 +25,7 @@ type SetGeneratedCodeCommand(outputFile:String) =
   member val OutputFile:string = outputFile with get, set
 
 [<System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.PowerShell",
-  "PS1101:AllCmdletsShouldAcceptPipelineInput", 
+  "PS1101:AllCmdletsShouldAcceptPipelineInput",
   Justification = "TODO")>]
 [<Cmdlet(VerbsCommon.Remove, "ByFilter")>]
 [<OutputType(typeof<XmlDocument>)>]
@@ -37,6 +38,7 @@ type RemoveByFilterCommand(outputFile:String) =
   [<Parameter(Mandatory = false,
       ValueFromPipeline = false, ValueFromPipelineByPropertyName = false)>]
   member val OutputFile:string = outputFile with get, set
+#endif
 
 [<Cmdlet(VerbsData.ConvertTo, "XmlDocument")>]
 [<OutputType(typeof<XmlDocument>)>]

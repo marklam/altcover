@@ -7,6 +7,7 @@ open System.Management.Automation
 open System.Xml
 open System.Xml.XPath
 
+#if TODO
 [<System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.PowerShell",
   "PS1101:AllCmdletsShouldAcceptPipelineInput",
   Justification = "TODO")>]
@@ -20,6 +21,7 @@ type SelectByTrackingCommand(outputFile:String) =
   [<Parameter(Mandatory = false,
       ValueFromPipeline = false, ValueFromPipelineByPropertyName = false)>]
   member val OutputFile:string = outputFile with get, set
+#endif
 
 [<Cmdlet(VerbsData.Merge, "Coverage")>]
 [<OutputType(typeof<XmlDocument>)>]
