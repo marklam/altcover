@@ -43,7 +43,7 @@ module OpenCoverUtilities =
                                           Some xmlDocument
                                         | _ -> None
                                       with
-                                      | :? XmlSchemaValidationException as x ->
+                                      | :? XmlSchemaValidationException ->
                                                None
                  )
                  |> Seq.choose id
