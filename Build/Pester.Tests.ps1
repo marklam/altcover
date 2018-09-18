@@ -662,4 +662,13 @@ Describe "MergeCoverage" {
 	$result = [xml](Get-Content "./_Packaging/Sample1WithNCoverOnly.xml")
 	$result.OuterXml | Should -BeExactly $expected.OuterXml
   }
+
+  It "Combines Top Level Summaries" {
+    $files = ("./Tests/HandRolledMonoCoverage.xml", "./Tests/Sample4.Prepare.xml")
+    $xml = $files | Merge-Coverage
+	$xml | Should -BeOfType "System.Xml.XmlDocument"
+	$summary = ($xml.SelectNodes("//Summary") | Select-Object -First 1).OuterXml
+	$summary | Should -BeExactly '<Summary numSequencePoints="36" visitedSequencePoints="0" numBranchPoints="17" visitedBranchPoints="0" sequenceCoverage="0" branchCoverage="0" maxCyclomaticComplexity="11" minCyclomaticComplexity="1" visitedClasses="0" numClasses="7" visitedMethods="0" numMethods="11" minCrapScore="0" maxCrapScore="0" />'
+  }
+
 }
