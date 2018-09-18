@@ -23,7 +23,7 @@ module OpenCoverUtilities =
     Justification="Premature abstraction")>]
   let MergeOpenCover (inputs:XmlDocument list) =
     let loadFromString () =
-      use reader = new StringReader("""<CoverageSession xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"><Summary numSequencePoints="?" visitedSequencePoints="0" numBranchPoints="?" visitedBranchPoints="0" sequenceCoverage="0" branchCoverage="0" maxCyclomaticComplexity="0" minCyclomaticComplexity="0" visitedClasses="0" numClasses="?" visitedMethods="0" numMethods="?" minCrapScore="0" maxCrapScore="0" /><Modules></CoverageSession>""")
+      use reader = new StringReader("""<CoverageSession xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"><Summary numSequencePoints="?" visitedSequencePoints="0" numBranchPoints="?" visitedBranchPoints="0" sequenceCoverage="0" branchCoverage="0" maxCyclomaticComplexity="0" minCyclomaticComplexity="0" visitedClasses="0" numClasses="?" visitedMethods="0" numMethods="?" minCrapScore="0" maxCrapScore="0" /><Modules /></CoverageSession>""")
       let doc = XmlDocument()
       doc.Load(reader)
       doc
@@ -32,14 +32,18 @@ module OpenCoverUtilities =
 
     let modules = inputs
                   |> List.collect (fun x -> x.SelectNodes("//Module").OfType<XmlElement>() |> Seq.toList)
-                  |> List.filter (fun x -> x.GetAttribute("skippedDueTo") |> String.IsNullOrWhiteSpace |> not)
                   |> List.groupBy (fun x -> x.GetAttribute("hash"))
 
     let (numSequencePoints, numBranchPoints, maxCyclomaticComplexity,
          minCyclomaticComplexity, numClasses, numMethods) 
               = modules
-                |> List.collect (fun (_,m) -> m)
-                |> List.collect (fun m -> m.ChildNodes.OfType<XmlElement>() |> Seq.toList |> List.filter (fun n -> n.Name = "Summary"))
+                |> List.map (fun (_,m) -> m |> List.filter (fun x -> x.GetAttribute("skippedDueTo") |> String.IsNullOrWhiteSpace |> not)
+                                            |> List.tryHead)
+                |> List.choose id
+                |> List.map (fun m -> m.ChildNodes.OfType<XmlElement>() 
+                                      |> Seq.toList |> List.filter (fun n -> n.Name = "Summary")
+                                      |> List.tryHead)
+                |> List.choose id
                 |> List.fold (fun x summary -> let (s,b,xcc,ncc,c,m) = x
                                                (s + (Int32.TryParse(summary.GetAttribute "numSequencePoints") |> snd),
                                                 b + (Int32.TryParse(summary.GetAttribute "numBranchPoints") |> snd),
