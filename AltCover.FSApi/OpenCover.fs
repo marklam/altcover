@@ -37,7 +37,7 @@ module OpenCoverUtilities =
     let (numSequencePoints, numBranchPoints, maxCyclomaticComplexity,
          minCyclomaticComplexity, numClasses, numMethods) 
               = modules
-                |> List.map (fun (_,m) -> m |> List.filter (fun x -> x.GetAttribute("skippedDueTo") |> String.IsNullOrWhiteSpace |> not)
+                |> List.map (fun (_,m) -> m |> List.filter (fun x -> x.GetAttribute("skippedDueTo") |> String.IsNullOrWhiteSpace)
                                             |> List.tryHead)
                 |> List.choose id
                 |> List.map (fun m -> m.ChildNodes.OfType<XmlElement>() 
