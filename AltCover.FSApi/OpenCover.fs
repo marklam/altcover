@@ -3,6 +3,7 @@
 open System
 open System.Diagnostics.CodeAnalysis
 open System.Globalization
+open System.IO
 open System.Linq
 open System.Xml
 open System.Xml.Schema
@@ -20,13 +21,45 @@ module OpenCoverUtilities =
 
   [<SuppressMessage("Microsoft.Design", "CA1059",
     Justification="Premature abstraction")>]
-  let MergeOpenCover inputs =
-    let doc = XmlDocument()
-    doc.CreateComment(inputs.ToString()) |> doc.AppendChild |> ignore
+  let MergeOpenCover (inputs:XmlDocument list) =
+    let loadFromString () =
+      use reader = new StringReader("""<CoverageSession xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"><Summary numSequencePoints="?" visitedSequencePoints="0" numBranchPoints="?" visitedBranchPoints="0" sequenceCoverage="0" branchCoverage="0" maxCyclomaticComplexity="0" minCyclomaticComplexity="0" visitedClasses="0" numClasses="?" visitedMethods="0" numMethods="?" minCrapScore="0" maxCrapScore="0" /><Modules></CoverageSession>""")
+      let doc = XmlDocument()
+      doc.Load(reader)
+      doc
 
-    //  // tidy up here
-    //  AltCover.Runner.PostProcess null AltCover.Base.ReportFormat.OpenCover xmlDocument
-    //  XmlUtilities.PrependDeclaration xmlDocument
+    let doc = loadFromString ()    
+
+    let modules = inputs
+                  |> List.collect (fun x -> x.SelectNodes("//Module").OfType<XmlElement>() |> Seq.toList)
+                  |> List.filter (fun x -> x.GetAttribute("skippedDueTo") |> String.IsNullOrWhiteSpace |> not)
+                  |> List.groupBy (fun x -> x.GetAttribute("hash"))
+
+    let (numSequencePoints, numBranchPoints, maxCyclomaticComplexity,
+         minCyclomaticComplexity, numClasses, numMethods) 
+              = modules
+                |> List.collect (fun (_,m) -> m)
+                |> List.collect (fun m -> m.ChildNodes.OfType<XmlElement>() |> Seq.toList |> List.filter (fun n -> n.Name = "Summary"))
+                |> List.fold (fun x summary -> let (s,b,xcc,ncc,c,m) = x
+                                               (s + (Int32.TryParse(summary.GetAttribute "numSequencePoints") |> snd),
+                                                b + (Int32.TryParse(summary.GetAttribute "numBranchPoints") |> snd),
+                                                Math.Max(xcc, Int32.TryParse(summary.GetAttribute "maxCyclomaticComplexity") |> snd),
+                                                Math.Min(ncc, Int32.TryParse(summary.GetAttribute "minCyclomaticComplexity") |> snd),
+                                                c + (Int32.TryParse(summary.GetAttribute "numClasses") |> snd),
+                                                m + (Int32.TryParse(summary.GetAttribute "numMethods") |> snd))
+                                             ) (0,0,1,Int32.MaxValue,0,0)
+
+    let summary = doc.SelectSingleNode("//Summary") :?> XmlElement
+    summary.SetAttribute("numSequencePoints", numSequencePoints.ToString(CultureInfo.InvariantCulture))
+    summary.SetAttribute("numBranchPoints", numBranchPoints.ToString(CultureInfo.InvariantCulture))
+    summary.SetAttribute("maxCyclomaticComplexity", Math.Max(1, maxCyclomaticComplexity).ToString(CultureInfo.InvariantCulture))
+    summary.SetAttribute("minCyclomaticComplexity", Math.Max(1, Math.Min(minCyclomaticComplexity, maxCyclomaticComplexity)).ToString(CultureInfo.InvariantCulture))
+    summary.SetAttribute("numClasses", numClasses.ToString(CultureInfo.InvariantCulture))
+    summary.SetAttribute("numMethods", numMethods.ToString(CultureInfo.InvariantCulture))
+
+    // tidy up here
+    AltCover.Runner.PostProcess null AltCover.Base.ReportFormat.OpenCover doc
+    XmlUtilities.PrependDeclaration doc
     doc
 
   [<SuppressMessage("Microsoft.Design", "CA1059",
