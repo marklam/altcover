@@ -28,19 +28,19 @@ module OpenCoverUtilities =
       doc.Load(reader)
       doc
 
-    let doc = loadFromString ()    
+    let doc = loadFromString ()
 
     let modules = inputs
                   |> List.collect (fun x -> x.SelectNodes("//Module").OfType<XmlElement>() |> Seq.toList)
                   |> List.groupBy (fun x -> x.GetAttribute("hash"))
 
     let (numSequencePoints, numBranchPoints, maxCyclomaticComplexity,
-         minCyclomaticComplexity, numClasses, numMethods) 
+         minCyclomaticComplexity, numClasses, numMethods)
               = modules
                 |> List.map (fun (_,m) -> m |> List.filter (fun x -> x.GetAttribute("skippedDueTo") |> String.IsNullOrWhiteSpace)
                                             |> List.tryHead)
                 |> List.choose id
-                |> List.map (fun m -> m.ChildNodes.OfType<XmlElement>() 
+                |> List.map (fun m -> m.ChildNodes.OfType<XmlElement>()
                                       |> Seq.toList |> List.filter (fun n -> n.Name = "Summary")
                                       |> List.tryHead)
                 |> List.choose id
