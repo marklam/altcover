@@ -8,6 +8,7 @@ open System.Linq
 open System.Xml
 open System.Xml.Schema
 open System.Xml.XPath
+open System.Collections.Generic
 
 module OpenCoverUtilities =
 
@@ -33,6 +34,43 @@ module OpenCoverUtilities =
     let modules = inputs
                   |> List.collect (fun x -> x.SelectNodes("//Module").OfType<XmlElement>() |> Seq.toList)
                   |> List.groupBy (fun x -> x.GetAttribute("hash"))
+
+    let results = Dictionary<string, XmlElement>()
+    let classes = Dictionary<string, XmlElement>()
+
+    modules
+    |> List.iter( fun (h,l) -> let m = doc.CreateElement("Module")
+                               results.Add(h, m)
+                               m.SetAttribute("hash", h)
+                               let s = l
+                                       |> List.map (fun x -> x.GetAttribute("skippedDueTo"))
+                                       |> List.distinct
+                               if s |> List.exists String.IsNullOrWhiteSpace then ()
+                               else m.SetAttribute("skippedDueTo", String.Join(";", s))
+
+                               match l
+                                     |> List.map (fun x -> x.ChildNodes.OfType<XmlElement>()
+                                                           |> Seq.filter (fun n -> n.Name = "Summary")
+                                                           |> Seq.tryHead)
+                                     |> List.choose id
+                                     |> List.tryHead with
+                               | Some n -> doc.ImportNode(n.Clone(), true)
+                                           |> m.AppendChild
+                                           |> ignore
+                               | None -> ()
+
+                               (l |> List.head).ChildNodes.OfType<XmlElement>()
+                               |> Seq.filter (fun n -> n.Name.StartsWith("Module", StringComparison.Ordinal))
+                               |> Seq.iter(fun n -> doc.ImportNode(n.Clone(), true)
+                                                    |> m.AppendChild
+                                                    |> ignore)
+
+                               // Maybe Files
+                               let c = doc.CreateElement("Classes")
+                               classes.Add(h, c)
+                               c |> m.AppendChild |> ignore
+                               // Maybe TrackedMethods
+    )
 
     let (numSequencePoints, numBranchPoints, maxCyclomaticComplexity,
          minCyclomaticComplexity, numClasses, numMethods)
