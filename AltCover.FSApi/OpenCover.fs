@@ -37,6 +37,7 @@ module OpenCoverUtilities =
 
     let results = Dictionary<string, XmlElement>()
     let classes = Dictionary<string, XmlElement>()
+    let summaries = List<XmlElement>()
 
     modules
     |> List.iter( fun (h,l) -> let m = doc.CreateElement("Module")
@@ -54,7 +55,8 @@ module OpenCoverUtilities =
                                                            |> Seq.tryHead)
                                      |> List.choose id
                                      |> List.tryHead with
-                               | Some n -> doc.ImportNode(n.Clone(), true)
+                               | Some n -> summaries.Add n
+                                           doc.ImportNode(n.Clone(), true)
                                            |> m.AppendChild
                                            |> ignore
                                | None -> ()
@@ -74,15 +76,8 @@ module OpenCoverUtilities =
 
     let (numSequencePoints, numBranchPoints, maxCyclomaticComplexity,
          minCyclomaticComplexity, numClasses, numMethods)
-              = modules
-                |> List.map (fun (_,m) -> m |> List.filter (fun x -> x.GetAttribute("skippedDueTo") |> String.IsNullOrWhiteSpace)
-                                            |> List.tryHead)
-                |> List.choose id
-                |> List.map (fun m -> m.ChildNodes.OfType<XmlElement>()
-                                      |> Seq.toList |> List.filter (fun n -> n.Name = "Summary")
-                                      |> List.tryHead)
-                |> List.choose id
-                |> List.fold (fun x summary -> let (s,b,xcc,ncc,c,m) = x
+              = summaries
+                |> Seq.fold  (fun x summary -> let (s,b,xcc,ncc,c,m) = x
                                                (s + (Int32.TryParse(summary.GetAttribute "numSequencePoints") |> snd),
                                                 b + (Int32.TryParse(summary.GetAttribute "numBranchPoints") |> snd),
                                                 Math.Max(xcc, Int32.TryParse(summary.GetAttribute "maxCyclomaticComplexity") |> snd),
