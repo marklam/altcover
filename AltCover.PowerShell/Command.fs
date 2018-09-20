@@ -3,6 +3,7 @@ namespace AltCover.Commands
 open System
 open System.IO
 open System.Management.Automation
+
 open AltCover
 
 [<Cmdlet(VerbsLifecycle.Invoke, "AltCover")>]
@@ -12,6 +13,7 @@ open AltCover
                                                   Justification = "No valid input")>]
 type InvokeAltCoverCommand(runner : bool) =
   inherit PSCmdlet()
+
   new() = InvokeAltCoverCommand(false)
 
   [<Parameter(ParameterSetName = "Runner", Mandatory = true, Position = 1,

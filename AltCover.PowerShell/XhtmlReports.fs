@@ -9,19 +9,19 @@ open System.Xml.XPath
 
 #if TODO
 [<System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.PowerShell",
-  "PS1101:AllCmdletsShouldAcceptPipelineInput",
-  Justification = "TODO")>]
+                                                  "PS1101:AllCmdletsShouldAcceptPipelineInput",
+                                                  Justification = "TODO")>]
 [<Cmdlet(VerbsData.ConvertTo, "SourceMap")>]
 [<OutputType(typeof<XmlDocument>)>]
 [<SuppressMessage("Microsoft.PowerShell", "PS1008", Justification = "Cobertura is OK")>]
-type ConvertToSourceMapCommand(outputFile:String) =
+type ConvertToSourceMapCommand(outputFile : String) =
   inherit PSCmdlet()
 
-  new () = ConvertToSourceMapCommand(String.Empty)
+  new() = ConvertToSourceMapCommand(String.Empty)
 
-  [<Parameter(Mandatory = false,
-      ValueFromPipeline = false, ValueFromPipelineByPropertyName = false)>]
-  member val OutputFile:string = outputFile with get, set
+  [<Parameter(Mandatory = false, ValueFromPipeline = false,
+              ValueFromPipelineByPropertyName = false)>]
+  member val OutputFile : string = outputFile with get, set
 #endif
 
 [<Cmdlet(VerbsData.ConvertTo, "BarChart")>]
@@ -29,28 +29,29 @@ type ConvertToSourceMapCommand(outputFile:String) =
 [<SuppressMessage("Microsoft.PowerShell", "PS1008", Justification = "Cobertura is OK")>]
 type ConvertToBarChartCommand(outputFile : String) =
   inherit PSCmdlet()
+
   new() = ConvertToBarChartCommand(String.Empty)
-  
-  [<Parameter(ParameterSetName = "XmlDoc", Mandatory = true, Position = 1, 
+
+  [<Parameter(ParameterSetName = "XmlDoc", Mandatory = true, Position = 1,
               ValueFromPipeline = true, ValueFromPipelineByPropertyName = false)>]
   member val XmlDocument : IXPathNavigable = null with get, set
-  
-  [<Parameter(ParameterSetName = "FromFile", Mandatory = true, Position = 1, 
+
+  [<Parameter(ParameterSetName = "FromFile", Mandatory = true, Position = 1,
               ValueFromPipeline = true, ValueFromPipelineByPropertyName = false)>]
   member val InputFile : string = null with get, set
-  
-  [<Parameter(ParameterSetName = "XmlDoc", Mandatory = false, Position = 2, 
+
+  [<Parameter(ParameterSetName = "XmlDoc", Mandatory = false, Position = 2,
               ValueFromPipeline = false, ValueFromPipelineByPropertyName = false)>]
-  [<Parameter(ParameterSetName = "FromFile", Mandatory = false, Position = 2, 
+  [<Parameter(ParameterSetName = "FromFile", Mandatory = false, Position = 2,
               ValueFromPipeline = false, ValueFromPipelineByPropertyName = false)>]
   member val OutputFile : string = outputFile with get, set
-  
+
   override self.ProcessRecord() =
     let here = Directory.GetCurrentDirectory()
-    try 
+    try
       let where = self.SessionState.Path.CurrentLocation.Path
       Directory.SetCurrentDirectory where
-      if self.ParameterSetName = "FromFile" then 
+      if self.ParameterSetName = "FromFile" then
         self.XmlDocument <- XPathDocument self.InputFile
       let rewrite = AltCover.Xhtml.ConvertToBarChart self.XmlDocument
       if self.OutputFile

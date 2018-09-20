@@ -10,40 +10,41 @@ open System.Xml.XPath
 
 #if TODO
 [<System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.PowerShell",
-  "PS1101:AllCmdletsShouldAcceptPipelineInput",
-  Justification = "TODO")>]
+                                                  "PS1101:AllCmdletsShouldAcceptPipelineInput",
+                                                  Justification = "TODO")>]
 [<Cmdlet(VerbsCommon.Set, "GeneratedCode")>]
 [<OutputType(typeof<XmlDocument>)>]
 [<SuppressMessage("Microsoft.PowerShell", "PS1008", Justification = "Cobertura is OK")>]
-type SetGeneratedCodeCommand(outputFile:String) =
+type SetGeneratedCodeCommand(outputFile : String) =
   inherit PSCmdlet()
 
-  new () = SetGeneratedCodeCommand(String.Empty)
+  new() = SetGeneratedCodeCommand(String.Empty)
 
-  [<Parameter(Mandatory = false,
-      ValueFromPipeline = false, ValueFromPipelineByPropertyName = false)>]
-  member val OutputFile:string = outputFile with get, set
+  [<Parameter(Mandatory = false, ValueFromPipeline = false,
+              ValueFromPipelineByPropertyName = false)>]
+  member val OutputFile : string = outputFile with get, set
 
 [<System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.PowerShell",
-  "PS1101:AllCmdletsShouldAcceptPipelineInput",
-  Justification = "TODO")>]
+                                                  "PS1101:AllCmdletsShouldAcceptPipelineInput",
+                                                  Justification = "TODO")>]
 [<Cmdlet(VerbsCommon.Remove, "ByFilter")>]
 [<OutputType(typeof<XmlDocument>)>]
 [<SuppressMessage("Microsoft.PowerShell", "PS1008", Justification = "Cobertura is OK")>]
-type RemoveByFilterCommand(outputFile:String) =
+type RemoveByFilterCommand(outputFile : String) =
   inherit PSCmdlet()
 
-  new () = RemoveByFilterCommand(String.Empty)
+  new() = RemoveByFilterCommand(String.Empty)
 
-  [<Parameter(Mandatory = false,
-      ValueFromPipeline = false, ValueFromPipelineByPropertyName = false)>]
-  member val OutputFile:string = outputFile with get, set
+  [<Parameter(Mandatory = false, ValueFromPipeline = false,
+              ValueFromPipelineByPropertyName = false)>]
+  member val OutputFile : string = outputFile with get, set
 #endif
 
 [<Cmdlet(VerbsData.ConvertTo, "XmlDocument")>]
 [<OutputType(typeof<XmlDocument>)>]
 type ConvertToXmlDocumentCommand(xdocument : XDocument) =
   inherit PSCmdlet()
+
   new() = ConvertToXmlDocumentCommand(null)
 
   [<Parameter(ParameterSetName = "XmlDoc", Mandatory = true, Position = 1,
@@ -76,6 +77,7 @@ type ConvertToXDocumentCommand(xmldocument : XmlDocument) =
 [<SuppressMessage("Microsoft.PowerShell", "PS1008", Justification = "Lcov is OK")>]
 type ConvertToLcovCommand(outputFile : String) =
   inherit PSCmdlet()
+
   new() = ConvertToLcovCommand(String.Empty)
 
   [<Parameter(ParameterSetName = "XmlDoc", Mandatory = true, Position = 1,
@@ -110,6 +112,7 @@ type ConvertToLcovCommand(outputFile : String) =
 [<SuppressMessage("Microsoft.PowerShell", "PS1008", Justification = "Cobertura is OK")>]
 type ConvertToCoberturaCommand(outputFile : String) =
   inherit PSCmdlet()
+
   new() = ConvertToCoberturaCommand(String.Empty)
 
   [<Parameter(ParameterSetName = "XmlDoc", Mandatory = true, Position = 1,
@@ -151,6 +154,7 @@ type ConvertToCoberturaCommand(outputFile : String) =
 [<SuppressMessage("Microsoft.PowerShell", "PS1008", Justification = "Cobertura is OK")>]
 type ConvertToNCoverCommand(outputFile : String) =
   inherit PSCmdlet()
+
   new() = ConvertToNCoverCommand(String.Empty)
 
   [<Parameter(ParameterSetName = "XmlDoc", Mandatory = true, Position = 1,
@@ -191,6 +195,7 @@ type ConvertToNCoverCommand(outputFile : String) =
 [<SuppressMessage("Microsoft.PowerShell", "PS1008", Justification = "Cobertura is OK")>]
 type ConvertFromNCoverCommand(outputFile : String) =
   inherit PSCmdlet()
+
   new() = ConvertFromNCoverCommand(String.Empty)
 
   [<Parameter(ParameterSetName = "XmlDoc", Mandatory = true, Position = 1,

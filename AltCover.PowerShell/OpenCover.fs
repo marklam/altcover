@@ -9,48 +9,47 @@ open System.Xml.XPath
 
 #if TODO
 [<System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.PowerShell",
-  "PS1101:AllCmdletsShouldAcceptPipelineInput",
-  Justification = "TODO")>]
+                                                  "PS1101:AllCmdletsShouldAcceptPipelineInput",
+                                                  Justification = "TODO")>]
 [<Cmdlet(VerbsCommon.Select, "ByTracking")>]
 [<OutputType(typeof<XmlDocument>)>]
-type SelectByTrackingCommand(outputFile:String) =
+type SelectByTrackingCommand(outputFile : String) =
   inherit PSCmdlet()
 
-  new () = SelectByTrackingCommand(String.Empty)
+  new() = SelectByTrackingCommand(String.Empty)
 
-  [<Parameter(Mandatory = false,
-      ValueFromPipeline = false, ValueFromPipelineByPropertyName = false)>]
-  member val OutputFile:string = outputFile with get, set
+  [<Parameter(Mandatory = false, ValueFromPipeline = false,
+              ValueFromPipelineByPropertyName = false)>]
+  member val OutputFile : string = outputFile with get, set
 #endif
 
 [<Cmdlet(VerbsData.Merge, "Coverage")>]
 [<OutputType(typeof<XmlDocument>)>]
-type MergeCoverageCommand(outputFile:String) =
+type MergeCoverageCommand(outputFile : String) =
   inherit PSCmdlet()
 
-  new () = MergeCoverageCommand(String.Empty)
+  new() = MergeCoverageCommand(String.Empty)
 
   [<Parameter(ParameterSetName = "XmlDoc", Mandatory = true, Position = 1,
-      ValueFromPipeline = true, ValueFromPipelineByPropertyName = false)>]
-  [<ValidateNotNull;ValidateCount(1,Int32.MaxValue)>]
-  member val XmlDocument:IXPathNavigable array = [| |] with get, set
+              ValueFromPipeline = true, ValueFromPipelineByPropertyName = false)>]
+  [<ValidateNotNull; ValidateCount(1, Int32.MaxValue)>]
+  member val XmlDocument : IXPathNavigable array = [||] with get, set
 
   [<Parameter(ParameterSetName = "Files", Mandatory = true, Position = 1,
-      ValueFromPipeline = true, ValueFromPipelineByPropertyName = false)>]
-  [<ValidateNotNull;ValidateCount(1,Int32.MaxValue)>]
-  member val InputFile:string array = [| |] with get, set
+              ValueFromPipeline = true, ValueFromPipelineByPropertyName = false)>]
+  [<ValidateNotNull; ValidateCount(1, Int32.MaxValue)>]
+  member val InputFile : string array = [||] with get, set
 
-  [<Parameter(Mandatory = false,
-      ValueFromPipeline = false, ValueFromPipelineByPropertyName = false)>]
-  member val OutputFile:string = outputFile with get, set
+  [<Parameter(Mandatory = false, ValueFromPipeline = false,
+              ValueFromPipelineByPropertyName = false)>]
+  member val OutputFile : string = outputFile with get, set
 
   [<Parameter(Mandatory = false)>]
   member val AsNCover : SwitchParameter = SwitchParameter(false) with get, set
 
-  member val private Files = new List<IXPathNavigable>() with get
+  member val private Files = new List<IXPathNavigable>()
 
-  override self.BeginProcessing() =
-    self.Files.Clear()
+  override self.BeginProcessing() = self.Files.Clear()
 
   override self.ProcessRecord() =
     let here = Directory.GetCurrentDirectory()
@@ -60,7 +59,7 @@ type MergeCoverageCommand(outputFile:String) =
 
       if self.ParameterSetName.StartsWith("File", StringComparison.Ordinal) then
         self.XmlDocument <- self.InputFile
-                            |>  Array.map (fun x -> XPathDocument(x) :> IXPathNavigable)
+                            |> Array.map (fun x -> XPathDocument(x) :> IXPathNavigable)
       self.Files.AddRange self.XmlDocument
     finally
       Directory.SetCurrentDirectory here
@@ -71,9 +70,12 @@ type MergeCoverageCommand(outputFile:String) =
       let where = self.SessionState.Path.CurrentLocation.Path
       Directory.SetCurrentDirectory where
 
-      let xmlDocument = AltCover.OpenCoverUtilities.MergeCoverage self.Files self.AsNCover.IsPresent
-      if self.OutputFile |> String.IsNullOrWhiteSpace |> not then
-        xmlDocument.Save(self.OutputFile)
+      let xmlDocument =
+        AltCover.OpenCoverUtilities.MergeCoverage self.Files self.AsNCover.IsPresent
+      if self.OutputFile
+         |> String.IsNullOrWhiteSpace
+         |> not
+      then xmlDocument.Save(self.OutputFile)
 
       self.WriteObject xmlDocument
     finally
@@ -83,6 +85,7 @@ type MergeCoverageCommand(outputFile:String) =
 [<OutputType(typeof<XmlDocument>)>]
 type CompressBranchingCommand(outputFile : String) =
   inherit PSCmdlet()
+
   new() = CompressBranchingCommand(String.Empty)
 
   [<Parameter(ParameterSetName = "XmlDocA", Mandatory = true, Position = 1,
