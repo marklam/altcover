@@ -280,7 +280,7 @@ _Target "FxCop"
     { info with FileName = fxCop
                 WorkingDirectory = "."
                 Arguments =
-                  """/c /f:"_Binaries/AltCover.PowerShell/Debug+AnyCPU/AltCover.PowerShell.dll" /o:"_Reports/FxCopReport.xml" /rid:-Microsoft.Design#CA1059 /rid:-Microsoft.Usage#CA2235 /rid:-Microsoft.Performance#CA1819 /rid:-Microsoft.Design#CA1020 /rid:-Microsoft.Design#CA1004 /rid:-Microsoft.Design#CA1006 /rid:-Microsoft.Design#CA1011 /rid:-Microsoft.Design#CA1062 /rid:-Microsoft.Maintainability#CA1506 /rid:-Microsoft.Naming#CA1704 /rid:-Microsoft.Naming#CA1707 /rid:-Microsoft.Naming#CA1709 /rid:-Microsoft.Naming#CA1715 /ignoregeneratedcode /s /gac""" })
+                  """/c /f:"_Binaries/AltCover.PowerShell/Debug+AnyCPU/AltCover.PowerShell.dll" /o:"_Reports/FxCopReport.xml" /rid:-Microsoft.Design#CA1059 /rid:-Microsoft.Usage#CA2235 /rid:-Microsoft.Usage#CA2208 /rid:-Microsoft.Performance#CA1819 /rid:-Microsoft.Design#CA1020 /rid:-Microsoft.Design#CA1004 /rid:-Microsoft.Design#CA1006 /rid:-Microsoft.Design#CA1011 /rid:-Microsoft.Design#CA1062 /rid:-Microsoft.Maintainability#CA1506 /rid:-Microsoft.Naming#CA1704 /rid:-Microsoft.Naming#CA1707 /rid:-Microsoft.Naming#CA1709 /rid:-Microsoft.Naming#CA1715 /ignoregeneratedcode /s /gac""" })
     "FxCop Errors were detected"
   Assert.That
     (File.Exists "_Reports/FxCopReport.xml", Is.False, "FxCop Errors were detected")
