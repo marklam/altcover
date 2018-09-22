@@ -118,10 +118,10 @@ _Target "SetVersion" (fun _ ->
   |> List.iter
        (fun file ->
        AssemblyInfoFile.create file [ AssemblyInfo.Product "AltCover"
-                                      AssemblyInfo.Version(majmin + ".0.0")
-                                      AssemblyInfo.FileVersion v'
-                                      AssemblyInfo.Company "Steve Gilham"
-                                      AssemblyInfo.Trademark ""
+        AssemblyInfo.Version(majmin + ".0.0")
+        AssemblyInfo.FileVersion v'
+        AssemblyInfo.Company "Steve Gilham"
+        AssemblyInfo.Trademark ""
                                       AssemblyInfo.Copyright copy ]
          (Some AssemblyInfoFileConfig.Default))
   let hack = """namespace AltCover
@@ -2800,4 +2800,4 @@ Target.activateFinal "ResetConsoleColours"
 let defaultTarget () = resetColours()
                        "All"
 
-Target.runOrDefault <| defaultTarget ()
+Target.runOrDefault <| defaultTarget()
