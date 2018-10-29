@@ -2754,7 +2754,8 @@ Target.activateFinal "ResetConsoleColours"
 
 "Compilation"
 ==> "PrepareFrameworkBuild"
-=?> ("Packaging", Environment.isWindows)  // can't ILMerge
+//=?> ("Packaging", Environment.isWindows)  // can't ILMerge
+==> "Packaging"
 
 "Compilation"
 ==> "PrepareDotNetBuild"
