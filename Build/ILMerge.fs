@@ -172,10 +172,12 @@ let internal createProcess parameters outputFile primaryAssembly =
 ///  - `primaryAssembly` - The assembly you want ILMerge to consider as the primary.
 let run parameters outputFile primaryAssembly =
     use __ = Trace.traceTask "ILMerge" primaryAssembly
-    let run = createProcess parameters outputFile primaryAssembly 
-              |> CreateProcess.withFramework
-              |> Proc.run
-    if 0 <> run.ExitCode then
-        let args = getArguments outputFile primaryAssembly parameters
-        failwithf "'ILMerge %s' failed." (String.separated " " args)
-    __.MarkSuccess()
+  
+    // The type initializer for 'System.Compiler.CoreSystemTypes' throws on Mono.
+    // So let task be a no-op marked as failed on non-Windows platforms  
+    if Environment.isWindows then
+        let run = createProcess parameters outputFile primaryAssembly |> Proc.run
+        if 0 <> run.ExitCode then
+            let args = getArguments outputFile primaryAssembly parameters
+            failwithf "'ILMerge %s' failed." (String.separated " " args)
+        __.MarkSuccess()

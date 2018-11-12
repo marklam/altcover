@@ -2124,34 +2124,34 @@ _Target "PrepareDotNetBuild" (fun _ ->
     (Path.getFullName "./AltCover.Visualizer/altcover.visualizer.core.fsproj")
 
 // Seems to work, but alas, the static linkage leaks all over the show
-//  let toolpath = Tools.findToolInSubPath "ILRepack.exe" "./packages"
-//  let ver = String.Join(".", (!Version).Split('.') |> Seq.take 2) + ".0.0"
-// 
-//  [ publish; publish + ".api" ]
-//  |> List.iter (fun dir ->
-//    let outDir = Path.Combine(dir, "out")
-//    Directory.ensure outDir
-//    let dumpDir = Path.Combine(dir, "old")
-//    Directory.ensure dumpDir
-//    let inFile = Path.Combine(dir, "AltCover.Recorder.dll")
-//    ILMerge.run
-//      { ILMerge.Params.Create() with DebugInfo = true
-//                                     ToolPath = toolpath
-//                                     TargetKind = ILMerge.TargetKind.Library
-//                                     KeyFile = Path.getFullName "./Build/Infrastructure.snk"
-//                                     Version = Some(System.Version(ver))
-//                                     // Internalize = ILMerge.Internalize
-//                                     Libraries = [ Path.Combine(dir, "FSharp.Core.dll") ]
-//                                     SearchDirectories = [ dir ]
-//                                     AttributeFile = inFile }
-//      (Path.Combine(outDir, "AltCover.Recorder.dll"))
-//      inFile
-//
-//    // swap in the ILRepack'd files
-//    !! (dir @@ "AltCover.Recorder.*")
-//    |> Seq.iter (Shell.moveFile dumpDir)
-//    !! (outDir @@ "AltCover.Recorder.*")
-//    |> Seq.iter (Shell.moveFile dir) )
+  let toolpath = Tools.findToolInSubPath "ILRepack.exe" "./packages"
+  let ver = String.Join(".", (!Version).Split('.') |> Seq.take 2) + ".0.0"
+ 
+  if Environment.isWindows then [ publish (*; publish + ".api"*) ] else []
+  |> List.iter (fun dir ->
+    let outDir = Path.Combine(dir, "out")
+    Directory.ensure outDir
+    let dumpDir = Path.Combine(dir, "old")
+    Directory.ensure dumpDir
+    let inFile = Path.Combine(dir, "AltCover.Recorder.dll")
+    ILMerge.run
+      { ILMerge.Params.Create() with DebugInfo = true
+                                     ToolPath = toolpath
+                                     TargetKind = ILMerge.TargetKind.Library
+                                     KeyFile = Path.getFullName "./Build/Infrastructure.snk"
+                                     Version = Some(System.Version(ver))
+                                     Internalize = ILMerge.Internalize
+                                     Libraries = [ Path.Combine(dir, "FSharp.Core.dll") ]
+                                     SearchDirectories = [ dir ]
+                                     AttributeFile = inFile }
+      (Path.Combine(outDir, "AltCover.Recorder.dll"))
+      inFile
+
+    // swap in the ILRepack'd files
+    !! (dir @@ "AltCover.Recorder.*")
+    |> Seq.iter (Shell.moveFile dumpDir)
+    !! (outDir @@ "AltCover.Recorder.*")
+    |> Seq.iter (Shell.moveFile dir) )
 
      // dotnet tooling mods
   [ ("DotnetCliTool", "./_Generated/altcover.dotnet.nuspec",
@@ -3359,8 +3359,7 @@ Target.activateFinal "ResetConsoleColours"
 
 "Compilation"
 ==> "PrepareFrameworkBuild"
-==> "Packaging" // ILRepack
-// =?> ("Packaging", Environment.isWindows)  // can't ILMerge
+=?> ("Packaging", Environment.isWindows)  // can't ILMerge
 
 "Compilation"
 ==> "PrepareDotNetBuild"
