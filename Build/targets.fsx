@@ -779,13 +779,11 @@ _Target "UnitTestWithAltCoverRunner" (fun _ ->
       let collect =
         { AltCover.CollectParams.Create() with Executable = nunit
                                                RecorderDirectory = testDirectory @@ "__UnitTestWithAltCoverRunner" }
-          .withCommandLine [ "--noheader"
-                             "--work=."
-                             "--result=./_Reports/UnitTestWithAltCoverRunnerReport.xml"
-
+          .withCommandLine [ "--noheader";
+                             "--work=.";
+                             "--result=./_Reports/UnitTestWithAltCoverRunnerReport.xml";
                              Path.getFullName
-                                "_Binaries/AltCover.Tests/Debug+AnyCPU/__UnitTestWithAltCoverRunner/AltCover.Tests.dll"
-
+                                "_Binaries/AltCover.Tests/Debug+AnyCPU/__UnitTestWithAltCoverRunner/AltCover.Tests.dll";
                               Path.getFullName
                                "_Binaries/AltCover.Tests/Debug+AnyCPU/__UnitTestWithAltCoverRunner/Sample2.dll" ]
         |> AltCover.Collect
@@ -854,13 +852,11 @@ _Target "UnitTestWithAltCoverRunner" (fun _ ->
     let collect =
       { AltCover.CollectParams.Create() with Executable = nunit
                                              RecorderDirectory = shadowDir @@ "__ShadowTestWithAltCoverRunner" }
-        .withCommandLine [ "--noheader"
-                           "--work=."
-                           "--result=./_Reports/ShadowTestWithAltCoverRunnerReport.xml"
-
+        .withCommandLine [ "--noheader";
+                           "--work=.";
+                           "--result=./_Reports/ShadowTestWithAltCoverRunnerReport.xml";
                            Path.getFullName
-                              "_Binaries/AltCover.Shadow.Tests/Debug+AnyCPU/__ShadowTestWithAltCoverRunner/AltCover.Shadow.Tests.dll"
-
+                              "_Binaries/AltCover.Shadow.Tests/Debug+AnyCPU/__ShadowTestWithAltCoverRunner/AltCover.Shadow.Tests.dll";
                             Path.getFullName
                              "_Binaries/AltCover.Shadow.Tests/Debug+AnyCPU/__ShadowTestWithAltCoverRunner/AltCover.Shadow.Tests2.dll" ]
       |> AltCover.Collect
@@ -1468,7 +1464,7 @@ _Target "CSharpDotNetWithDotNet"
                                            Save = false }
     |> AltCover.Prepare
   { AltCover.Params.Create prep with ToolPath =
-    "_Binaries/AltCover/Debug+AnyCPU/netcoreapp2.0/AltCover.dll"
+                                        "_Binaries/AltCover/Debug+AnyCPU/netcoreapp2.0/AltCover.dll"
                                      ToolType = AltCover.ToolType.DotNet dotnetPath
                                      WorkingDirectory = "." }
   |> AltCover.run
@@ -3467,6 +3463,6 @@ Target.activateFinal "ResetConsoleColours"
 
 let defaultTarget() =
   resetColours()
-                       "All"
+  "All"
 
 Target.runOrDefault <| defaultTarget ()
