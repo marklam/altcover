@@ -2087,6 +2087,11 @@ _Target "PrepareFrameworkBuild"
   (fun _ ->
   let toolpath = Tools.findToolInSubPath "ILRepack.exe" "./packages"
   let ver = String.Join(".", (!Version).Split('.') |> Seq.take 2) + ".0.0"
+  let temp = Path.getFullName "./_Temp"
+  Directory.ensure temp
+  Environment.setEnvironVar "TMP" temp
+  Environment.setEnvironVar "TEMP" temp
+
   ILMerge.run
     { ILMerge.Params.Create() with DebugInfo = true
                                    ToolPath = toolpath
