@@ -2085,7 +2085,7 @@ _Target "Packaging" (fun _ ->
 
 _Target "PrepareFrameworkBuild"
   (fun _ ->
-  let toolpath = Tools.findToolInSubPath "ILMerge.exe" "./packages"
+  let toolpath = Tools.findToolInSubPath "ILRepack.exe" "./packages"
   let ver = String.Join(".", (!Version).Split('.') |> Seq.take 2) + ".0.0"
   ILMerge.run
     { ILMerge.Params.Create() with DebugInfo = true
@@ -2094,6 +2094,7 @@ _Target "PrepareFrameworkBuild"
                                    KeyFile = Path.getFullName "./Build/Infrastructure.snk"
                                    Version = Some(System.Version(ver))
                                    Internalize = ILMerge.Internalize
+                                   SearchDirectories = [ Path.getFullName "./_Binaries/AltCover/Release+AnyCPU" ]
                                    Libraries =
                                      Seq.concat
                                        [ !!"./_Binaries/AltCover/Release+AnyCPU/Mono.C*.dll"
@@ -2122,23 +2123,35 @@ _Target "PrepareDotNetBuild" (fun _ ->
                    Framework = Some "netcoreapp2.1" })
     (Path.getFullName "./AltCover.Visualizer/altcover.visualizer.core.fsproj")
 
-     //  let toolpath = Tools.findToolInSubPath "ILMerge.exe" "./packages"
-     //  let ver = String.Join(".", (!Version).Split('.') |> Seq.take 2) + ".0.0"
-     //
-     //  [ publish; publish + ".api" ]
-     //  |> List.iter (fun dir ->
-     //    let outDir = Path.Combine(dir, "out")
-     //    Directory.ensure outDir
-     //    Actions.Run (toolpath, ".",
-     //                 [ "/out:" + Path.Combine(outDir, "AltCover.Recorder.dll")
-     //                   "/ver:" + ver
-     //                   "/attr:" + Path.Combine(dir, "AltCover.Recorder.dll")
-     //                   "/keyfile:./Build/Infrastructure.snk"
-     //                   "/target:library"
-     //                   "/internalize"
-     //                   Path.Combine(dir, "AltCover.Recorder.dll")
-     //                   Path.Combine(dir, "FSharp.Core.dll") ])
-     //      "ILMerge failure")
+// Seems to work, but alas, the static linkage leaks all over the show
+//  let toolpath = Tools.findToolInSubPath "ILRepack.exe" "./packages"
+//  let ver = String.Join(".", (!Version).Split('.') |> Seq.take 2) + ".0.0"
+// 
+//  [ publish; publish + ".api" ]
+//  |> List.iter (fun dir ->
+//    let outDir = Path.Combine(dir, "out")
+//    Directory.ensure outDir
+//    let dumpDir = Path.Combine(dir, "old")
+//    Directory.ensure dumpDir
+//    let inFile = Path.Combine(dir, "AltCover.Recorder.dll")
+//    ILMerge.run
+//      { ILMerge.Params.Create() with DebugInfo = true
+//                                     ToolPath = toolpath
+//                                     TargetKind = ILMerge.TargetKind.Library
+//                                     KeyFile = Path.getFullName "./Build/Infrastructure.snk"
+//                                     Version = Some(System.Version(ver))
+//                                     // Internalize = ILMerge.Internalize
+//                                     Libraries = [ Path.Combine(dir, "FSharp.Core.dll") ]
+//                                     SearchDirectories = [ dir ]
+//                                     AttributeFile = inFile }
+//      (Path.Combine(outDir, "AltCover.Recorder.dll"))
+//      inFile
+//
+//    // swap in the ILRepack'd files
+//    !! (dir @@ "AltCover.Recorder.*")
+//    |> Seq.iter (Shell.moveFile dumpDir)
+//    !! (outDir @@ "AltCover.Recorder.*")
+//    |> Seq.iter (Shell.moveFile dir) )
 
      // dotnet tooling mods
   [ ("DotnetCliTool", "./_Generated/altcover.dotnet.nuspec",
@@ -2727,8 +2740,9 @@ _Target "DoIt"
 Target.runOrDefault "DoIt"
 """
     File.WriteAllText("./_ApiUse/DriveApi.fsx", script)
-
-    let dependencies = """// [ FAKE GROUP ]
+ 
+    let dependencies = """version 5.186.3
+// [ FAKE GROUP ]
 group NetcoreBuild
   source https://api.nuget.org/v3/index.json
   nuget Fake.Core >= 5.8.4
@@ -3345,7 +3359,8 @@ Target.activateFinal "ResetConsoleColours"
 
 "Compilation"
 ==> "PrepareFrameworkBuild"
-=?> ("Packaging", Environment.isWindows)  // can't ILMerge
+==> "Packaging" // ILRepack
+// =?> ("Packaging", Environment.isWindows)  // can't ILMerge
 
 "Compilation"
 ==> "PrepareDotNetBuild"
