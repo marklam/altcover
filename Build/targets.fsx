@@ -354,6 +354,7 @@ _Target "FxCop" (fun _ -> // Needs debug because release is compiled --standalon
     ([
          "_Binaries/AltCover.PowerShell/Debug+AnyCPU/AltCover.PowerShell.dll"
        ], [], [ "-Microsoft.Design#CA1059"
+                "-Microsoft.Usage#CA2208"
                 "-Microsoft.Usage#CA2235"
                 "-Microsoft.Performance#CA1819"
                 "-Microsoft.Design#CA1020"
