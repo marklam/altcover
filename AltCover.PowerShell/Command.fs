@@ -6,6 +6,8 @@ open System.Management.Automation
 
 open AltCover
 
+#nowarn "44"
+
 [<Cmdlet(VerbsLifecycle.Invoke, "AltCover")>]
 [<OutputType("System.Void")>]
 [<System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.PowerShell",
@@ -156,7 +158,7 @@ type InvokeAltCoverCommand(runner : bool) =
                                   Threshold = self.Threshold
                                   Cobertura = self.Cobertura
                                   OutputFile = self.OutputFile
-                                  CommandLine = String.Join(" ", self.CommandLine) }
+                                  Command = self.CommandLine }
 
   member private self.Prepare() =
     { PrepareParams.Create() with InputDirectory = self.InputDirectory
@@ -183,7 +185,7 @@ type InvokeAltCoverCommand(runner : bool) =
                                   Single = self.Single.IsPresent
                                   LineCover = self.LineCover.IsPresent
                                   BranchCover = self.BranchCover.IsPresent
-                                  CommandLine = String.Join(" ", self.CommandLine) }
+                                  Command = self.CommandLine }
 
   member private self.Log() =
     { Logging.Default with Error = (fun s -> self.Fail <- s :: self.Fail)
