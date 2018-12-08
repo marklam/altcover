@@ -6,8 +6,6 @@ open System.Management.Automation
 
 open AltCover
 
-#nowarn "44"
-
 [<Cmdlet(VerbsLifecycle.Invoke, "AltCover")>]
 [<OutputType("System.Void")>]
 [<System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.PowerShell",
