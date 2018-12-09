@@ -92,7 +92,7 @@ type Prepare() =
   member val Single = true |> not with get, set // work around Gendarme insistence on non-default values only
   member val LineCover = true |> not with get, set
   member val BranchCover = true |> not with get, set
-  [<Obsolete("Please use AltCover.Prepare.Command instead instead.")>]
+  [<Obsolete("Please use AltCover.Prepare.Command instead.")>]
   member val CommandLine = String.Empty with get, set
   member val Command : string array = [||] with get, set
   member self.Message x = base.Log.LogMessage(MessageImportance.High, x)
@@ -144,7 +144,7 @@ type Collect() =
   member val Threshold = String.Empty with get, set
   member val Cobertura = String.Empty with get, set
   member val OutputFile = String.Empty with get, set
-  [<Obsolete("Please use AltCover.Collect.Command instead instead.")>]
+  [<Obsolete("Please use AltCover.Collect.Command instead.")>]
   member val CommandLine = String.Empty with get, set
   member val Command : string array = [||] with get, set
   member self.Message x = base.Log.LogMessage(MessageImportance.High, x)

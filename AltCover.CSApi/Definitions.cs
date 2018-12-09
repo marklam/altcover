@@ -13,7 +13,7 @@ namespace AltCover
         public string Cobertura { get; set; }
         public string OutputFile { get; set; }
 
-        [Obsolete("Please use AltCover.CollectArgs.Command instead instead.")]
+        [Obsolete("Please use AltCover.CollectArgs.Command instead.")]
         public string CommandLine { get; set; }
 
         public string[] Command { get; set; }
@@ -87,7 +87,7 @@ namespace AltCover
         public bool LineCover { get; set; }
         public bool BranchCover { get; set; }
 
-        [Obsolete("Please use AltCover.PrepareArgs.Command instead instead.")]
+        [Obsolete("Please use AltCover.PrepareArgs.Command instead.")]
         public string CommandLine { get; set; }
 
         public string[] Command { get; set; }
