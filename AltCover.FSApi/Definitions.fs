@@ -28,10 +28,10 @@ module DotNet =
   let private Join(l : string list) = String.Join(" ", l)
 
 #if RUNNER
-  let ToTestArgumentList (prepare : PrepareParams) (collect : CollectParams) =
+  let MakeTestArgumentList (prepare : PrepareParameters) (collect : CollectParameters) =
 #else
-  let ToTestArgumentList (prepare : AltCover.PrepareParams)
-      (collect : AltCover.CollectParams) =
+  let MakeTestArgumentList (prepare : AltCover.PrepareParameters)
+      (collect : AltCover.CollectParameters) =
 #endif
 
     [ FromArg String.Empty "true"
@@ -53,6 +53,22 @@ module DotNet =
       (Arg "BranchCover" "true", prepare.BranchCover) ]
     |> List.filter snd
     |> List.map fst
+
+#if RUNNER
+  let ToTestArgumentList (prepare : PrepareParams) (collect : CollectParams) =
+#else
+  let ToTestArgumentList (prepare : AltCover.PrepareParams)
+      (collect : AltCover.CollectParams) =
+#endif
+      MakeTestArgumentList (prepare.ToParameters()) (collect.ToParameters())
+
+#if RUNNER
+  let MakeTestArguments (prepare : PrepareParameters) (collect : CollectParameters) =
+#else
+  let ToTestArguments (prepare : AltCover.PrepareParameters)
+      (collect : AltCover.CollectParameters) =
+#endif
+    MakeTestArgumentList prepare collect |> Join
 
 #if RUNNER
   let ToTestArguments (prepare : PrepareParams) (collect : CollectParams) =

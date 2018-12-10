@@ -147,41 +147,71 @@ type InvokeAltCoverCommand(runner : bool) =
   member val private Fail : String list = [] with get, set
 
   member private self.Collect() =
-    { CollectParams.Create() with RecorderDirectory = self.RecorderDirectory
-                                  WorkingDirectory = self.WorkingDirectory
-                                  Executable = self.Executable
-                                  LcovReport = self.LcovReport
-                                  Threshold = self.Threshold
-                                  Cobertura = self.Cobertura
-                                  OutputFile = self.OutputFile
-                                  Command = self.CommandLine }
+    { CollectParameters.Create() with RecorderDirectory = DirectoryPath self.RecorderDirectory
+                                      WorkingDirectory = DirectoryPath self.WorkingDirectory
+                                      Executable = FilePath self.Executable
+                                      LcovReport = FilePath self.LcovReport
+                                      Threshold = match Byte.TryParse self.Threshold with
+                                                  | (true, n) -> Threshold n
+                                                  | _ -> NoThreshold
+                                      Cobertura = FilePath self.Cobertura
+                                      OutputFile = FilePath self.OutputFile
+                                      CommandLine = self.CommandLine
+                                                    |> Seq.filter (String.IsNullOrWhiteSpace >> not)
+                                                    |> Seq.map CommandArgument |> Command }
 
   member private self.Prepare() =
-    { PrepareParams.Create() with InputDirectory = self.InputDirectory
-                                  OutputDirectory = self.OutputDirectory
-                                  SymbolDirectories = self.SymbolDirectory
+    { PrepareParameters.Create() with InputDirectory = DirectoryPath self.InputDirectory
+                                      OutputDirectory = DirectoryPath self.OutputDirectory
+                                      SymbolDirectories = self.SymbolDirectory
+                                                          |>Seq.map DirectoryPath
+                                                          |> DirectoryPaths
 #if NETCOREAPP2_0
-                                  Dependencies = self.Dependency
+                                      Dependencies = self.Dependencies
+                                                     |> Seq.map FilePath
+                                                     |> FilePaths
 #else
-                                  Keys = self.Key;
-                                  StrongNameKey = self.StrongNameKey;
+                                      Keys = self.Key
+                                             |> Seq.map FilePath
+                                             |> FilePaths
+                                      StrongNameKey = FilePath self.StrongNameKey
 #endif
-                                  XmlReport = self.XmlReport
-                                  FileFilter = self.FileFilter
-                                  AssemblyFilter = self.AssemblyFilter
-                                  AssemblyExcludeFilter = self.AssemblyExcludeFilter
-                                  TypeFilter = self.TypeFilter
-                                  MethodFilter = self.MethodFilter
-                                  AttributeFilter = self.AttributeFilter
-                                  PathFilter = self.PathFilter
-                                  CallContext = self.CallContext
-                                  OpenCover = self.OpenCover.IsPresent
-                                  InPlace = self.InPlace.IsPresent
-                                  Save = self.Save.IsPresent
-                                  Single = self.Single.IsPresent
-                                  LineCover = self.LineCover.IsPresent
-                                  BranchCover = self.BranchCover.IsPresent
-                                  Command = self.CommandLine }
+                                      XmlReport = FilePath self.XmlReport
+                                      FileFilter = self.FileFilter
+                                                   |> Seq.map Raw
+                                                   |> Filters
+                                      AssemblyFilter = self.AssemblyFilter
+                                                   |> Seq.map Raw
+                                                   |> Filters
+                                      AssemblyExcludeFilter = self.AssemblyExcludeFilter
+                                                   |> Seq.map Raw
+                                                   |> Filters
+                                      TypeFilter = self.TypeFilter
+                                                   |> Seq.map Raw
+                                                   |> Filters
+                                      MethodFilter = self.MethodFilter
+                                                   |> Seq.map Raw
+                                                   |> Filters
+                                      AttributeFilter = self.AttributeFilter
+                                                        |> Seq.map Raw
+                                                        |> Filters
+                                      PathFilter = self.PathFilter
+                                                   |> Seq.map Raw
+                                                   |> Filters
+                                      CallContext = self.CallContext
+                                                    |> Seq.map (fun c -> match Byte.TryParse c with
+                                                                         | (true, n) -> TimeItem n
+                                                                         | _ -> CallItem c)
+                                                    |> Context
+                                      OpenCover = Flag self.OpenCover.IsPresent
+                                      InPlace = Flag self.InPlace.IsPresent
+                                      Save = Flag self.Save.IsPresent
+                                      Single = Flag self.Single.IsPresent
+                                      LineCover = Flag self.LineCover.IsPresent
+                                      BranchCover = Flag self.BranchCover.IsPresent
+                                      CommandLine = self.CommandLine
+                                                    |> Seq.filter (String.IsNullOrWhiteSpace >> not)
+                                                    |> Seq.map CommandArgument |> Command }
 
   member private self.Log() =
     { Logging.Default with Error = (fun s -> self.Fail <- s :: self.Fail)
@@ -206,10 +236,10 @@ type InvokeAltCoverCommand(runner : bool) =
            0)
          | (_, true) ->
            let task = self.Collect()
-           Api.Collect task
+           Api.DoCollect task
          | _ ->
            let task = self.Prepare()
-           Api.Prepare task) log
+           Api.DoPrepare task) log
       if status <> 0 then status.ToString() |> self.Log().Error
       match self.Fail with
       | [] -> ()

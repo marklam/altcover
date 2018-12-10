@@ -32,24 +32,31 @@ type Logging =
 #nowarn "44"
 
 module Api =
-  let Prepare (args : PrepareParams) (log : Logging) =
+  let DoPrepare (args : PrepareParameters) (log : Logging) =
     log.Apply()
     Args.Prepare { args with
 #if NETCOREAPP2_0
-                            Keys = []
-                            StrongNameKey = String.Empty
+                                            Keys = NoPaths
+                                            StrongNameKey = NoFile
 #else
-                            Dependencies = []
+                                            Dependencies = NoPaths
 #endif
     }
     |> List.toArray
     |> Main.EffectiveMain
 
-  let Collect (args : CollectParams) (log : Logging) =
+  let Prepare (args : PrepareParams) (log : Logging) =
+    DoPrepare (args.ToParameters()) log
+
+  let DoCollect (args : CollectParameters) (log : Logging) =
     log.Apply()
-    Args.Collect args
+    args
+    |> Args.Collect
     |> List.toArray
     |> Main.EffectiveMain
+
+  let Collect (args : CollectParams) (log : Logging) =
+    DoCollect (args.ToParameters()) log
 
   let mutable internal store = String.Empty
   let private writeToStore s = store <- s
@@ -103,34 +110,61 @@ type Prepare() =
                              Info = self.Message }
 
     let task =
-      { PrepareParams.Create() with InputDirectory = self.InputDirectory
-                                    OutputDirectory = self.OutputDirectory
-                                    SymbolDirectories = self.SymbolDirectories
+      { PrepareParameters.Create() with InputDirectory = DirectoryPath self.InputDirectory
+                                        OutputDirectory = DirectoryPath self.OutputDirectory
+                                        SymbolDirectories = self.SymbolDirectories
+                                                            |>Seq.map DirectoryPath
+                                                            |> DirectoryPaths
 #if NETCOREAPP2_0
-                                    Dependencies = self.Dependencies
+                                        Dependencies = self.Dependencies
+                                                       |> Seq.map FilePath
+                                                       |> FilePaths
 #else
-                                    Keys = self.Keys
-                                    StrongNameKey = self.StrongNameKey
+                                        Keys = self.Keys
+                                               |> Seq.map FilePath
+                                               |> FilePaths
+                                        StrongNameKey = FilePath self.StrongNameKey
 #endif
-                                    XmlReport = self.XmlReport
-                                    FileFilter = self.FileFilter
-                                    AssemblyFilter = self.AssemblyFilter
-                                    AssemblyExcludeFilter = self.AssemblyExcludeFilter
-                                    TypeFilter = self.TypeFilter
-                                    MethodFilter = self.MethodFilter
-                                    AttributeFilter = self.AttributeFilter
-                                    PathFilter = self.PathFilter
-                                    CallContext = self.CallContext
-                                    OpenCover = self.OpenCover
-                                    InPlace = self.InPlace
-                                    Save = self.Save
-                                    Single = self.Single
-                                    LineCover = self.LineCover
-                                    BranchCover = self.BranchCover
-                                    CommandLine = self.CommandLine
-                                    Command = self.Command }
+                                        XmlReport = FilePath self.XmlReport
+                                        FileFilter = self.FileFilter
+                                                     |> Seq.map Raw
+                                                     |> Filters
+                                        AssemblyFilter = self.AssemblyFilter
+                                                     |> Seq.map Raw
+                                                     |> Filters
+                                        AssemblyExcludeFilter = self.AssemblyExcludeFilter
+                                                     |> Seq.map Raw
+                                                     |> Filters
+                                        TypeFilter = self.TypeFilter
+                                                     |> Seq.map Raw
+                                                     |> Filters
+                                        MethodFilter = self.MethodFilter
+                                                     |> Seq.map Raw
+                                                     |> Filters
+                                        AttributeFilter = self.AttributeFilter
+                                                     |> Seq.map Raw
+                                                     |> Filters
+                                        PathFilter = self.PathFilter
+                                                     |> Seq.map Raw
+                                                     |> Filters
+                                        CallContext = self.CallContext
+                                                      |> Seq.map (fun c -> match Byte.TryParse c with
+                                                                           | (true, n) -> TimeItem n
+                                                                           | _ -> CallItem c)
+                                                      |> Context
+                                        OpenCover = Flag self.OpenCover
+                                        InPlace = Flag self.InPlace
+                                        Save = Flag self.Save
+                                        Single = Flag self.Single
+                                        LineCover = Flag self.LineCover
+                                        BranchCover = Flag self.BranchCover
+                                        CommandLine = if self.Command |> Seq.isEmpty |> not then
+                                                         self.Command
+                                                         |> Seq.filter (String.IsNullOrWhiteSpace >> not)
+                                                         |> Seq.map CommandArgument |> Command
+                                                      else CommandArgs.extract self.CommandLine }
 
-    Api.Prepare task log = 0
+    Api.DoPrepare task log = 0
 
 type Collect() =
   inherit Task(null)
@@ -155,17 +189,21 @@ type Collect() =
                              Info = self.Message }
 
     let task =
-      { CollectParams.Create() with RecorderDirectory = self.RecorderDirectory
-                                    WorkingDirectory = self.WorkingDirectory
-                                    Executable = self.Executable
-                                    LcovReport = self.LcovReport
-                                    Threshold = self.Threshold
-                                    Cobertura = self.Cobertura
-                                    OutputFile = self.OutputFile
-                                    CommandLine = self.CommandLine
-                                    Command = self.Command }
-
-    Api.Collect task log = 0
+      { CollectParameters.Create() with RecorderDirectory = DirectoryPath self.RecorderDirectory
+                                        WorkingDirectory = DirectoryPath self.WorkingDirectory
+                                        Executable = FilePath self.Executable
+                                        LcovReport = FilePath self.LcovReport
+                                        Threshold = match Byte.TryParse self.Threshold with
+                                                    | (true, n) -> Threshold n
+                                                    | _ -> NoThreshold
+                                        Cobertura = FilePath self.Cobertura
+                                        OutputFile = FilePath self.OutputFile
+                                        CommandLine = if self.Command |> Seq.isEmpty |> not then
+                                                         self.Command
+                                                         |> Seq.filter (String.IsNullOrWhiteSpace >> not)
+                                                         |> Seq.map CommandArgument |> Command
+                                                      else CommandArgs.extract self.CommandLine }
+    Api.DoCollect task log = 0
 
 type PowerShell() =
   inherit Task(null)

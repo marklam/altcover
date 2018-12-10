@@ -23,10 +23,10 @@ open Fake.Core
 [<ExcludeFromCodeCoverage; NoComparison>]
 type FilePath = FilePath of String
                 | FileInfo of FileInfo
-                | Unset
+                | NoFile
                 member self.AsString () =
                   match self with
-                  | Unset -> String.Empty
+                  | NoFile -> String.Empty
                   | FileInfo i -> i.FullName
                   | FilePath s -> s
 
@@ -88,9 +88,11 @@ type DirectoryPaths = DirectoryPaths of DirectoryPath seq
 
 [<ExcludeFromCodeCoverage; NoComparison>]
 type FilterItem = | FilterItem of Regex
+                  | Raw of String
                   member self.AsString () =
                     match self with
                     | FilterItem r -> r.ToString()
+                    | Raw r -> r
 
 [<ExcludeFromCodeCoverage; NoComparison>]
 type Filters = Filters of FilterItem seq
@@ -144,11 +146,11 @@ type CollectParameters =
   static member Create() =
     { RecorderDirectory = NoDirectory
       WorkingDirectory = NoDirectory
-      Executable = Unset
-      LcovReport = Unset
+      Executable = NoFile
+      LcovReport = NoFile
       Threshold = NoThreshold
-      Cobertura = Unset
-      OutputFile = Unset
+      Cobertura = NoFile
+      OutputFile = NoFile
       CommandLine = NoCommand }
 
 #if RUNNER
@@ -216,8 +218,8 @@ type PrepareParameters =
       SymbolDirectories = NoDirectories
       Dependencies = NoPaths
       Keys = NoPaths
-      StrongNameKey = Unset
-      XmlReport = Unset
+      StrongNameKey = NoFile
+      XmlReport = NoFile
       FileFilter = Unfiltered
       AssemblyFilter = Unfiltered
       AssemblyExcludeFilter = Unfiltered
@@ -255,7 +257,12 @@ type PrepareParameters =
     then f key x |> ignore
 
   member private self.consistent() =
-    if self.Single.AsBool() && self.CallContext |> PrepareParameters.nonNull && self.CallContext.Any() then
+    let contextPresent = match self.CallContext with
+                         | NoContext -> false
+                         | Context s -> s |> Seq.exists (fun i -> match i with
+                                                                  | CallItem c -> c |> String.IsNullOrWhiteSpace |> not
+                                                                  | _ -> true)
+    if self.Single.AsBool() && contextPresent then
       CommandLine.error <- String.Format
                              (System.Globalization.CultureInfo.CurrentCulture,
                               CommandLine.resources.GetString "Incompatible", "--single",
@@ -272,18 +279,18 @@ type PrepareParameters =
     let saved = CommandLine.error
 
     let validateContext context =
-      if context
-         |> isNull
-         |> not
-      then
-        let select state x =
-          let (_, n) = Main.ValidateCallContext state x
+      match context with
+      | NoContext -> ()
+      | Context c ->
+        let select state (x:ContextItem) =
+          let (_, n) = Main.ValidateCallContext state <| x.AsString()
           match (state, n) with
           | (true, _) | (_, Left(Some _)) -> true
           | _ -> false
-        context
+        c
         |> Seq.fold select false
         |> ignore
+
     try
       CommandLine.error <- []
       PrepareParameters.validateOptional CommandLine.ValidateDirectory "--inputDirectory"
@@ -298,9 +305,9 @@ type PrepareParameters =
         "--symbolDirectory"
       PrepareParameters.validateArray (self.Dependencies.AsStrings()) CommandLine.ValidateAssembly
         "--dependency"
-      PrepareParameters.validateArray self.Keys CommandLine.ValidateStrongNameKey "--key"
-      [ self.FileFilter; self.AssemblyFilter; self.AssemblyExcludeFilter; self.TypeFilter;
-        self.MethodFilter; self.AttributeFilter; self.PathFilter ]
+      PrepareParameters.validateArray (self.Keys.AsStrings()) CommandLine.ValidateStrongNameKey "--key"
+      [ self.FileFilter.AsStrings(); self.AssemblyFilter.AsStrings(); self.AssemblyExcludeFilter.AsStrings(); self.TypeFilter.AsStrings();
+        self.MethodFilter.AsStrings(); self.AttributeFilter.AsStrings(); self.PathFilter.AsStrings() ]
       |> Seq.iter
            (fun a -> PrepareParameters.validateArraySimple a CommandLine.ValidateRegexes)
       self.consistent()
@@ -313,6 +320,8 @@ type PrepareParameters =
   member self.withCommandLine args =
     { self with CommandLine = args |> Seq.map CommandArgument |> Command}
 #endif
+
+#nowarn "44"
 
 [<Obsolete("Please use AltCover.CollectParameters instead.")>]
 [<ExcludeFromCodeCoverage; NoComparison>]
@@ -411,25 +420,25 @@ type PrepareParams =
                                       StrongNameKey = FilePath self.StrongNameKey
                                       XmlReport = FilePath self.XmlReport
                                       FileFilter = self.FileFilter
-                                                   |> Seq.map (Regex >> FilterItem)
+                                                   |> Seq.map Raw
                                                    |> Filters
                                       AssemblyFilter = self.AssemblyFilter
-                                                   |> Seq.map (Regex >> FilterItem)
+                                                   |> Seq.map Raw
                                                    |> Filters
                                       AssemblyExcludeFilter = self.AssemblyExcludeFilter
-                                                   |> Seq.map (Regex >> FilterItem)
+                                                   |> Seq.map Raw
                                                    |> Filters
                                       TypeFilter = self.TypeFilter
-                                                   |> Seq.map (Regex >> FilterItem)
+                                                   |> Seq.map Raw
                                                    |> Filters
                                       MethodFilter = self.MethodFilter
-                                                   |> Seq.map (Regex >> FilterItem)
+                                                   |> Seq.map Raw
                                                    |> Filters
                                       AttributeFilter = self.AttributeFilter
-                                                   |> Seq.map (Regex >> FilterItem)
+                                                   |> Seq.map Raw
                                                    |> Filters
                                       PathFilter = self.PathFilter
-                                                   |> Seq.map (Regex >> FilterItem)
+                                                   |> Seq.map Raw
                                                    |> Filters
                                       CallContext = self.CallContext
                                                     |> Seq.map (fun c -> match Byte.TryParse c with
@@ -620,7 +629,7 @@ let internal createArgs parameters =
      | Framework
      | Mono _ -> { p with Dependencies = NoPaths }
      | _ -> { p with Keys = NoPaths
-                     StrongNameKey = Unset})
+                     StrongNameKey = NoFile})
      |> Args.Prepare
   | ImportModule -> [ "ipmo" ]
   | GetVersion -> [ "version" ]
