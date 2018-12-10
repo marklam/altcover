@@ -7,13 +7,14 @@ module AltCover_Fake.DotNet.Testing.AltCover
 
 open System
 open System.Diagnostics.CodeAnalysis
+open System.IO
 open System.Linq
+open System.Text.RegularExpressions
 open BlackFox.CommandLine
 #if RUNNER
 open AltCover.Augment
 #else
 open System.Reflection
-open System.IO
 open Fake.Core
 open System.Globalization
 
@@ -22,11 +23,23 @@ open System.Globalization
 // No more primitive obsession!
 [<ExcludeFromCodeCoverage; NoComparison>]
 type FilePath = FilePath of String
+                | FileInfo of FileInfo
                 | Unset
                 member self.AsString () =
                   match self with
                   | Unset -> String.Empty
+                  | FileInfo i -> i.FullName
                   | FilePath s -> s
+
+[<ExcludeFromCodeCoverage; NoComparison>]
+type DirectoryPath = DirectoryPath of String
+                      | DirectoryInfo of DirectoryInfo
+                      | NoDirectory
+                      member self.AsString () =
+                        match self with
+                        | NoDirectory -> String.Empty
+                        | DirectoryInfo i -> i.FullName
+                        | DirectoryPath s -> s
 
 [<ExcludeFromCodeCoverage; NoComparison>]
 type CommandArgument = | CommandArgument of String
@@ -61,17 +74,48 @@ type Flag = Flag of bool | Set | Clear
 [<ExcludeFromCodeCoverage; NoComparison>]
 type FilePaths = FilePaths of FilePath seq
                 | NoPaths
+                 member self.AsStrings () =
+                    match self with
+                    | NoPaths -> List.empty<String>
+                    | FilePaths c -> c |> Seq.map (fun a -> a.AsString()) |> Seq.toList
+
 [<ExcludeFromCodeCoverage; NoComparison>]
-type FilterItem = FilterItem of System.Text.RegularExpressions.Regex
+type DirectoryPaths = DirectoryPaths of DirectoryPath seq
+                      | NoDirectories
+                       member self.AsStrings () =
+                          match self with
+                          | NoDirectories -> List.empty<String>
+                          | DirectoryPaths c -> c |> Seq.map (fun a -> a.AsString()) |> Seq.toList
+
+[<ExcludeFromCodeCoverage; NoComparison>]
+type FilterItem = | FilterItem of Regex
+                  member self.AsString () =
+                    match self with
+                    | FilterItem r -> r.ToString()
+
 [<ExcludeFromCodeCoverage; NoComparison>]
 type Filters = Filters of FilterItem seq
                | Unfiltered
+                member self.AsStrings () =
+                  match self with
+                  | Unfiltered -> List.empty<String>
+                  | Filters c -> c |> Seq.map (fun a -> a.AsString()) |> Seq.toList
+
 [<ExcludeFromCodeCoverage; NoComparison>]
 type ContextItem = CallItem of String
                    | TimeItem of uint8
+                    member self.AsString () =
+                      match self with
+                      | CallItem c -> c
+                      | TimeItem t -> t.ToString(CultureInfo.InvariantCulture)
+
 [<ExcludeFromCodeCoverage; NoComparison>]
 type Context = Context of ContextItem seq
                | NoContext
+                member self.AsStrings () =
+                  match self with
+                  | NoContext -> List.empty<String>
+                  | Context c -> c |> Seq.map (fun a -> a.AsString()) |> Seq.toList
 
 module internal CommandArgs =
   let internal parse s =
@@ -82,21 +126,16 @@ module internal CommandArgs =
     let m = t.GetMethod "parse"
     m.Invoke (m, [| s |]) :?> String seq |> Seq.toList
 
-  let internal extract command commandLine =
-    let commands = command
-                   |> Seq.filter (String.IsNullOrWhiteSpace >> not)
-                   |> Seq.toList
-    let args = if List.isEmpty commands then
-                  parse commandLine
-               else commands
+  let internal extract command =
+    let args = parse command
     if List.isEmpty args then
         NoCommand
     else args |> List.map CommandArgument |> List.toSeq |> Command
 
 [<ExcludeFromCodeCoverage; NoComparison>]
 type CollectParameters =
-  { RecorderDirectory : FilePath
-    WorkingDirectory : FilePath
+  { RecorderDirectory : DirectoryPath
+    WorkingDirectory : DirectoryPath
     Executable : FilePath
     LcovReport : FilePath
     Threshold : Threshold
@@ -104,8 +143,8 @@ type CollectParameters =
     OutputFile : FilePath
     CommandLine : Command }
   static member Create() =
-    { RecorderDirectory = Unset
-      WorkingDirectory = Unset
+    { RecorderDirectory = NoDirectory
+      WorkingDirectory = NoDirectory
       Executable = Unset
       LcovReport = Unset
       Threshold = NoThreshold
@@ -150,9 +189,9 @@ type CollectParameters =
 
 [<ExcludeFromCodeCoverage; NoComparison>]
 type PrepareParameters =
-  { InputDirectory : FilePath
-    OutputDirectory : FilePath
-    SymbolDirectories : FilePaths
+  { InputDirectory : DirectoryPath
+    OutputDirectory : DirectoryPath
+    SymbolDirectories : DirectoryPaths
     Dependencies : FilePaths
     Keys : FilePaths
     StrongNameKey : FilePath
@@ -173,9 +212,9 @@ type PrepareParameters =
     BranchCover : Flag
     CommandLine : Command }
   static member Create() =
-    { InputDirectory = Unset
-      OutputDirectory = Unset
-      SymbolDirectories = NoPaths
+    { InputDirectory = NoDirectory
+      OutputDirectory = NoDirectory
+      SymbolDirectories = NoDirectories
       Dependencies = NoPaths
       Keys = NoPaths
       StrongNameKey = Unset
@@ -285,8 +324,7 @@ type CollectParams =
     Threshold : String
     Cobertura : String
     OutputFile : String
-    CommandLine : String
-    Command : String seq }
+    CommandLine : String }
 
 #if RUNNER
   [<Obsolete("Please use AltCover.CollectParams.Create() instead.")>]
@@ -298,8 +336,7 @@ type CollectParams =
       Threshold = String.Empty
       Cobertura = String.Empty
       OutputFile = String.Empty
-      CommandLine = String.Empty
-      Command = [] }
+      CommandLine = String.Empty }
 #endif
 
   static member Create() =
@@ -310,27 +347,27 @@ type CollectParams =
       Threshold = String.Empty
       Cobertura = String.Empty
       OutputFile = String.Empty
-      CommandLine = String.Empty
-      Command = [] }
+      CommandLine = String.Empty }
 
   member self.ToParameters () =
-    { CollectParameters.Create() with RecorderDirectory = FilePath self.RecorderDirectory
-                                      WorkingDirectory = FilePath self.WorkingDirectory
+    { CollectParameters.Create() with RecorderDirectory = DirectoryPath self.RecorderDirectory
+                                      WorkingDirectory = DirectoryPath self.WorkingDirectory
                                       Executable = FilePath self.Executable
                                       LcovReport = FilePath self.LcovReport
-                                      Threshold = match uint8.TryParse self.Threshold with
+                                      Threshold = match Byte.TryParse self.Threshold with
                                                   | (true, n) -> Threshold n
                                                   | _ -> NoThreshold
                                       Cobertura = FilePath self.Cobertura
                                       OutputFile = FilePath self.OutputFile
-                                      CommandLine = CommandArgs.extract self.Command self.CommandLine }
+                                      CommandLine = CommandArgs.extract self.CommandLine }
 #if RUNNER
   member self.Validate afterPreparation =
     self.ToParamaters().Validate afterPreparation
 #else
   member self.withCommandLine args =
-    { self with Command = args
-                CommandLine = String.Empty}
+    { self with CommandLine = args
+                              |> CmdLine.fromSeq
+                              |> CmdLine.toString}
 #endif
 
 [<Obsolete("Please use AltCover.PerpareParameters instead.")>]
@@ -357,12 +394,55 @@ type PrepareParams =
     Single : bool
     LineCover : bool
     BranchCover : bool
-    // [<Obs // olete("Please use AltCover.PrepareParams.Command instead.")>]
-    CommandLine : String
-    Command : String seq }
+    CommandLine : String }
 
   member self.ToParameters () = // TODO
-    { PrepareParameters.Create() with InputDirectory = FilePath self.InputDirectory }
+    { PrepareParameters.Create() with InputDirectory = DirectoryPath self.InputDirectory
+                                      OutputDirectory = DirectoryPath self.OutputDirectory
+                                      SymbolDirectories = self.SymbolDirectories
+                                                          |>Seq.map DirectoryPath
+                                                          |> DirectoryPaths
+                                      Dependencies = self.Dependencies
+                                                     |> Seq.map FilePath
+                                                     |> FilePaths
+                                      Keys = self.Keys
+                                             |> Seq.map FilePath
+                                             |> FilePaths
+                                      StrongNameKey = FilePath self.StrongNameKey
+                                      XmlReport = FilePath self.XmlReport
+                                      FileFilter = self.FileFilter
+                                                   |> Seq.map (Regex >> FilterItem)
+                                                   |> Filters
+                                      AssemblyFilter = self.AssemblyFilter
+                                                   |> Seq.map (Regex >> FilterItem)
+                                                   |> Filters
+                                      AssemblyExcludeFilter = self.AssemblyExcludeFilter
+                                                   |> Seq.map (Regex >> FilterItem)
+                                                   |> Filters
+                                      TypeFilter = self.TypeFilter
+                                                   |> Seq.map (Regex >> FilterItem)
+                                                   |> Filters
+                                      MethodFilter = self.MethodFilter
+                                                   |> Seq.map (Regex >> FilterItem)
+                                                   |> Filters
+                                      AttributeFilter = self.AttributeFilter
+                                                   |> Seq.map (Regex >> FilterItem)
+                                                   |> Filters
+                                      PathFilter = self.PathFilter
+                                                   |> Seq.map (Regex >> FilterItem)
+                                                   |> Filters
+                                      CallContext = self.CallContext
+                                                    |> Seq.map (fun c -> match Byte.TryParse c with
+                                                                         | (true, n) -> TimeItem n
+                                                                         | _ -> CallItem c)
+                                                    |> Context
+                                      OpenCover = Flag self.OpenCover
+                                      InPlace = Flag self.InPlace
+                                      Save = Flag self.Save
+                                      Single = Flag self.Single
+                                      LineCover = Flag self.LineCover
+                                      BranchCover = Flag self.BranchCover
+                                      CommandLine = CommandArgs.extract self.CommandLine }
 
 #if RUNNER
   [<Obsolete("Please use AltCover.CollectParams.Create() instead.")>]
@@ -388,8 +468,7 @@ type PrepareParams =
       Single = false
       LineCover = false
       BranchCover = false
-      CommandLine = String.Empty
-      Command = [] }
+      CommandLine = String.Empty }
 #endif
 
   static member Create() =
@@ -414,16 +493,16 @@ type PrepareParams =
       Single = false
       LineCover = false
       BranchCover = false
-      CommandLine = String.Empty
-      Command = [] }
+      CommandLine = String.Empty }
 
 #if RUNNER
   member self.Validate() =
     self.ToParamaters().Validate ()
 #else
   member self.withCommandLine args =
-    { self with Command = args
-                CommandLine = String.Empty}
+    { self with CommandLine = args
+                              |> CmdLine.fromSeq
+                              |> CmdLine.toString}
 #endif
 
 module internal Args =
@@ -449,19 +528,18 @@ module internal Args =
 
     [ Item "-i" <| args.InputDirectory.AsString()
       Item "-o" <| args.OutputDirectory.AsString()
-      ItemList "-y" args.SymbolDirectories
-      ItemList "-d" args.Dependencies
-      ItemList "-k" args.Keys
+      ItemList "-y" <| args.SymbolDirectories.AsStrings()
+      ItemList "-d" <| args.Dependencies.AsStrings()
+      ItemList "-k" <| args.Keys.AsStrings()
       Item "--sn" <| args.StrongNameKey.AsString()
       Item "-x" <| args.XmlReport.AsString()
-      ItemList "-f" args.FileFilter
-      ItemList "-s" args.AssemblyFilter
-      ItemList "-e" args.AssemblyExcludeFilter
-      ItemList "-t" args.TypeFilter
-      ItemList "-m" args.MethodFilter
-      ItemList "-a" args.AttributeFilter
-      ItemList "-p" args.PathFilter
-      ItemList "-c" args.CallContext
+      ItemList "-f" <| args.AssemblyFilter.AsStrings()
+      ItemList "-e" <| args.AssemblyExcludeFilter.AsStrings()
+      ItemList "-t" <| args.TypeFilter.AsStrings()
+      ItemList "-m" <| args.MethodFilter.AsStrings()
+      ItemList "-a" <| args.AttributeFilter.AsStrings()
+      ItemList "-p" <| args.PathFilter.AsStrings()
+      ItemList "-c" <| args.CallContext.AsStrings()
       Flag "--opencover" <| args.OpenCover.AsBool()
       Flag "--inplace" <| args.InPlace.AsBool()
       Flag "--save" <| args.Save.AsBool()
@@ -540,7 +618,7 @@ let internal createArgs parameters =
   | Preparing p ->
     (match parameters.ToolType with
      | Framework
-     | Mono _ -> { p with Dependencies = NoPaths }
+     | Mono _ -> { p with Dependencies = NoDirectories }
      | _ -> { p with Keys = NoPaths
                      StrongNameKey = Unset})
      |> Args.Prepare
