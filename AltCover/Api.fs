@@ -7,6 +7,7 @@ module AltCover_Fake.DotNet.Testing.AltCover
 
 open System
 open System.Diagnostics.CodeAnalysis
+open System.Globalization
 open System.IO
 open System.Linq
 open System.Text.RegularExpressions
@@ -16,8 +17,6 @@ open AltCover.Augment
 #else
 open System.Reflection
 open Fake.Core
-open System.Globalization
-
 #endif
 
 // No more primitive obsession!
@@ -168,17 +167,17 @@ type CollectParameters =
       if s |> String.IsNullOrWhiteSpace then None
       else Some s
     try
-      [ ("--recorderDirectory", self.RecorderDirectory)
-        ("--workingDirectory", self.WorkingDirectory) ]
+      [ ("--recorderDirectory", self.RecorderDirectory.AsString())
+        ("--workingDirectory", self.WorkingDirectory.AsString()) ]
       |> List.iter (fun (n, x) -> validateOptional CommandLine.ValidateDirectory n x)
-      [ ("--executable", self.Executable)
-        ("--lcovReport", self.LcovReport)
-        ("--cobertura", self.Cobertura)
-        ("--outputFile", self.OutputFile) ]
+      [ ("--executable", self.Executable.AsString())
+        ("--lcovReport", self.LcovReport.AsString())
+        ("--cobertura", self.Cobertura.AsString())
+        ("--outputFile", self.OutputFile.AsString()) ]
       |> List.iter (fun (n, x) -> validateOptional CommandLine.ValidatePath n x)
-      validate Runner.ValidateThreshold self.Threshold
+      validate Runner.ValidateThreshold <| self.Threshold.AsString()
       if afterPreparation then
-        Runner.RequireRecorderTest (self.RecorderDirectory |> toOption) () ()
+        Runner.RequireRecorderTest (self.RecorderDirectory.AsString() |> toOption) () ()
       CommandLine.error |> List.toArray
     finally
       CommandLine.error <- saved
@@ -237,7 +236,7 @@ type PrepareParameters =
 
 #if RUNNER
   static member private validateArray a f key =
-    PrepareParams.validateArraySimple a (f key)
+    PrepareParameters.validateArraySimple a (f key)
 
   static member private nonNull a =
     a
@@ -247,7 +246,7 @@ type PrepareParameters =
   [<SuppressMessage("Microsoft.Usage", "CA2208",
                     Justification = "Some in-lined code must be creating an ArgumentNullException")>]
   static member private validateArraySimple a f =
-    if a |> PrepareParams.nonNull then a |> Seq.iter (fun s -> f s |> ignore)
+    if a |> PrepareParameters.nonNull then a |> Seq.iter (fun s -> f s |> ignore)
 
   static member private validateOptional f key x =
     if x
@@ -256,14 +255,14 @@ type PrepareParameters =
     then f key x |> ignore
 
   member private self.consistent() =
-    if self.Single && self.CallContext |> PrepareParams.nonNull && self.CallContext.Any() then
+    if self.Single.AsBool() && self.CallContext |> PrepareParameters.nonNull && self.CallContext.Any() then
       CommandLine.error <- String.Format
                              (System.Globalization.CultureInfo.CurrentCulture,
                               CommandLine.resources.GetString "Incompatible", "--single",
                               "--callContext") :: CommandLine.error
 
   member private self.consistent'() =
-    if self.LineCover && self.BranchCover then
+    if self.LineCover.AsBool() && self.BranchCover.AsBool() then
       CommandLine.error <- String.Format
                              (System.Globalization.CultureInfo.CurrentCulture,
                               CommandLine.resources.GetString "Incompatible",
@@ -287,22 +286,23 @@ type PrepareParameters =
         |> ignore
     try
       CommandLine.error <- []
-      PrepareParams.validateOptional CommandLine.ValidateDirectory "--inputDirectory"
-        self.InputDirectory
-      PrepareParams.validateOptional CommandLine.ValidatePath "--outputDirectory"
-        self.OutputDirectory
-      PrepareParams.validateOptional CommandLine.ValidateStrongNameKey "--strongNameKey"
-        self.StrongNameKey
-      PrepareParams.validateOptional CommandLine.ValidatePath "--xmlReport" self.XmlReport
-      PrepareParams.validateArray self.SymbolDirectories CommandLine.ValidateDirectory
+      PrepareParameters.validateOptional CommandLine.ValidateDirectory "--inputDirectory"
+        <| self.InputDirectory.AsString()
+      PrepareParameters.validateOptional CommandLine.ValidatePath "--outputDirectory"
+        <| self.OutputDirectory.AsString()
+      PrepareParameters.validateOptional CommandLine.ValidateStrongNameKey "--strongNameKey"
+        <| self.StrongNameKey.AsString()
+      PrepareParameters.validateOptional CommandLine.ValidatePath "--xmlReport"
+        <| self.XmlReport.AsString()
+      PrepareParameters.validateArray (self.SymbolDirectories.AsStrings()) CommandLine.ValidateDirectory
         "--symbolDirectory"
-      PrepareParams.validateArray self.Dependencies CommandLine.ValidateAssembly
+      PrepareParameters.validateArray (self.Dependencies.AsStrings()) CommandLine.ValidateAssembly
         "--dependency"
-      PrepareParams.validateArray self.Keys CommandLine.ValidateStrongNameKey "--key"
+      PrepareParameters.validateArray self.Keys CommandLine.ValidateStrongNameKey "--key"
       [ self.FileFilter; self.AssemblyFilter; self.AssemblyExcludeFilter; self.TypeFilter;
         self.MethodFilter; self.AttributeFilter; self.PathFilter ]
       |> Seq.iter
-           (fun a -> PrepareParams.validateArraySimple a CommandLine.ValidateRegexes)
+           (fun a -> PrepareParameters.validateArraySimple a CommandLine.ValidateRegexes)
       self.consistent()
       self.consistent'()
       validateContext self.CallContext
@@ -362,7 +362,7 @@ type CollectParams =
                                       CommandLine = CommandArgs.extract self.CommandLine }
 #if RUNNER
   member self.Validate afterPreparation =
-    self.ToParamaters().Validate afterPreparation
+    self.ToParameters().Validate afterPreparation
 #else
   member self.withCommandLine args =
     { self with CommandLine = args
@@ -370,7 +370,7 @@ type CollectParams =
                               |> CmdLine.toString}
 #endif
 
-[<Obsolete("Please use AltCover.PerpareParameters instead.")>]
+[<Obsolete("Please use AltCover.PrepareParameters instead.")>]
 [<ExcludeFromCodeCoverage; NoComparison>]
 type PrepareParams =
   { InputDirectory : String
@@ -497,7 +497,7 @@ type PrepareParams =
 
 #if RUNNER
   member self.Validate() =
-    self.ToParamaters().Validate ()
+    self.ToParameters().Validate ()
 #else
   member self.withCommandLine args =
     { self with CommandLine = args
@@ -618,7 +618,7 @@ let internal createArgs parameters =
   | Preparing p ->
     (match parameters.ToolType with
      | Framework
-     | Mono _ -> { p with Dependencies = NoDirectories }
+     | Mono _ -> { p with Dependencies = NoPaths }
      | _ -> { p with Keys = NoPaths
                      StrongNameKey = Unset})
      |> Args.Prepare
