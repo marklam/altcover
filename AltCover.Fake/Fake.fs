@@ -28,9 +28,15 @@ type Implementation =
 
 type Api =
   static member Prepare(args : PrepareParams, ?log : Logging) =
+    AltCover.Api.Prepare (args.ToParameters()) (Trace.DoDefault log)
+  static member Prepare(args : PrepareParameters, ?log : Logging) =
     AltCover.Api.Prepare args (Trace.DoDefault log)
+
   static member Collect(args : CollectParams, ?log : Logging) =
+    AltCover.Api.Collect (args.ToParameters()) (Trace.DoDefault log)
+  static member Collect(args : CollectParameters, ?log : Logging) =
     AltCover.Api.Collect args (Trace.DoDefault log)
+
   static member Ipmo() = AltCover.Api.Ipmo()
   static member Version() = AltCover.Api.Version()
   // Finds the tool from within the .nuget package
@@ -115,5 +121,14 @@ module DotNet =
 #endif
 
       DotNet.ToTestArguments prepare collect |> self.ExtendCustomParams
+
+#if RUNNER
+    member self.WithParameters (prepare : PrepareParameters) (collect : CollectParameters) =
+#else
+    member self.WithParameters (prepare : AltCover.PrepareParameters)
+           (collect : AltCover.CollectParameters) =
+#endif
+      DotNet.ToTestArguments prepare collect |> self.ExtendCustomParams
+
     member self.WithImportModule() = self.ExtendCustomParams "/p:AltCoverIpmo=true"
     member self.WithGetVersion() = self.ExtendCustomParams "/p:AltCoverGetVersion=true"
