@@ -10,6 +10,7 @@ open System.Xml.Schema
 open System.Xml.XPath
 open System.Collections.Generic
 
+[<RequireQualifiedAccess>]
 module OpenCoverUtilities =
 
   [<SuppressMessage("Microsoft.Design", "CA1059", Justification = "Premature abstraction")>]
