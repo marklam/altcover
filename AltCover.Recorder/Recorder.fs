@@ -24,8 +24,7 @@ type internal Carrier = SequencePoint of String * int * Track
 #endif
 [<NoComparison>]
 type internal Message =
-  | AsyncItem
-  | Item of AsyncReplyChannel<unit>
+  | AsyncItem of Carrier
   | Finish of Close * AsyncReplyChannel<unit>
 
 module Instance =
@@ -78,6 +77,12 @@ module Instance =
   /// </summary>
   [<MethodImplAttribute(MethodImplOptions.NoInlining)>]
   let internal Sample = Sampling.All
+
+  let Fault _ = async { InvalidOperationException() |> raise }
+  let internal MakeDefaultMailbox() = new MailboxProcessor<Message>(Fault)
+
+  let mutable internal mailbox = MakeDefaultMailbox()
+  let mutable internal mailboxOK = false
 
   /// <summary>
   /// Gets or sets the current test method
@@ -207,6 +212,46 @@ module Instance =
         else AddVisit
       adder moduleId hitPointId context
 
+  let rec private loop (inbox : MailboxProcessor<Message>) =
+    async {
+      if Object.ReferenceEquals(inbox, mailbox) then
+        // release the wait every half second
+        let! opt = inbox.TryReceive(500)
+        match opt with
+        | None -> return! loop inbox
+        | Some msg ->
+          match msg with
+          | AsyncItem (SequencePoint (moduleId, hitPointId, context))  ->
+            VisitImpl moduleId hitPointId context
+            return! loop inbox
+          | Finish(Pause, channel) ->
+            FlushPause()
+            channel.Reply()
+            return! loop inbox
+          | Finish(Resume, channel) ->
+            FlushResume()
+            channel.Reply()
+            return! loop inbox
+          | Finish(finish, channel) ->
+            FlushAll finish
+            channel.Reply()
+            mailboxOK <- false
+            Assist.SafeDispose inbox
+    }
+
+  let internal MakeMailbox() = new MailboxProcessor<Message>(loop)
+  let internal Backlog() = mailbox.CurrentQueueLength
+  let internal DefaultErrorAction = ignore
+  let mutable internal ErrorAction = DefaultErrorAction
+
+  let MailboxError x =
+    mailboxOK <- false
+    ErrorAction x
+
+  let DisplayError x = eprintfn "%s - %A" ("Recorder error"
+                                           |> GetResource
+                                           |> Option.get) x
+
   let private IsOpenCoverRunner() =
     (CoverageFormat = ReportFormat.OpenCoverWithTracking)
     && ((trace.Definitive && trace.Runner)
@@ -244,6 +289,18 @@ module Instance =
       | _ ->
         FlushAll finish)
 
+  let internal AddErrorHandler(box : MailboxProcessor<'a>) = box.Error.Add MailboxError
+  let internal SetErrorAction() = ErrorAction <- DisplayError
+
+  let internal RunMailbox() =
+    Recording <- true
+    Assist.SafeDispose mailbox
+    mailbox <- MakeMailbox()
+    mailboxOK <- true
+    AddErrorHandler mailbox
+    SetErrorAction()
+    mailbox.Start()
+
   // Register event handling
   let DoPause = FlushCounter Pause
   let DoResume = FlushCounter Resume
@@ -261,3 +318,4 @@ module Instance =
      AppDomain.CurrentDomain.ProcessExit.Add(FlushCounter ProcessExit)
      StartWatcher()
      InitialiseTrace()
+     RunMailbox()
