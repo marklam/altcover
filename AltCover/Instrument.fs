@@ -99,7 +99,7 @@ module internal Instrument =
   /// <returns>A representation of the method to call to signal a coverage visit.</returns>
   let internal RecordingMethod(recordingAssembly : AssemblyDefinition) =
     let other = RecorderInstanceType()
-    [ "Visit"; "Push"; "Pop" ]
+    [ (if Visitor.visitAsync then "VisitAsync" else "Visit"); "Push"; "Pop" ]
     |> List.map (fun n ->
          let t = other.GetMethod(n).MetadataToken
          recordingAssembly.MainModule.LookupToken(t) :?> MethodDefinition)

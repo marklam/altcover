@@ -44,6 +44,7 @@ type AltCoverTests2() =
 
     [<Test>]
     member self.ShouldBeAbleToGetTheVisitReportMethod() =
+      Visitor.visitAsync <- false
       let where = Assembly.GetExecutingAssembly().Location
       let path =
         Path.Combine
@@ -53,6 +54,22 @@ type AltCoverTests2() =
       recorder
       |> List.zip
            [ "System.Void AltCover.Recorder.Instance.Visit(System.String,System.Int32)";
+             "System.Void AltCover.Recorder.Instance.Push(System.Int32)";
+             "System.Void AltCover.Recorder.Instance.Pop()" ]
+      |> List.iter (fun (n, m) -> Assert.That(Naming.FullMethodName m, Is.EqualTo n))
+
+    [<Test>]
+    member self.ShouldBeAbleToGetTheAsyncVisitReportMethod() =
+      Visitor.visitAsync <- true
+      let where = Assembly.GetExecutingAssembly().Location
+      let path =
+        Path.Combine
+          (Path.GetDirectoryName(where) + AltCoverTests.Hack(), "AltCover.Recorder.dll")
+      let def = Mono.Cecil.AssemblyDefinition.ReadAssembly path
+      let recorder = AltCover.Instrument.RecordingMethod def
+      recorder
+      |> List.zip
+           [ "System.Void AltCover.Recorder.Instance.VisitAsync(System.String,System.Int32)";
              "System.Void AltCover.Recorder.Instance.Push(System.Int32)";
              "System.Void AltCover.Recorder.Instance.Pop()" ]
       |> List.iter (fun (n, m) -> Assert.That(Naming.FullMethodName m, Is.EqualTo n))
@@ -1464,6 +1481,7 @@ type AltCoverTests2() =
 
     [<Test>]
     member self.IncludedModuleEnsuresRecorder() =
+      Visitor.visitAsync <- false
       let where = Assembly.GetExecutingAssembly().Location
       let path =
         Path.Combine(Path.GetDirectoryName(where) + AltCoverTests.Hack(), "Sample2.dll")
@@ -1481,6 +1499,61 @@ type AltCoverTests2() =
         |> Seq.filter (fun t -> t.Name = "Instance")
         |> Seq.collect (fun t -> t.Methods)
         |> Seq.filter (fun m -> m.Name = "Visit" || m.Name = "Push" || m.Name = "Pop")
+        |> Seq.sortBy (fun m -> m.Name)
+        |> Seq.toList
+        |> List.rev
+
+      let state' = { state with RecordingAssembly = def' }
+      let result = Instrument.InstrumentationVisitor state' visited
+      Assert.That(result.RecordingMethodRef.Visit.Module, Is.EqualTo(def.MainModule))
+      Assert.That(string result.RecordingMethodRef.Visit,
+                  visit
+                  |> Seq.head
+                  |> string
+                  |> Is.EqualTo)
+      Assert.That(string result.RecordingMethodRef.Push,
+                  visit
+                  |> Seq.skip 1
+                  |> Seq.head
+                  |> string
+                  |> Is.EqualTo)
+      Assert.That(string result.RecordingMethodRef.Pop,
+                  visit
+                  |> Seq.skip 2
+                  |> Seq.head
+                  |> string
+                  |> Is.EqualTo)
+      Assert.That({ result with RecordingMethodRef =
+                                  { Visit = null
+                                    Push = null
+                                    Pop = null } },
+                  Is.EqualTo { state' with ModuleId = def.MainModule.Mvid.ToString()
+                                           RecordingMethod = visit
+                                           RecordingMethodRef =
+                                             { Visit = null
+                                               Push = null
+                                               Pop = null } })
+
+    [<Test>]
+    member self.IncludedModuleEnsuresRecorderAsync() =
+      Visitor.visitAsync <- true
+      let where = Assembly.GetExecutingAssembly().Location
+      let path =
+        Path.Combine(Path.GetDirectoryName(where) + AltCoverTests.Hack(), "Sample2.dll")
+      let def = Mono.Cecil.AssemblyDefinition.ReadAssembly path
+      ProgramDatabase.ReadSymbols def
+      let visited = Node.Module(def.MainModule, Inspect.Instrument)
+      let state = InstrumentContext.Build [ "nunit.framework"; "nonesuch" ]
+      let path' =
+        Path.Combine
+          (Path.GetDirectoryName(where) + AltCoverTests.Hack(), "AltCover.Recorder.dll")
+      let def' = Mono.Cecil.AssemblyDefinition.ReadAssembly path'
+
+      let visit =
+        def'.MainModule.GetAllTypes()
+        |> Seq.filter (fun t -> t.Name = "Instance")
+        |> Seq.collect (fun t -> t.Methods)
+        |> Seq.filter (fun m -> m.Name = "VisitAsync" || m.Name = "Push" || m.Name = "Pop")
         |> Seq.sortBy (fun m -> m.Name)
         |> Seq.toList
         |> List.rev

@@ -15,17 +15,7 @@ open System.Runtime.CompilerServices
 #else
 [<System.Runtime.InteropServices.ProgIdAttribute("ExcludeFromCodeCoverage hack for OpenCover issue 615")>]
 #endif
-type internal Carrier = SequencePoint of String * int * Track
-
-#if NETSTANDARD2_0
-[<System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage>]
-#else
-[<System.Runtime.InteropServices.ProgIdAttribute("ExcludeFromCodeCoverage hack for OpenCover issue 615")>]
-#endif
-[<NoComparison>]
-type internal Message =
-  | AsyncItem of Carrier
-  | Finish of Close * AsyncReplyChannel<unit>
+type internal Carrier = SequencePoint of String * int
 
 module Instance =
   let internal resources =
@@ -79,7 +69,7 @@ module Instance =
   let internal Sample = Sampling.All
 
   let Fault _ = async { InvalidOperationException() |> raise }
-  let internal MakeDefaultMailbox() = new MailboxProcessor<Message>(Fault)
+  let internal MakeDefaultMailbox() = new MailboxProcessor<Carrier>(Fault)
 
   let mutable internal mailbox = MakeDefaultMailbox()
   let mutable internal mailboxOK = false
@@ -152,7 +142,10 @@ module Instance =
   /// This method flushes hit count buffers.
   /// </summary>
   let internal FlushAll finish =
-    trace.OnConnected (fun () -> trace.OnFinish finish Visits)
+    trace.OnConnected (fun () -> if finish = ProcessExit then
+                                   mailboxOK <- false
+                                   Assist.SafeDispose mailbox
+                                 trace.OnFinish finish Visits)
       (fun () ->
       match Visits.Count with
       | 0 -> ()
@@ -212,34 +205,6 @@ module Instance =
         else AddVisit
       adder moduleId hitPointId context
 
-  let rec private loop (inbox : MailboxProcessor<Message>) =
-    async {
-      if Object.ReferenceEquals(inbox, mailbox) then
-        // release the wait every half second
-        let! opt = inbox.TryReceive(500)
-        match opt with
-        | None -> return! loop inbox
-        | Some msg ->
-          match msg with
-          | AsyncItem (SequencePoint (moduleId, hitPointId, context))  ->
-            VisitImpl moduleId hitPointId context
-            return! loop inbox
-          | Finish(Pause, channel) ->
-            FlushPause()
-            channel.Reply()
-            return! loop inbox
-          | Finish(Resume, channel) ->
-            FlushResume()
-            channel.Reply()
-            return! loop inbox
-          | Finish(finish, channel) ->
-            FlushAll finish
-            channel.Reply()
-            mailboxOK <- false
-            Assist.SafeDispose inbox
-    }
-
-  let internal MakeMailbox() = new MailboxProcessor<Message>(loop)
   let internal Backlog() = mailbox.CurrentQueueLength
   let internal DefaultErrorAction = ignore
   let mutable internal ErrorAction = DefaultErrorAction
@@ -277,9 +242,34 @@ module Instance =
     lockVisits (fun () ->
       VisitImpl moduleId hitPointId track)
 
+  let internal RecordVisit moduleId hitPointId =
+    VisitSelection (PayloadSelector IsOpenCoverRunner) moduleId hitPointId
+
   let Visit moduleId hitPointId =
-    if Recording then
-      VisitSelection (PayloadSelector IsOpenCoverRunner) moduleId hitPointId
+    if Recording then RecordVisit moduleId hitPointId
+
+  let rec private loop (inbox : MailboxProcessor<Carrier>) =
+    async {
+      System.Threading.Thread.CurrentThread.Priority <- System.Threading.ThreadPriority.AboveNormal
+      if Object.ReferenceEquals(inbox, mailbox) then
+        // release the wait every half second
+        let! opt = inbox.TryReceive(500)
+        match opt with
+        | None -> return! loop inbox
+        | Some msg ->
+          match msg with
+          | SequencePoint (moduleId, hitPointId)  ->
+            RecordVisit moduleId hitPointId
+            return! loop inbox
+    }
+  let internal MakeMailbox() = new MailboxProcessor<Carrier>(loop)
+
+  let VisitAsync moduleId hitPointId =
+    if Recording then // mailbox.Post (SequencePoint (moduleId, hitPointId))
+      async {
+        System.Threading.Thread.CurrentThread.Priority <- System.Threading.ThreadPriority.AboveNormal
+        RecordVisit moduleId hitPointId
+      } |> Async.Start
 
   let internal FlushCounter (finish : Close) _ =
     lockVisits (fun () ->

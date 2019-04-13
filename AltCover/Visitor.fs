@@ -160,6 +160,7 @@ module internal Visitor =
   let internal inplace = ref false
   let mutable internal single = false
   let internal sourcelink = ref false
+  let mutable internal visitAsync = true
 
   let mutable internal inputDirectory : Option<string> = None
   let private defaultInputDirectory = "."
