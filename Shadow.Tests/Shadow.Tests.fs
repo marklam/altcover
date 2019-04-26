@@ -127,14 +127,14 @@ type AltCoverTests() =
     member self.RealIdShouldIncrementCount() =
       self.GetMyMethodName "=>"
       lock Adapter.Lock (fun () ->
-        let save = Instance.trace
+        let save = Instance.TraceOut.Instance
         try
           Adapter.VisitsClear()
-          Instance.trace <- { Tracer = null
-                              Stream = null
-                              Formatter = null
-                              Runner = false
-                              Definitive = false }
+          Instance.TraceOut.Override { Tracer = null
+                                       Stream = null
+                                       Formatter = null
+                                       Runner = false
+                                       Definitive = false }
           let key = " "
           Instance.Visit key 23
           Assert.That(Adapter.VisitsSeq() |> Seq.length, Is.EqualTo 1)
@@ -142,7 +142,7 @@ type AltCoverTests() =
           Assert.That(Adapter.VisitCount key 23, Is.EqualTo 1)
         finally
           Adapter.VisitsClear()
-          Instance.trace <- save)
+          Instance.TraceOut.Override save)
       self.GetMyMethodName "<="
 
 #if NET4
@@ -193,11 +193,11 @@ type AltCoverTests() =
     member self.RealIdShouldIncrementCountSynchronously() =
       self.GetMyMethodName "=>"
       lock Instance.Visits (fun () ->
-      let save = Instance.trace
+      let save = Instance.TraceOut.Instance
       try
         Instance.Visits.Clear()
-        Instance.trace <- { Tracer=null; Stream=null; Formatter=null;
-                            Runner = false; Definitive = false }
+        Instance.TraceOut.Override { Tracer=null; Stream=null; Formatter=null;
+                                    Runner = false; Definitive = false }
         let key = " "
         Instance.VisitSelection Null key 23
         Assert.That (Instance.Visits.Count, Is.EqualTo 1, "A visit that should have happened, didn't")
@@ -205,7 +205,7 @@ type AltCoverTests() =
         Assert.That (Instance.Visits.[key].[23], Is.EqualTo (1, []))
       finally
         Instance.Visits.Clear()
-        Instance.trace <- save)
+        Instance.TraceOut.Override save)
       self.GetMyMethodName "<="
 
     [<Test>]
@@ -532,12 +532,12 @@ type AltCoverTests() =
           let here = Directory.GetCurrentDirectory()
           let where = Assembly.GetExecutingAssembly().Location |> Path.GetDirectoryName
           let unique = Path.Combine(where, Guid.NewGuid().ToString())
-          let save = Instance.trace
-          Instance.trace <- { Tracer = null
-                              Stream = null
-                              Formatter = null
-                              Runner = false
-                              Definitive = false }
+          let save = Instance.TraceOut.Instance
+          Instance.TraceOut.Override { Tracer = null
+                                       Stream = null
+                                       Formatter = null
+                                       Runner = false
+                                       Definitive = false }
           try
             Adapter.VisitsClear()
             use stdout = new StringWriter()
@@ -575,7 +575,7 @@ type AltCoverTests() =
                |> Seq.map (fun x -> x.GetAttribute("visitcount")),
                Is.EquivalentTo [ "11"; "10"; "9"; "8"; "7"; "6"; "4"; "3"; "2"; "1" ])
           finally
-            Instance.trace <- save
+            Instance.TraceOut.Override save
             if File.Exists Instance.ReportFile then File.Delete Instance.ReportFile
             Adapter.VisitsClear()
             Console.SetOut saved
@@ -594,7 +594,7 @@ type AltCoverTests() =
           let here = Directory.GetCurrentDirectory()
           let where = Assembly.GetExecutingAssembly().Location |> Path.GetDirectoryName
           let unique = Path.Combine(where, Guid.NewGuid().ToString())
-          let save = Instance.trace
+          let save = Instance.TraceOut.Instance
 
           let newTrace =
             { Tracer = null
@@ -602,7 +602,7 @@ type AltCoverTests() =
               Formatter = null
               Runner = false
               Definitive = false }
-          Instance.trace <- newTrace
+          Instance.TraceOut.Override newTrace
           try
             Adapter.VisitsClear()
             use stdout = new StringWriter()
@@ -626,7 +626,7 @@ type AltCoverTests() =
             Adapter.DoResume()
             Assert.That(Adapter.VisitsSeq(), Is.Empty, "Visits should be cleared")
             Assert.That
-              (Object.ReferenceEquals(Instance.trace, newTrace), Is.False,
+              (Object.ReferenceEquals(Instance.TraceOut.Instance, newTrace), Is.False,
                "trace should be replaced")
             let recorded = stdout.ToString().Trim()
             Assert.That(recorded, Is.EqualTo "Resuming...", recorded)
@@ -640,7 +640,7 @@ type AltCoverTests() =
                Is.EquivalentTo
                  [ "1"; "1"; "1"; "1"; "1"; "1"; "0"; String.Empty; "X"; "-1" ])
           finally
-            Instance.trace <- save
+            Instance.TraceOut.Override save
             if File.Exists Instance.ReportFile then File.Delete Instance.ReportFile
             Adapter.VisitsClear()
             Console.SetOut saved
@@ -659,12 +659,12 @@ type AltCoverTests() =
           let here = Directory.GetCurrentDirectory()
           let where = Assembly.GetExecutingAssembly().Location |> Path.GetDirectoryName
           let unique = Path.Combine(where, Guid.NewGuid().ToString())
-          let save = Instance.trace
-          Instance.trace <- { Tracer = null
-                              Stream = null
-                              Formatter = null
-                              Runner = false
-                              Definitive = false }
+          let save = Instance.TraceOut.Instance
+          Instance.TraceOut.Override { Tracer = null
+                                       Stream = null
+                                       Formatter = null
+                                       Runner = false
+                                       Definitive = false }
           try
             Adapter.VisitsClear()
             use stdout = new StringWriter()
@@ -702,7 +702,7 @@ type AltCoverTests() =
                |> Seq.map (fun x -> x.GetAttribute("visitcount")),
                Is.EquivalentTo [ "11"; "10"; "9"; "8"; "7"; "6"; "4"; "3"; "2"; "1" ])
           finally
-            Instance.trace <- save
+            Instance.TraceOut.Override save
             if File.Exists Instance.ReportFile then File.Delete Instance.ReportFile
             Adapter.VisitsClear()
             Console.SetOut saved

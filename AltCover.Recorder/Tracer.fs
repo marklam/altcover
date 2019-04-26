@@ -16,6 +16,9 @@ type internal Close =
   | Pause
   | Resume
 
+module Extra =
+  let streams = System.Collections.ObjectModel.Collection<Stream * BinaryWriter>()
+
 [<NoComparison>]
 type Tracer =
   { Tracer : string
@@ -35,6 +38,9 @@ type Tracer =
       Stream = null
       Formatter = null }
 
+  member this.IsDefiniteRunner() =
+    this.Runner && this.Definitive
+
   member this.IsConnected() =
     match this.Stream with
     | null -> false
@@ -53,11 +59,12 @@ type Tracer =
       |> Seq.head
     else this
 
-  member this.Close() =
-    try
-      this.Stream.Flush()
-      this.Formatter.Close()
-    with :? ObjectDisposedException -> ()
+  static member Close() =
+    Extra.streams |> Seq.iter (fun (s,f) ->
+        try
+          s.Flush()
+          f.Close()
+        with :? ObjectDisposedException -> ())
 
   member internal this.Push (moduleId : string) (hitPointId : int) context =
     this.Formatter.Write moduleId
@@ -91,7 +98,10 @@ type Tracer =
 
   member this.OnStart() =
     let running =
-      if this.Tracer <> "Coverage.Default.xml.acv" then this.Connect()
+      if this.Tracer <> "Coverage.Default.xml.acv" then
+        let t = this.Connect()
+        Extra.streams.Add(t.Stream, t.Formatter)
+        t
       else this
     { running with Definitive = true }
 
@@ -102,9 +112,10 @@ type Tracer =
   member internal this.OnFinish finish visits =
     this.CatchUp visits
     if finish <> Pause
-    then this.Close()
+    then Tracer.Close()
 
   member internal this.OnVisit visits moduleId hitPointId context =
+    printfn "Tracer.OnVisit %s %d" moduleId hitPointId
     this.CatchUp visits
     this.Push moduleId hitPointId context
     this.Formatter.Flush()

@@ -112,11 +112,6 @@ module Instance =
 
   let SignalFile() = ReportFile + ".acv"
 
-  /// <summary>
-  /// Reporting back to the mother-ship
-  /// </summary>
-  let mutable internal trace = Tracer.Create(SignalFile())
-
   let internal WithMutex(f : bool -> 'a) =
     let own = mutex.WaitOne(1000)
     try
@@ -124,10 +119,35 @@ module Instance =
     finally
       if own then mutex.ReleaseMutex()
 
-  let InitialiseTrace() =
-    WithMutex(fun _ ->
-      let t = Tracer.Create(SignalFile())
-      trace <- t.OnStart())
+  /// <summary>
+  /// Reporting back to the mother-ship
+  /// </summary>
+  type internal TraceOut (dummy:string) =
+    static let mutable toFile = false
+
+    static member ToFile
+        with get() = toFile
+        and set(v) = toFile <- v
+
+    [<ThreadStatic; DefaultValue>]
+    static val mutable private instance : Option<Tracer>
+
+    static member private InitialiseTrace() =
+      WithMutex(fun _ ->
+        let t = Tracer.Create(SignalFile())
+        t.OnStart())
+
+    static member Instance =
+      match TraceOut.instance with
+      | None -> WithMutex(fun _ -> TraceOut.instance <- Some <| TraceOut.InitialiseTrace())
+      | _ -> if TraceOut.ToFile && (not <| TraceOut.instance.Value.IsConnected())
+             then WithMutex(fun _ -> TraceOut.instance <- Some <| TraceOut.InitialiseTrace())
+      TraceOut.instance.Value
+
+    static member Override t =
+      TraceOut.instance <- Some t
+
+    override self.ToString() = dummy
 
   let internal Watcher = new FileSystemWatcher()
   let mutable internal Recording = true
@@ -136,7 +156,7 @@ module Instance =
   /// This method flushes hit count buffers.
   /// </summary>
   let internal FlushAll finish =
-    trace.OnConnected (fun () -> trace.OnFinish finish Visits)
+    TraceOut.Instance.OnConnected (fun () -> TraceOut.Instance.OnFinish finish Visits)
       (fun () ->
       match Visits.Count with
       | 0 -> ()
@@ -164,10 +184,11 @@ module Instance =
     |> GetResource
     |> Option.iter Console.Out.WriteLine
     Visits.Clear()
-    InitialiseTrace()
+    TraceOut.ToFile <- true
 
   let internal TraceVisit moduleId hitPointId context =
-    trace.OnVisit Visits moduleId hitPointId context
+    printfn "TraceVisit %s %d" moduleId hitPointId
+    TraceOut.Instance.OnVisit Visits moduleId hitPointId context
 
   let internal AddVisit moduleId hitPointId context =
     Counter.AddVisit Visits moduleId hitPointId context
@@ -192,13 +213,14 @@ module Instance =
     if not <| String.IsNullOrEmpty(moduleId) &&
        TakeSample Sample moduleId hitPointId then
       let adder =
-        if trace.IsConnected() then TraceVisit
+        if TraceOut.Instance.IsConnected() then TraceVisit
         else AddVisit
+      printfn "VisitImpl %s %d" moduleId hitPointId
       adder moduleId hitPointId context
 
   let private IsOpenCoverRunner() =
     (CoverageFormat = ReportFormat.OpenCoverWithTracking)
-    && ((trace.Definitive && trace.Runner)
+    && (TraceOut.Instance.IsDefiniteRunner()
         || (ReportFile <> "Coverage.Default.xml"
             && System.IO.File.Exists(ReportFile + ".acv")))
   let internal Granularity() = Timer
@@ -219,9 +241,11 @@ module Instance =
 
   let internal VisitSelection track moduleId hitPointId =
     lockVisits (fun () ->
+      printfn "VisitSelection %s %d" moduleId hitPointId
       VisitImpl moduleId hitPointId track)
 
   let Visit moduleId hitPointId =
+    printfn "Visit %A %s %d" Recording moduleId hitPointId
     if Recording then
       VisitSelection (PayloadSelector IsOpenCoverRunner) moduleId hitPointId
 
@@ -249,4 +273,3 @@ module Instance =
   do AppDomain.CurrentDomain.DomainUnload.Add(FlushCounter DomainUnload)
      AppDomain.CurrentDomain.ProcessExit.Add(FlushCounter ProcessExit)
      StartWatcher()
-     InitialiseTrace()

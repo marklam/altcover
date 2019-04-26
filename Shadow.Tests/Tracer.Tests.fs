@@ -39,7 +39,7 @@ type AltCoverCoreTests() =
         client <- client.OnStart()
         Assert.That(client.IsConnected(), Is.False)
       with _ ->
-        client.Close()
+        Tracer.Close()
         reraise()
 
     [<Test>]
@@ -53,7 +53,7 @@ type AltCoverCoreTests() =
         client <- client.OnStart()
         Assert.That(client.IsConnected(), Is.True)
       finally
-        client.Close()
+        Tracer.Close()
 
     member internal self.ReadResults(stream : Stream) =
       let hits = List<string * int * Track>()
@@ -83,7 +83,7 @@ type AltCoverCoreTests() =
 
     [<Test>]
     member self.VisitShouldSignal() =
-      let save = Instance.trace
+      let save = Instance.TraceOut.Instance
       let where = Assembly.GetExecutingAssembly().Location |> Path.GetDirectoryName
       let unique = Path.Combine(where, Guid.NewGuid().ToString())
       let tag = unique + ".acv"
@@ -98,14 +98,14 @@ type AltCoverCoreTests() =
         try
           Adapter.VisitsClear()
           Adapter.VisitsAdd "name" 23 1
-          Instance.trace <- client.OnStart()
-          Assert.That(Instance.trace.IsConnected(), "connection failed")
+          Instance.TraceOut.Override <| client.OnStart()
+          Assert.That(Instance.TraceOut.Instance.IsConnected(), "connection failed")
           Adapter.VisitImplNone "name" 23
         finally
-          Instance.trace.Close()
-          Instance.trace.Close()
-          Instance.trace.Close()
-          Instance.trace <- save
+          Tracer.Close()
+          Tracer.Close()
+          Tracer.Close()
+          Instance.TraceOut.Override save
         use stream =
           new DeflateStream(File.OpenRead(unique + ".0.acv"), CompressionMode.Decompress)
         let results = self.ReadResults stream
@@ -116,7 +116,7 @@ type AltCoverCoreTests() =
 
     [<Test>]
     member self.VisitShouldSignalTrack() =
-      let save = Instance.trace
+      let save = Instance.TraceOut.Instance
       let where = Assembly.GetExecutingAssembly().Location |> Path.GetDirectoryName
       let unique = Path.Combine(where, Guid.NewGuid().ToString())
       let tag = unique + ".acv"
@@ -142,12 +142,12 @@ type AltCoverCoreTests() =
         try
           Adapter.VisitsClear()
           Adapter.VisitsAddTrack "name" 23 1
-          Instance.trace <- client.OnStart()
-          Assert.That(Instance.trace.IsConnected(), "connection failed")
+          Instance.TraceOut.Override <| client.OnStart()
+          Assert.That(Instance.TraceOut.Instance.IsConnected(), "connection failed")
           Adapter.VisitImplMethod "name" 23 5
         finally
-          Instance.trace.Close()
-          Instance.trace <- save
+          Tracer.Close()
+          Instance.TraceOut.Override save
         use stream =
           new DeflateStream(File.OpenRead(unique + ".0.acv"), CompressionMode.Decompress)
         let results = self.ReadResults stream
@@ -158,7 +158,7 @@ type AltCoverCoreTests() =
 
     [<Test>]
     member self.FlushShouldTidyUp() = // also throw a bone to OpenCover 615
-      let save = Instance.trace
+      let save = Instance.TraceOut.Instance
       let where = Assembly.GetExecutingAssembly().Location |> Path.GetDirectoryName
       let root = Path.Combine(where, Guid.NewGuid().ToString())
       let unique = root + ".acv"
@@ -169,18 +169,18 @@ type AltCoverCoreTests() =
         let expected = [ ("name", client.GetHashCode(), Null) ]
         try
           Adapter.VisitsClear()
-          Instance.trace <- client.OnStart()
-          Assert.That(Instance.trace.Equals client, Is.False)
-          Assert.That(Instance.trace.Equals expected, Is.False)
-          Assert.That(Instance.trace.IsConnected(), "connection failed")
+          Instance.TraceOut.Override <| client.OnStart()
+          Assert.That(Instance.TraceOut.Instance.Equals client, Is.False)
+          Assert.That(Instance.TraceOut.Instance.Equals expected, Is.False)
+          Assert.That(Instance.TraceOut.Instance.IsConnected(), "connection failed")
           let formatter = System.Runtime.Serialization.Formatters.Binary.BinaryFormatter()
           let (a, b, c) = expected |> Seq.head
-          Instance.trace.Push a b c
+          Instance.TraceOut.Instance.Push a b c
           Adapter.FlushAll()
         finally
-          Instance.trace.Close()
+          Tracer.Close()
           System.Threading.Thread.Sleep 100
-          Instance.trace <- save
+          Instance.TraceOut.Override save
         use stream =
           new DeflateStream(File.OpenRead(root + ".0.acv"), CompressionMode.Decompress)
         let results = self.ReadResults stream
