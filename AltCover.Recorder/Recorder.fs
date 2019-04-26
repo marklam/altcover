@@ -149,6 +149,10 @@ module Instance =
 
     override self.ToString() = dummy
 
+    static member OnConnected f g =
+      if toFile then f()
+      else g()
+
   let internal Watcher = new FileSystemWatcher()
   let mutable internal Recording = true
 
@@ -156,7 +160,7 @@ module Instance =
   /// This method flushes hit count buffers.
   /// </summary>
   let internal FlushAll finish =
-    TraceOut.Instance.OnConnected (fun () -> TraceOut.Instance.OnFinish finish Visits)
+    TraceOut.OnConnected (fun () -> TraceOut.Instance.OnFinish finish Visits)
       (fun () ->
       match Visits.Count with
       | 0 -> ()
@@ -175,7 +179,6 @@ module Instance =
     ("PauseHandler")
     |> GetResource
     |> Option.iter Console.Out.WriteLine
-    FlushAll Pause
     Recording <- false
 
   let FlushResume() =
@@ -266,9 +269,11 @@ module Instance =
     Watcher.Filter <- Path.GetFileName <| SignalFile()
     Watcher.Created.Add DoResume
     Watcher.Deleted.Add DoPause
-    Watcher.EnableRaisingEvents <- Watcher.Path
-                                   |> String.IsNullOrEmpty
-                                   |> not
+    let isPath = Watcher.Path
+                 |> String.IsNullOrEmpty
+                 |> not
+    TraceOut.ToFile <- isPath && File.Exists(SignalFile())
+    Watcher.EnableRaisingEvents <- isPath
 
   do AppDomain.CurrentDomain.DomainUnload.Add(FlushCounter DomainUnload)
      AppDomain.CurrentDomain.ProcessExit.Add(FlushCounter ProcessExit)

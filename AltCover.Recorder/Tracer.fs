@@ -53,8 +53,10 @@ type Tracer =
       |> Seq.map (fun f ->
            let fs = File.OpenWrite f
            let s = new DeflateStream(fs, CompressionMode.Compress)
+           let fo = new BinaryWriter(s)
+           Extra.streams.Add(s :> Stream, fo)
            { this with Stream = s
-                       Formatter = new BinaryWriter(s)
+                       Formatter = fo
                        Runner = true })
       |> Seq.head
     else this
@@ -98,10 +100,7 @@ type Tracer =
 
   member this.OnStart() =
     let running =
-      if this.Tracer <> "Coverage.Default.xml.acv" then
-        let t = this.Connect()
-        Extra.streams.Add(t.Stream, t.Formatter)
-        t
+      if this.Tracer <> "Coverage.Default.xml.acv" then this.Connect()
       else this
     { running with Definitive = true }
 

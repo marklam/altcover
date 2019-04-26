@@ -522,14 +522,14 @@ module internal Runner =
                with :? EndOfStreamException -> None
              match hit with
              | Some tuple ->
-               let (key, hitPointId, hit) = tuple
+               let (key, hitPointId, track) = tuple
 
                let increment =
                  if key
                     |> String.IsNullOrWhiteSpace
                     |> not
                  then
-                   Base.Counter.AddVisit hits key hitPointId hit
+                   Base.Counter.AddVisit hits key hitPointId track
                    1
                  else 0
                sink (hitcount + increment)
