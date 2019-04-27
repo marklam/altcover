@@ -85,21 +85,12 @@ module Instance =
 
     member self.Push x = self.caller <- x :: self.caller
 
-    //let s = sprintf "push %d -> %A" x self.caller
-    //System.Diagnostics.Debug.WriteLine(s)
     member self.Pop() =
       self.caller <- match self.caller with
                      | [] | [ 0 ] -> [ 0 ]
                      | _ :: xs -> xs
 
-    //let s = sprintf "pop -> %A"self.caller
-    //System.Diagnostics.Debug.WriteLine(s)
     member self.CallerId() = Seq.head self.caller
-
-  (*let x = Seq.head self.caller
-                              let s = sprintf "peek %d" x
-                              System.Diagnostics.Debug.WriteLine(s)
-                              x*)
 
   let Push x = CallStack.Instance.Push x
   let Pop() = CallStack.Instance.Pop()
@@ -118,6 +109,8 @@ module Instance =
       f (own)
     finally
       if own then mutex.ReleaseMutex()
+
+  let internal lockVisits f = lock Visits f
 
   /// <summary>
   /// Reporting back to the mother-ship
@@ -180,6 +173,7 @@ module Instance =
     |> GetResource
     |> Option.iter Console.Out.WriteLine
     Recording <- false
+    FlushAll Pause
 
   let FlushResume() =
     Recording <- true
@@ -190,11 +184,11 @@ module Instance =
     TraceOut.ToFile <- true
 
   let internal TraceVisit moduleId hitPointId context =
-    printfn "TraceVisit %s %d" moduleId hitPointId
     TraceOut.Instance.OnVisit Visits moduleId hitPointId context
 
   let internal AddVisit moduleId hitPointId context =
-    Counter.AddVisit Visits moduleId hitPointId context
+    lockVisits (fun () ->
+      Counter.AddVisit Visits moduleId hitPointId context)
 
   let internal TakeSample strategy moduleId hitPointId =
     match strategy with
@@ -218,7 +212,6 @@ module Instance =
       let adder =
         if TraceOut.Instance.IsConnected() then TraceVisit
         else AddVisit
-      printfn "VisitImpl %s %d" moduleId hitPointId
       adder moduleId hitPointId context
 
   let private IsOpenCoverRunner() =
@@ -240,15 +233,11 @@ module Instance =
 
   let internal PayloadControl = PayloadSelection Clock
   let internal PayloadSelector enable = PayloadControl Granularity enable
-  let internal lockVisits f = lock Visits f
 
   let internal VisitSelection track moduleId hitPointId =
-    lockVisits (fun () ->
-      printfn "VisitSelection %s %d" moduleId hitPointId
-      VisitImpl moduleId hitPointId track)
+      VisitImpl moduleId hitPointId track
 
   let Visit moduleId hitPointId =
-    printfn "Visit %A %s %d" Recording moduleId hitPointId
     if Recording then
       VisitSelection (PayloadSelector IsOpenCoverRunner) moduleId hitPointId
 

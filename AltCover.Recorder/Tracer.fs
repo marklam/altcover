@@ -60,6 +60,25 @@ type Tracer =
                        Runner = true })
       |> Seq.head
     else this
+    (* 105, 106 exist
+The active test run was aborted. Reason: Unhandled Exception: System.IO.IOException: The process cannot access the file 'C:\Users\steve\Documents\GitHub\sawdust-master\sd_tests\coverage.xml.105.acv' because it is being used by another process.
+   at System.IO.FileStream.ValidateFileHandle(SafeFileHandle fileHandle)
+   at System.IO.FileStream.CreateFileOpenHandle(FileMode mode, FileShare share, FileOptions options)
+   at System.IO.FileStream..ctor(String path, FileMode mode, FileAccess access, FileShare share, Int32 bufferSize, FileOptions options)
+   at <StartupCode$AltCover-Recorder>.$Tracer.Connect@53.Invoke(String f)
+   at Microsoft.FSharp.Collections.Internal.IEnumerator.map@74.DoMoveNext(b& curr)
+   at Microsoft.FSharp.Collections.Internal.IEnumerator.MapEnumerator`1.System-Collections-IEnumerator-MoveNext()
+   at Microsoft.FSharp.Collections.SeqModule.Head[T](IEnumerable`1 source)
+   at AltCover.Recorder.Tracer.OnStart()
+   at AltCover.Recorder.Instance.WithMutex[a](FSharpFunc`2 f)
+   at AltCover.Recorder.Instance.get_Instance@135.Invoke(Boolean _arg2)
+   at AltCover.Recorder.Instance.WithMutex[a](FSharpFunc`2 f)
+   at AltCover.Recorder.Instance.TraceOut.get_Instance()
+   at AltCover.Recorder.Instance.VisitImpl(String moduleId, Int32 hitPointId, Track context)
+   at EricSinkMultiCoreLib.multicore.<>c__DisplayClass7_2`2.<Map_ResultsIndexed>b__0(Object obj) in C:\Users\steve\Documents\GitHub\sawdust-master\sd\multicore.cs:line 196
+   at System.Threading.QueueUserWorkItemCallback.Execute()
+   at System.Threading.ThreadPoolWorkQueue.Dispatch()
+    *)
 
   static member Close() =
     Extra.streams |> Seq.iter (fun (s,f) ->
@@ -88,9 +107,10 @@ type Tracer =
     let empty = Null
     visits.Keys
     |> Seq.iter (fun moduleId ->
-         visits.[moduleId].Keys
+         let m = visits.[moduleId]
+         m.Keys
          |> Seq.iter (fun hitPointId ->
-              let n, l = visits.[moduleId].[hitPointId]
+              let n, l = m.[hitPointId]
               let push = this.Push moduleId hitPointId
               [ seq { 1..n } |> Seq.map (fun _ -> empty)
                 l |> List.toSeq ]
@@ -114,7 +134,6 @@ type Tracer =
     then Tracer.Close()
 
   member internal this.OnVisit visits moduleId hitPointId context =
-    printfn "Tracer.OnVisit %s %d" moduleId hitPointId
     this.CatchUp visits
     this.Push moduleId hitPointId context
     this.Formatter.Flush()

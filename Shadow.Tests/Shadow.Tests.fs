@@ -665,6 +665,7 @@ type AltCoverTests() =
                                        Formatter = null
                                        Runner = false
                                        Definitive = false }
+          Instance.TraceOut.ToFile <- false
           try
             Adapter.VisitsClear()
             use stdout = new StringWriter()
