@@ -159,7 +159,15 @@ module internal Visitor =
 
   let internal inplace = ref false
   let mutable internal single = false
+  let Sampling() =
+    (if single then Base.Sampling.Single
+               else Base.Sampling.All) |> int
   let internal sourcelink = ref false
+  let internal defer = ref (Some false)
+  let internal deferOpCode () =
+    if Option.getOrElse false !defer
+                         then OpCodes.Ldc_I4_1
+                         else OpCodes.Ldc_I4_0
 
   let mutable internal inputDirectory : Option<string> = None
   let private defaultInputDirectory = "."
@@ -225,13 +233,19 @@ module internal Visitor =
   let mutable private MethodNumber : int = 0
   let mutable internal SourceLinkDocuments : Dictionary<string, string> option = None
 
+  let internal EnsureEndsWith c (s:string) =
+    if s.EndsWith (c, StringComparison.Ordinal)
+    then s
+    else s + c
+
   let internal GetRelativePath (relativeTo:string) path =
-    let uri = new Uri(if relativeTo.EndsWith(Path.DirectorySeparatorChar.ToString(),
-                                              StringComparison.Ordinal)
-                      then relativeTo
-                      else relativeTo + Path.DirectorySeparatorChar.ToString())
-    Uri.UnescapeDataString(uri.MakeRelativeUri(new Uri(path)).ToString()).
-        Replace(Path.AltDirectorySeparatorChar, Path.DirectorySeparatorChar)
+    if Path.GetFullPath path = Path.GetFullPath relativeTo
+    then String.Empty
+    else
+      let ender = EnsureEndsWith <| Path.DirectorySeparatorChar.ToString()
+      let uri = new Uri(ender relativeTo)
+      Uri.UnescapeDataString(uri.MakeRelativeUri(new Uri(path)).ToString()).
+            Replace(Path.AltDirectorySeparatorChar, Path.DirectorySeparatorChar)
 
   let internal Exists (url:Uri) =
     let request = System.Net.WebRequest.CreateHttp(url)
@@ -243,17 +257,19 @@ module internal Visitor =
     with
     | :? WebException -> false
 
+  let internal FindClosestMatch  file (dict : Dictionary<string, string>) =
+    dict.Keys
+    |> Seq.filter (fun x -> x |> Path.GetFileName = "*")
+    |> Seq.map (fun x -> (x, GetRelativePath (x |> Path.GetDirectoryName) (file |> Path.GetDirectoryName)))
+    |> Seq.filter (fun (x, r) -> r.IndexOf("..") < 0)
+    |> Seq.sortBy (fun (x, r) -> r.Length)
+    |> Seq.tryHead
+
   [<SuppressMessage("Microsoft.Usage",
                     "CA2208:InstantiateArgumentExceptionsCorrectly",
                     Justification = "F# inlined code")>]
-  let internal LocateMatch file (dict : Dictionary<string, string>) =
-    let find =
-      dict.Keys
-      |> Seq.filter (fun x -> x |> Path.GetFileName = "*")
-      |> Seq.map (fun x -> (x, GetRelativePath (x |> Path.GetDirectoryName) (file |> Path.GetDirectoryName)))
-      |> Seq.filter (fun (x, r) -> r.IndexOf("..") < 0)
-      |> Seq.sortBy (fun (x, r) -> r.Length)
-      |> Seq.tryHead
+  let internal LocateMatch file dict =
+    let find = FindClosestMatch file dict
 
     match find with
     | Some (best, relative) ->
@@ -621,18 +637,7 @@ module internal Visitor =
   let private ExtractBranchPoints dbg methodFullName rawInstructions interesting =
     // Generated MoveNext => skip one branch
     let skip = IsMoveNext.IsMatch methodFullName |> Augment.Increment
-    [ rawInstructions |> Seq.cast ]
-    |> Seq.filter (fun _ ->
-         dbg
-         |> isNull
-         |> not)
-    |> Seq.concat
-    |> Seq.filter
-         (fun (i : Instruction) -> i.OpCode.FlowControl = FlowControl.Cond_Branch)
-    |> Seq.mapi (fun n i -> (n, i)) //
-    |> Seq.filter (fun (n, _) -> n >= skip) // like skip, but OK if there aren't enough elements
-    |> Seq.map snd //
-    |> Seq.map (fun (i : Instruction) ->
+    (Seq.map (snd >> (fun (i : Instruction) ->
          getJumps dbg i // if two or more jumps go between the same two places, coalesce them
          |> List.groupBy (fun (_, _, o, _) -> o)
          |> List.map (fun (_, records) ->
@@ -642,7 +647,16 @@ module internal Visitor =
                |> List.map (fun (_, _, _, n) -> n)
                |> List.sort))
          |> List.sortBy (fun (_, _, l) -> l.Head)
-         |> indexList)
+         |> indexList)) ([ rawInstructions |> Seq.cast ]
+    |> Seq.filter (fun _ ->
+         dbg
+         |> isNull
+         |> not)
+    |> Seq.concat
+    |> Seq.filter
+         (fun (i : Instruction) -> i.OpCode.FlowControl = FlowControl.Cond_Branch)
+    |> Seq.mapi (fun n i -> (n, i)) //
+    |> Seq.filter (fun (n, _) -> n >= skip)))
     |> Seq.filter (fun l -> l.Length > 1)
     |> Seq.collect id
     |> Seq.mapi (fun i (path, (from, target, indexes)) ->
