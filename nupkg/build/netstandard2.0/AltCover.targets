@@ -25,6 +25,8 @@
   <Target Name="AltCoverRunPreparation" Condition="'$(AltCover)' == 'true'">
     <ItemGroup>
       <AltCoverXmlOutput Include="$(AltCoverXmlReport)" />
+      <InputDirectory Include="$(TargetDir)" />
+      <OutputDirectory Include="$(TargetDir)__Saved" />
     </ItemGroup>
 
     <PropertyGroup>
@@ -35,8 +37,10 @@
     <AltCover.PowerShell Condition="'$(AltCoverIpmo)' == 'true'" />
     <AltCover.GetVersion Condition="'$(AltCoverGetVersion)' == 'true'" />
     <AltCover.Prepare
-      InputDirectory="$(TargetDir)"
-      OutputDirectory="$(TargetDir)__Saved"
+      InputDirectories="@(InputDirectory)"
+      OutputDirectories="@(OutputDirectory)"
+      StrongNameKey="$(AltCoverStrongNameKey)"
+      Keys="$(AltCoverKeys.Split('|'))"
       XmlReport="$(AltCoverXmlReport)"
       OpenCover="$(AltCoverOpenCover)"
       FileFilter="$(AltCoverFileFilter.Replace('\',%00).Split('|'))"
