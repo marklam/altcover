@@ -85,13 +85,7 @@ type AltCoverTests3() =
     [<Test>]
     member self.ShouldHaveExpectedOptions() =
       let options = Main.DeclareOptions()
-      Assert.That(options.Count, Is.EqualTo
-#if NETCOREAPP2_0
-                                            24
-#else
-                                            26
-#endif
-                 )
+      Assert.That(options.Count, Is.EqualTo 26)
       Assert.That
         (options
          |> Seq.filter (fun x -> x.Prototype <> "<>")
@@ -287,6 +281,33 @@ type AltCoverTests3() =
                 match x with
                 | FilterClass.Assembly i -> i.ToString()
                 | _ -> "*"), Is.EquivalentTo [| "1"; "2"; "3"; "4"; "p"; "q"; "5"; "6" |])
+      finally
+        Visitor.NameFilters.Clear()
+
+    [<Test>]
+    member self.ParsingEscapeCasesWork() =
+      try
+        Visitor.NameFilters.Clear()
+        let options = Main.DeclareOptions()
+        let input = [| "-s"; "1\u0001a"; "--s"; "\u0000d"; "/s"; "3"; "-s=4;;p;q"; "--s=5"; "/s=6" |]
+        let parse = CommandLine.ParseCommandLine input options
+        match parse with
+        | Left _ -> Assert.Fail()
+        | Right(x, y) ->
+          Assert.That(y, Is.SameAs options)
+          Assert.That(x, Is.Empty)
+        Assert.That(Visitor.NameFilters.Count, Is.EqualTo 7)
+        Assert.That(Visitor.NameFilters
+                    |> Seq.forall (fun x ->
+                         match x with
+                         | FilterClass.Assembly _ -> true
+                         | _ -> false))
+        Assert.That
+          (Visitor.NameFilters
+           |> Seq.map (fun x ->
+                match x with
+                | FilterClass.Assembly i -> i.ToString()
+                | _ -> "*"), Is.EquivalentTo [| "1|a"; "\\d"; "3"; "4;p"; "q"; "5"; "6" |])
       finally
         Visitor.NameFilters.Clear()
 
@@ -1988,17 +2009,12 @@ type AltCoverTests3() =
                                input directory
   -d, --dependency=VALUE     Optional, multiple: assembly path to resolve
                                missing reference.
-"""
-#if NETCOREAPP2_0
-#else
-                     + """  -k, --key=VALUE            Optional, multiple: any other strong-name key to
+  -k, --key=VALUE            Optional, multiple: any other strong-name key to
                                use
       --sn, --strongNameKey=VALUE
                              Optional: The default strong naming key to apply
                                to instrumented assemblies (default: None)
-"""
-#endif
-                     + """  -x, --xmlReport=VALUE      Optional: The output report template file (default:
+  -x, --xmlReport=VALUE      Optional: The output report template file (default:
                                 coverage.xml in the current directory)
   -f, --fileFilter=VALUE     Optional, multiple: source file name to exclude
                                from instrumentation
@@ -2096,17 +2112,12 @@ or
                                input directory
   -d, --dependency=VALUE     Optional, multiple: assembly path to resolve
                                missing reference.
-"""
-#if NETCOREAPP2_0
-#else
-                     + """  -k, --key=VALUE            Optional, multiple: any other strong-name key to
+  -k, --key=VALUE            Optional, multiple: any other strong-name key to
                                use
       --sn, --strongNameKey=VALUE
                              Optional: The default strong naming key to apply
                                to instrumented assemblies (default: None)
-"""
-#endif
-                     + """  -x, --xmlReport=VALUE      Optional: The output report template file (default:
+  -x, --xmlReport=VALUE      Optional: The output report template file (default:
                                 coverage.xml in the current directory)
   -f, --fileFilter=VALUE     Optional, multiple: source file name to exclude
                                from instrumentation
