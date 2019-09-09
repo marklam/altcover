@@ -205,16 +205,20 @@ type Fix<'T> = delegate of 'T -> Fix<'T>
 module internal Visitor =
   let internal collect = ref false
   let internal TrackingNames = new List<String>()
+  let internal DefaultFilter (s : Regex) =
+    (s, Exclude)
 
   let internal NameFilters = new List<FilterClass>()
 
   let private specialCaseFilters =
     [ @"^CompareTo\$cont\@\d+\-?\d$"
       |> Regex
+      |> DefaultFilter
       |> FilterClass.Method ]
 
   let internal inplace = ref false
   let mutable internal single = false
+  let mutable internal local = false
   let Sampling() =
     (if single then Base.Sampling.Single
                else Base.Sampling.All) |> int
@@ -279,8 +283,39 @@ module internal Visitor =
     let index = KeyStore.KeyToIndex key
     keys.[index] <- KeyStore.KeyToRecord key
 
+  let methodFile (m : MethodDefinition) =
+    m.DebugInformation.SequencePoints
+    |> Seq.tryHead // assume methods can only be in one file
+    |> Option.map (fun sp -> sp.Document.Url)
+
+  let typeFiles (t : TypeDefinition) =
+    Option.nullable t.Methods
+    |> Option.map (fun ms -> ms
+                             |> Seq.map methodFile
+                             |> Seq.choose id
+                             |> Seq.distinct)
+
+  let moduleFiles (m : ModuleDefinition) =
+    m.GetAllTypes()
+    |> Seq.map typeFiles
+    |> Seq.choose id
+    |> Seq.collect id
+    |> Seq.distinct
+
+  let localFilter (nameProvider : Object) =
+    match nameProvider with
+    | :? AssemblyDefinition as a -> local &&
+                                    a.MainModule
+                                    |> moduleFiles
+                                    |> Seq.tryHead
+                                    |> Option.map File.Exists
+                                    |> Option.getOrElse false
+                                    |> not
+    | _ -> false
+
   let IsIncluded(nameProvider : Object) =
-    if (NameFilters |> Seq.exists (Filter.Match nameProvider)) then Inspect.Ignore
+    if (NameFilters |> Seq.exists (Filter.Match nameProvider))
+       || localFilter nameProvider then Inspect.Ignore
     else Inspect.Instrument
 
   let Mask = ~~~Inspect.Instrument
@@ -381,6 +416,10 @@ module internal Visitor =
                                                 x
                                                 |> accumulator.Add
                                                 |> ignore
+
+                                                // can't delay reading symbols any more
+                                                ProgramDatabase.ReadSymbols(x)
+
                                                 // Reject completely if filtered here
                                                 let inspection = IsIncluded x
 
@@ -389,7 +428,6 @@ module internal Visitor =
                                                                     && ReportFormat() = Base.ReportFormat.OpenCoverWithTracking then
                                                                    Inspect.Track
                                                                  else Inspect.Ignore
-                                                ProgramDatabase.ReadSymbols(x)
                                                 Assembly(x, included, targets)))
                     >> buildSequence)
 

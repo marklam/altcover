@@ -2,6 +2,20 @@ Q. Never mind the fluff -- how do I get started?
 
 A. Start with the Quick Start guide : https://github.com/SteveGilham/altcover/wiki/QuickStart-Guide
 
+# 6.1.7xx (Fukurou series release 5)
+* [HACK] mitigate Issue #71 by simply ignoring null module identifiers.
+* Use a leading `?` as a negator for filter matches e.g. `?(a|b)` means "exclude anything that doesn't match a or match b", or `?MyApp` means exclude anything that doesn't contain `MyApp`; no valid .net regex begins with this so it's backwards compatible.  Between this and the previous release's `--localSource` option, the need to resort to cumbersome constructs involving negative lookahead regexes should be reduced.
+
+# 6.1.708 (Fukurou series release 4)
+* [BUGFIX] reinstate the PowerShell Core (`pwsh`) `Invoke-AltCover` support for strongnaming.
+* [API] `-l|--localSource` option (bool `LocalSource` default false in API, `-LocalSource` PowerShell flag) to ignore .pdb files that refer to source files not present on the current computer (test is if the first file found exists or not, and assumes that this is all-or-nothing, and assume no coincidences in naming).
+---
+# 6.0.705 (Fukurou series release 3)
+* [BUGFIX] in the case of multiple output folders, properly weave the AltCover recorder assembly dependency into all `dotnet` projects, not just the first.
+* [BUGFIX] when using the `dotnet` version of the tools, and when a suitable FSharp.Core package is present in the nuget cache, it is not necessary to copy one from the AltCover deployment to the output folder for a `dotnet` project
+* [BUGFIX] create the directory to hold the report file if it does not already exists
+* Use Mono.Cecil 0.11 for strongnaming in `dotnet`, removing the local reimplementation of assembly writing with strongnaming.
+
 # 6.0.700 (Fukurou series release 2)
 * [BUGFIX] in `dotnet test` the pipe character `|` is used as a separator because the previous choice of `;` didn't play nice with MSBuild.  To escape pipe characters inside regular expressions, double them up `||`.  See the [Usage](https://github.com/SteveGilham/altcover/wiki/Usage) and [`dotnet test`](https://github.com/SteveGilham/altcover/wiki/%60dotnet-test%60-integration) wiki pages for more detail.
 
