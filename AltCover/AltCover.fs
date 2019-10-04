@@ -22,7 +22,7 @@ type internal AssemblyInfo =
 module internal Main =
   let init() =
     CommandLine.error <- []
-    CommandLine.dropReturnCode := false
+    CommandLine.dropReturnCode := false // ddFlag
     Visitor.defer := None
     Visitor.inputDirectories.Clear()
     Visitor.outputDirectories.Clear()
@@ -44,13 +44,13 @@ module internal Main =
     Visitor.interval <- None
     Visitor.TrackingNames.Clear()
     Visitor.reportFormat <- None
-    Visitor.inplace := false
-    Visitor.collect := false
-    Visitor.single <- false
-    Visitor.local <- false
+    Visitor.inplace := false // ddFlag
+    Visitor.collect := false // ddFlag
+    Visitor.local := false // ddFlag
+    Visitor.single <- false // more complicated
     Visitor.coverstyle <- CoverStyle.All
-    Visitor.sourcelink := false
-    Visitor.coalesceBranches <- false
+    Visitor.sourcelink := false // ddFlag
+    Visitor.coalesceBranches := false // ddFlag
 
   let ValidateCallContext predicate x =
     if not (String.IsNullOrWhiteSpace x) then
@@ -59,8 +59,9 @@ module internal Main =
         if predicate || k.Length > 1 then
           CommandLine.error <-
             String.Format
-              (CultureInfo.CurrentCulture, CommandLine.resources.GetString "InvalidValue",
-               "--callContext", x) :: CommandLine.error
+              (CultureInfo.CurrentCulture, CommandLine.resources.GetString(
+                (if predicate then "MultiplesNotAllowed" else "InvalidValue")),
+                "--callContext", x) :: CommandLine.error
           (false, Left None)
         else
           let (ok, n) = Int32.TryParse(k)
@@ -81,10 +82,10 @@ module internal Main =
       (false, Left None)
 
   let internal DeclareOptions() =
-    let makeFilter filterclass (x: String) =
+    let makeFilter filterscope (x: String) =
       x.Replace('\u0000', '\\').Replace('\u0001','|')
       |> CommandLine.ValidateRegexes
-      |> Seq.iter (filterclass >> Visitor.NameFilters.Add)
+      |> Seq.iter (FilterClass.Build filterscope >> Visitor.NameFilters.Add)
 
     [ ("i|inputDirectory=",
        (fun x ->
@@ -160,22 +161,14 @@ module internal Main =
          else
            CommandLine.doPathOperation
              (fun () -> Visitor.reportPath <- Some(Path.GetFullPath x)) () false))
-      ("f|fileFilter=", makeFilter FilterClass.File)
-      ("p|pathFilter=", makeFilter FilterClass.Path)
-      ("s|assemblyFilter=", makeFilter FilterClass.Assembly)
-      ("e|assemblyExcludeFilter=", makeFilter FilterClass.Module)
-      ("t|typeFilter=", makeFilter FilterClass.Type)
-      ("m|methodFilter=", makeFilter FilterClass.Method)
-      ("a|attributeFilter=", makeFilter FilterClass.Attribute)
-      ("l|localSource",
-       (fun _ ->
-       if Visitor.local then
-         CommandLine.error <-
-           String.Format
-             (CultureInfo.CurrentCulture,
-              CommandLine.resources.GetString "MultiplesNotAllowed", "--localSource")
-           :: CommandLine.error
-       else Visitor.local <- true))
+      ("f|fileFilter=", makeFilter FilterScope.File)
+      ("p|pathFilter=", makeFilter FilterScope.Path)
+      ("s|assemblyFilter=", makeFilter FilterScope.Assembly)
+      ("e|assemblyExcludeFilter=", makeFilter FilterScope.Module)
+      ("t|typeFilter=", makeFilter FilterScope.Type)
+      ("m|methodFilter=", makeFilter FilterScope.Method)
+      ("a|attributeFilter=", makeFilter FilterScope.Attribute)
+      (CommandLine.ddFlag "l|localSource" Visitor.local)
       ("c|callContext=",
        (fun x ->
        if Visitor.single then
@@ -275,15 +268,7 @@ module internal Main =
                (CultureInfo.CurrentCulture,
                 CommandLine.resources.GetString "MultiplesNotAllowed", "--defer")
              :: CommandLine.error))
-      ("v|visibleBranches",
-       (fun _ ->
-       if Visitor.coalesceBranches then
-         CommandLine.error <-
-           String.Format
-             (CultureInfo.CurrentCulture,
-              CommandLine.resources.GetString "MultiplesNotAllowed", "--visibleBranches")
-           :: CommandLine.error
-       else Visitor.coalesceBranches <- true))
+      (CommandLine.ddFlag "v|visibleBranches" Visitor.coalesceBranches)
       ("?|help|h", (fun x -> CommandLine.help <- not (isNull x)))
 
       ("<>",
@@ -493,8 +478,8 @@ module internal Main =
       |> ProcessOutputLocation
     match check1 with
     | Left(intro, options) ->
-      CommandLine.HandleBadArguments dotnetBuild arguments intro options
-        (Runner.DeclareOptions())
+      CommandLine.HandleBadArguments dotnetBuild arguments
+        { Intro = intro; Options = options; Options2 = Runner.DeclareOptions() }
       255
     | Right(rest, fromInfo, toInfo, targetInfo) ->
       let report = Visitor.ReportPath()

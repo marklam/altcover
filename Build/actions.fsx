@@ -23,13 +23,6 @@ module Actions =
         (DirectoryInfo ".").GetDirectories("*", SearchOption.AllDirectories)
         |> Seq.filter (fun x -> x.Name.StartsWith "_" || x.Name = "bin" || x.Name = "obj")
         |> Seq.filter (fun n ->
-             match n.Name with
-             | "obj" ->
-               Path.Combine(n.FullName, "dotnet-fake.fsproj.nuget.g.props")
-               |> File.Exists
-               |> not
-             | _ -> true)
-        |> Seq.filter (fun n ->
              "packages"
              |> Path.GetFullPath
              |> n.FullName.StartsWith
@@ -222,9 +215,9 @@ do ()"""
       |> Seq.map (fun x -> x.Attribute(XName.Get("visitcount")).Value)
       |> Seq.toList
 
-    let expected = "0 1 1 1 1 1 1 1 0 0 0 0 0 0 0 0 0 0 0 2 1 1 1"
+    let expected = "0 1 1 1 1 1 1 0 0 0 0 0 0 0 2 1 1 1"
     Assert.That
-      (recorded, expected.Split() |> Is.EquivalentTo, sprintf "Bad visit list %A" recorded)
+      (String.Join(" ", recorded), expected |> Is.EqualTo, sprintf "Bad visit list %A" recorded)
 
   let ValidateSample1 simpleReport sigil =
     // get recorded details from here
@@ -320,9 +313,12 @@ do ()"""
                                          WorkingDirectory = sampleRoot }
 
     AltCover.run parameters
+    System.Threading.Thread.Sleep(1000)
 
     Run (sampleRoot @@ (instrumented + "/Sample1.exe"), (sampleRoot @@ instrumented), [])
       "Instrumented .exe failed"
+    System.Threading.Thread.Sleep(1000)
+
     ValidateSample1 simpleReport reportSigil
 
   let SimpleInstrumentingRunUnderMono (samplePath : string) (binaryPath : string)
@@ -451,9 +447,9 @@ a:hover {color: #ecc;}
       |> Seq.map (fun x -> x.Attribute(XName.Get("vc")).Value)
       |> Seq.toList
 
-    let expected = "0 1 1 1 1 1 1 1 0 0 0 0 0 0 0 0 0 0 0 2 1 1 1"
+    let expected = "0 1 1 1 1 1 1 0 0 0 0 0 0 0 2 1 1 1"
     Assert.That
-      (recorded, expected.Split() |> Is.EquivalentTo, sprintf "Bad visit list %A" recorded)
+      (String.Join(" ", recorded), expected |> Is.EqualTo, sprintf "Bad visit list %A" recorded)
     printfn "Visits OK"
     coverageDocument.Descendants(XName.Get("SequencePoint"))
     |> Seq.iter (fun sp ->
@@ -480,7 +476,6 @@ a:hover {color: #ecc;}
        |> Seq.map (fun x -> x.ToString()),
        Is.EquivalentTo
          [ "<TrackedMethodRef uid=\"1\" vc=\"1\" />"
-           "<TrackedMethodRef uid=\"1\" vc=\"1\" />"
            "<TrackedMethodRef uid=\"1\" vc=\"1\" />"
            "<TrackedMethodRef uid=\"1\" vc=\"1\" />"
            "<TrackedMethodRef uid=\"1\" vc=\"1\" />"
