@@ -2,12 +2,25 @@ Q. Never mind the fluff -- how do I get started?
 
 A. Start with the Quick Start guide : https://github.com/SteveGilham/altcover/wiki/QuickStart-Guide
 
+# 6.5.7xx  (Fukurou series release 10)
+* [API, Fake Helper API] Deprecate the `DotNet.TestOptions.WithParameters` extension method in favour of the otherwise identical `DotNet.TestOptions.WithAltCoverParameters`; the obsolete name now just calls through to the preferred one.
+* [Visualizer tool] Update GTK# for .net Core
+* [BUGFIX] In `ConvertFrom-NCover`, don't add classes for which there is no method coverage data.  This mainly affects system generated classes implementation details, including ones actually called `<PrivateImplementationDetails$...>...`
+
+# 6.4.734 (Fukurou series release 9)
+* [FAKE Helper API] Fake >= 5.18.1 is required for this release (the work-round for FAKE issue #2412 has been removed)
+* [FAKE Helper API] Add this constraint as an explicit dependency
+* [API] Add `Tool of String` a literal alongside `FilePath of String`, which is expanded to a full path to `TypeSafe.FilePath`
+* [API] Add `IncludeItem of Regex` which represents a `?`-prefix regex string to `TypeSafe.FilterItem`
+* Trap and log exceptions reported in Issue #71 as files `<coverage report path>.<timestamp>.exn`
+* Other housekeeping
+
 # 6.3.729 (Fukurou series release 8)
 * Filter out assemblies without the `ILOnly` bit set (i.e. pretty much anything C++/CLI, even with the deprecated /clr:pure compiler flag set)
 * [FAKE Helper API] Fake >= 5.18.0 is required for this release
 * [FAKE Helper API] Deprecate `AltCover_Fake.DotNet.Testing.AltCover.ToolType` in favour of `Fake.DotNet.ToolType` in the `AltCover_Fake.DotNet.Testing.AltCover.Params` record structure.  
 * [FAKE Helper API] Helper functions in `AltCover_Fake.DotNet.Testing.AltCover`
-  * `splitCommandLine: string -> string list` for breaking up composed command lines e.g. from `Fake.DotNet.Testing.NUnit3.buildArgs` or ``Fake.DotNet.Testing.XUnit2.buildArgs`
+  * `splitCommandLine: string -> string list` for breaking up composed command lines e.g. from `Fake.DotNet.Testing.NUnit3.buildArgs` or `Fake.DotNet.Testing.XUnit2.buildArgs`
   * `buildDotNetTestCommandLine: (DotNet.TestOptions -> DotNet.TestOptions) -> string -> (string * string list)` taking the arguments for `DotNet.test` and returning the `dotnet` path and the rest of the command line
   * `runWithMono: string option -> Params -> 'a` to execute the `Params` using the path to the Mono executable if it's a FAKE-style full framework tool on Windows (equivalent to the deprecated `AltCover.ToolType.Mono`)
   * `Params.WithToolType: Fake.DotNet.ToolType -> Params` Setting the new tool type using this member is the preferred forward-compatible way to do this
