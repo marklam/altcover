@@ -13,6 +13,7 @@ open NUnit.Framework
 open Swensen.Unquote
 open System.Security.Policy
 
+[<TestFixture>]
 module AltCoverTests2 =
 #if NETCOREAPP2_0
     let sample1 = "Sample1.dll"
@@ -1897,7 +1898,7 @@ module AltCoverTests2 =
         Assert.That
           (lines.[2].Replace("+", ".").Trim(),
            Does.StartWith
-             ("at <StartupCode$AltCover-Tests>.$Tests2.ArgumentExceptionWrites"))
+             ("at Tests.AltCoverTests2.ArgumentExceptionWrites@"))
         Assert.That
           (lines.[3].Trim(), Does.StartWith("at AltCover.CommandLine.doPathOperation"))
         Assert.That(lines |> List.skip 4, Is.Not.Empty)
@@ -1966,7 +1967,7 @@ module AltCoverTests2 =
         Assert.That
           (lines.[2].Replace("+", ".").Trim(),
            Does.StartWith
-             ("at <StartupCode$AltCover-Tests>.$Tests2.ArgumentExceptionWrites"))
+             ("at Tests.AltCoverTests2.ArgumentExceptionWritesEx@"))
         Assert.That
           (lines.[3].Trim(), Does.StartWith("at AltCover.CommandLine.doPathOperation"))
         Assert.That(lines |> List.skip 4, Is.Not.Empty)

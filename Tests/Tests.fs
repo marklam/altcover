@@ -37,6 +37,7 @@ type ProxyObject() =
       let methodinfo = t.GetMethod(methodName)
       methodinfo.Invoke(this.Object, args)
 
+[<TestFixture>]
 module AltCoverTests =
 #if NETCOREAPP2_0
     let sample1 = "Sample1.dll"

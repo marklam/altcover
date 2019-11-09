@@ -10,6 +10,7 @@ open Mono.Options
 open NUnit.Framework
 open Mono.Cecil.Cil
 
+[<TestFixture>]
 module AltCoverTests3 =
 #if NETCOREAPP2_0
     let monoSample1 = "../_Mono/Sample1"

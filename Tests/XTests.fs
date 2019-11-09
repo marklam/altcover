@@ -13,6 +13,7 @@ open Newtonsoft.Json.Linq
 open Swensen.Unquote
 open NUnit.Framework
 
+[<TestFixture>]
 module XTests =
   let test' x message =
     try
