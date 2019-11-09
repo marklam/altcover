@@ -13,7 +13,6 @@ open NUnit.Framework
 open Swensen.Unquote
 open System.Security.Policy
 
-[<TestFixture>]
 module AltCoverTests2 =
 #if NETCOREAPP2_0
     let sample1 = "Sample1.dll"

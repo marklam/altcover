@@ -16,6 +16,7 @@ open Mono.Cecil.Rocks
 open N
 open NUnit.Framework
 
+[<IncludeExcludeAttribute>]
 type ProxyObject() =
   inherit MarshalByRefObject()
 
@@ -37,7 +38,6 @@ type ProxyObject() =
       let methodinfo = t.GetMethod(methodName)
       methodinfo.Invoke(this.Object, args)
 
-[<TestFixture>]
 module AltCoverTests =
 #if NETCOREAPP2_0
     let sample1 = "Sample1.dll"
@@ -634,12 +634,12 @@ module AltCoverTests =
         Mono.Cecil.AssemblyDefinition.ReadAssembly
           (Assembly.GetExecutingAssembly().Location)
       def.MainModule.Types
-      |> Seq.filter (fun t -> t.IsPublic && t.Name.Contains("AltCover")
+      |> Seq.filter (fun t -> t.IsPublic && t.Name.Contains("ProxyObject")
                                          && (not (t.FullName.Contains("Coverlet.Core.Instrumentation")))) // exclude the many compiler generted chaff classes
       |> Seq.iter
            (fun t ->
-           Assert.That(Match t (FF(FilterScope.Attribute, Regex "Fix", Exclude)), Is.True, t.FullName)
-           Assert.That(Match t (FF(FilterScope.Attribute, Regex "Fix", Include)), Is.False, t.FullName))
+           Assert.That(Match t (FF(FilterScope.Attribute, Regex "Exclu", Exclude)), Is.True, t.FullName)
+           Assert.That(Match t (FF(FilterScope.Attribute, Regex "Exclu", Include)), Is.False, t.FullName))
 
     [<Test>]
     let CanExcludeCSharpPropertiesByAttribute() =
