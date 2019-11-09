@@ -20,7 +20,11 @@ open Swensen.Unquote
 
 module AltCoverTests =
     // Base.fs
+
+#if NETCOREAPP2_0
+#else
     [<Test>]
+#endif
     let SafeDisposalProtects() =
       Runner.init()
       let obj1 =
@@ -29,14 +33,20 @@ module AltCoverTests =
       Assist.SafeDispose obj1
       test <@ true @>
 
+#if NETCOREAPP2_0
+#else
     [<Test>]
+#endif
     let JunkUspidGivesNegativeIndex() =
       Runner.init()
       let key = " "
       let index = Counter.FindIndexFromUspid 0 key
       test <@ index < 0 @>
 
+#if NETCOREAPP2_0
+#else
     [<Test>]
+#endif
     let RealIdShouldIncrementCount() =
       Runner.init()
       let visits = new Dictionary<string, Dictionary<int, PointVisit>>()
@@ -49,7 +59,10 @@ module AltCoverTests =
       Assert.That(x.Count, Is.EqualTo 1)
       Assert.That(x.Tracks, Is.Empty)
 
+#if NETCOREAPP2_0
+#else
     [<Test>]
+#endif
     let RealIdShouldIncrementList() =
       Runner.init()
       let visits = new Dictionary<string, Dictionary<int, PointVisit>>()
@@ -63,7 +76,10 @@ module AltCoverTests =
       Assert.That(x.Count, Is.EqualTo 0)
       Assert.That(x.Tracks, Is.EquivalentTo [ payload ])
 
+#if NETCOREAPP2_0
+#else
     [<Test>]
+#endif
     let DistinctIdShouldBeDistinct() =
       Runner.init()
       let visits = new Dictionary<string, Dictionary<int, PointVisit>>()
@@ -74,7 +90,10 @@ module AltCoverTests =
       Assert.That(visits.Count, Is.EqualTo 2)
       Assert.That(v4, Is.EqualTo 1)
 
+#if NETCOREAPP2_0
+#else
     [<Test>]
+#endif
     let DistinctLineShouldBeDistinct() =
       Runner.init()
       let visits = new Dictionary<string, Dictionary<int, PointVisit>>()
@@ -86,7 +105,10 @@ module AltCoverTests =
       Assert.That(visits.Count, Is.EqualTo 1)
       Assert.That(visits.[key].Count, Is.EqualTo 2)
 
+#if NETCOREAPP2_0
+#else
     [<Test>]
+#endif
     let RepeatVisitsShouldIncrementCount() =
       Runner.init()
       let visits = new Dictionary<string, Dictionary<int, PointVisit>>()
@@ -99,7 +121,10 @@ module AltCoverTests =
       Assert.That(x.Count, Is.EqualTo 2)
       Assert.That(x.Tracks, Is.Empty)
 
+#if NETCOREAPP2_0
+#else
     [<Test>]
+#endif
     let RepeatVisitsShouldIncrementTotal() =
       Runner.init()
       let visits = new Dictionary<string, Dictionary<int, PointVisit>>()
@@ -121,7 +146,10 @@ module AltCoverTests =
       |> Seq.find
            (fun n -> n.EndsWith("Sample1WithOpenCover.xml", StringComparison.Ordinal))
 
+#if NETCOREAPP2_0
+#else
     [<Test>]
+#endif
     let KnownModuleWithPayloadMakesExpectedChangeInOpenCover() =
       Runner.init()
       Counter.measureTime <- DateTime.ParseExact
@@ -155,7 +183,10 @@ module AltCoverTests =
          |> Seq.cast<XmlElement>
          |> Seq.map (fun x -> x.GetAttribute("vc")), Is.EquivalentTo [ "2"; "2" ])
 
+#if NETCOREAPP2_0
+#else
     [<Test>]
+#endif
     let FlushLeavesExpectedTraces() =
       Runner.init()
       let saved = Console.Out
@@ -200,7 +231,10 @@ module AltCoverTests =
           Directory.Delete(unique)
         with :? IOException -> ()
 
+#if NETCOREAPP2_0
+#else
     [<Test>]
+#endif
     let FlushLeavesExpectedTracesWhenDiverted() =
       Runner.init()
       let saved = Console.Out
@@ -247,7 +281,10 @@ module AltCoverTests =
         with :? IOException -> ()
 
     // Runner.fs and CommandLine.fs
+#if NETCOREAPP2_0
+#else
     [<Test>]
+#endif
     let UsageIsAsExpected() =
       Runner.init()
       let options = Runner.DeclareOptions()
@@ -292,7 +329,10 @@ module AltCoverTests =
       finally
         Console.SetError saved
 
+#if NETCOREAPP2_0
+#else
     [<Test>]
+#endif
     let ShouldLaunchWithExpectedOutput() =
       Runner.init()
       // Hack for running while instrumented
@@ -353,7 +393,10 @@ module AltCoverTests =
         Console.SetOut(fst saved)
         Console.SetError(snd saved)
 
+#if NETCOREAPP2_0
+#else
     [<Test>]
+#endif
     let ShouldHaveExpectedOptions() =
       Runner.init()
       let options = Runner.DeclareOptions()
@@ -366,7 +409,10 @@ module AltCoverTests =
                   |> Seq.filter (fun x -> x.Prototype = "<>")
                   |> Seq.length, Is.EqualTo 1)
 
+#if NETCOREAPP2_0
+#else
     [<Test>]
+#endif
     let ParsingJunkIsAnError() =
       Runner.init()
       let options = Runner.DeclareOptions()
@@ -377,7 +423,10 @@ module AltCoverTests =
         Assert.That(x, Is.EqualTo "UsageError")
         Assert.That(y, Is.SameAs options)
 
+#if NETCOREAPP2_0
+#else
     [<Test>]
+#endif
     let ParsingJunkAfterSeparatorIsExpected() =
       Runner.init()
       let options = Runner.DeclareOptions()
@@ -389,7 +438,10 @@ module AltCoverTests =
         Assert.That(x, Is.EquivalentTo(input |> Seq.skip 1))
         Assert.That(y, Is.SameAs options)
 
+#if NETCOREAPP2_0
+#else
     [<Test>]
+#endif
     let ParsingHelpGivesHelp() =
       Runner.init()
       let options = Runner.DeclareOptions()
@@ -413,7 +465,10 @@ module AltCoverTests =
           Assert.That(y, Is.SameAs options)
           Assert.That(x, Is.Empty))
 
+#if NETCOREAPP2_0
+#else
     [<Test>]
+#endif
     let ParsingErrorHelpGivesHelp() =
       Runner.init()
       let options = Runner.DeclareOptions()
@@ -443,7 +498,10 @@ module AltCoverTests =
           Assert.That(y, Is.SameAs options)
           Assert.That(x, Is.Empty))
 
+#if NETCOREAPP2_0
+#else
     [<Test>]
+#endif
     let ParsingExeGivesExe() =
       Runner.init()
       lock Runner.executable (fun () ->
@@ -464,7 +522,10 @@ module AltCoverTests =
         finally
           Runner.executable := None)
 
+#if NETCOREAPP2_0
+#else
     [<Test>]
+#endif
     let ParsingMultipleExeGivesFailure() =
       Runner.init()
       lock Runner.executable (fun () ->
@@ -489,7 +550,10 @@ module AltCoverTests =
         finally
           Runner.executable := None)
 
+#if NETCOREAPP2_0
+#else
     [<Test>]
+#endif
     let ParsingNoExeGivesFailure() =
       Runner.init()
       lock Runner.executable (fun () ->
@@ -507,7 +571,10 @@ module AltCoverTests =
         finally
           Runner.executable := None)
 
+#if NETCOREAPP2_0
+#else
     [<Test>]
+#endif
     let ParsingWorkerGivesWorker() =
       Runner.init()
       try
@@ -527,7 +594,10 @@ module AltCoverTests =
       finally
         Runner.workingDirectory <- None
 
+#if NETCOREAPP2_0
+#else
     [<Test>]
+#endif
     let ParsingMultipleWorkerGivesFailure() =
       Runner.init()
       try
@@ -550,7 +620,10 @@ module AltCoverTests =
       finally
         Runner.workingDirectory <- None
 
+#if NETCOREAPP2_0
+#else
     [<Test>]
+#endif
     let ParsingBadWorkerGivesFailure() =
       Runner.init()
       try
@@ -567,7 +640,10 @@ module AltCoverTests =
       finally
         Runner.workingDirectory <- None
 
+#if NETCOREAPP2_0
+#else
     [<Test>]
+#endif
     let ParsingNoWorkerGivesFailure() =
       Runner.init()
       try
@@ -583,7 +659,10 @@ module AltCoverTests =
       finally
         Runner.workingDirectory <- None
 
+#if NETCOREAPP2_0
+#else
     [<Test>]
+#endif
     let ParsingRecorderGivesRecorder() =
       Runner.init()
       try
@@ -603,7 +682,10 @@ module AltCoverTests =
       finally
         Runner.recordingDirectory <- None
 
+#if NETCOREAPP2_0
+#else
     [<Test>]
+#endif
     let ParsingMultipleRecorderGivesFailure() =
       Runner.init()
       try
@@ -626,7 +708,10 @@ module AltCoverTests =
       finally
         Runner.recordingDirectory <- None
 
+#if NETCOREAPP2_0
+#else
     [<Test>]
+#endif
     let ParsingBadRecorderGivesFailure() =
       Runner.init()
       try
@@ -643,7 +728,10 @@ module AltCoverTests =
       finally
         Runner.recordingDirectory <- None
 
+#if NETCOREAPP2_0
+#else
     [<Test>]
+#endif
     let ParsingNoRecorderGivesFailure() =
       Runner.init()
       try
@@ -659,7 +747,10 @@ module AltCoverTests =
       finally
         Runner.recordingDirectory <- None
 
+#if NETCOREAPP2_0
+#else
     [<Test>]
+#endif
     let ParsingCollectGivesCollect() =
       Runner.init()
       try
@@ -676,7 +767,10 @@ module AltCoverTests =
       finally
         Runner.collect := false
 
+#if NETCOREAPP2_0
+#else
     [<Test>]
+#endif
     let ParsingMultipleCollectGivesFailure() =
       Runner.init()
       try
@@ -693,7 +787,10 @@ module AltCoverTests =
       finally
         Runner.collect := false
 
+#if NETCOREAPP2_0
+#else
     [<Test>]
+#endif
     let ParsingLcovGivesLcov() =
       Runner.init()
       lock LCov.path (fun () ->
@@ -717,7 +814,10 @@ module AltCoverTests =
           Runner.Summaries <- [ Runner.StandardSummary ]
           LCov.path := None)
 
+#if NETCOREAPP2_0
+#else
     [<Test>]
+#endif
     let ParsingMultipleLcovGivesFailure() =
       Runner.init()
       lock LCov.path (fun () ->
@@ -744,7 +844,10 @@ module AltCoverTests =
           Runner.Summaries <- [ Runner.StandardSummary ]
           LCov.path := None)
 
+#if NETCOREAPP2_0
+#else
     [<Test>]
+#endif
     let ParsingNoLcovGivesFailure() =
       Runner.init()
       lock LCov.path (fun () ->
@@ -764,7 +867,10 @@ module AltCoverTests =
           Runner.Summaries <- [ Runner.StandardSummary ]
           LCov.path := None)
 
+#if NETCOREAPP2_0
+#else
     [<Test>]
+#endif
     let ParsingThresholdGivesThreshold() =
       Runner.init()
       try
@@ -783,7 +889,10 @@ module AltCoverTests =
       finally
         Runner.threshold <- None
 
+#if NETCOREAPP2_0
+#else
     [<Test>]
+#endif
     let ParsingMultipleThresholdGivesFailure() =
       Runner.init()
       try
@@ -800,7 +909,10 @@ module AltCoverTests =
       finally
         Runner.threshold <- None
 
+#if NETCOREAPP2_0
+#else
     [<Test>]
+#endif
     let ParsingBadThresholdGivesFailure() =
       Runner.init()
       try
@@ -816,7 +928,10 @@ module AltCoverTests =
       finally
         Runner.threshold <- None
 
+#if NETCOREAPP2_0
+#else
     [<Test>]
+#endif
     let ParsingEmptyThresholdGivesFailure() =
       Runner.init()
       try
@@ -832,7 +947,10 @@ module AltCoverTests =
       finally
         Runner.threshold <- None
 
+#if NETCOREAPP2_0
+#else
     [<Test>]
+#endif
     let ParsingNoThresholdGivesFailure() =
       Runner.init()
       try
@@ -848,7 +966,10 @@ module AltCoverTests =
       finally
         Runner.threshold <- None
 
+#if NETCOREAPP2_0
+#else
     [<Test>]
+#endif
     let ParsingCoberturaGivesCobertura() =
       Runner.init()
       lock Cobertura.path (fun () ->
@@ -872,7 +993,10 @@ module AltCoverTests =
           Runner.Summaries <- [ Runner.StandardSummary ]
           Cobertura.path := None)
 
+#if NETCOREAPP2_0
+#else
     [<Test>]
+#endif
     let ParsingMultipleCoberturaGivesFailure() =
       Runner.init()
       lock Cobertura.path (fun () ->
@@ -899,7 +1023,10 @@ module AltCoverTests =
           Runner.Summaries <- [ Runner.StandardSummary ]
           Cobertura.path := None)
 
+#if NETCOREAPP2_0
+#else
     [<Test>]
+#endif
     let ParsingNoCoberturaGivesFailure() =
       Runner.init()
       lock Cobertura.path (fun () ->
@@ -919,7 +1046,10 @@ module AltCoverTests =
           Runner.Summaries <- [ Runner.StandardSummary ]
           Cobertura.path := None)
 
+#if NETCOREAPP2_0
+#else
     [<Test>]
+#endif
     let ParsingOutputGivesOutput() =
       Runner.init()
       try
@@ -939,7 +1069,10 @@ module AltCoverTests =
       finally
         Runner.output <- None
 
+#if NETCOREAPP2_0
+#else
     [<Test>]
+#endif
     let ParsingMultipleOutputGivesFailure() =
       Runner.init()
       try
@@ -964,7 +1097,10 @@ module AltCoverTests =
       finally
         Runner.output <- None
 
+#if NETCOREAPP2_0
+#else
     [<Test>]
+#endif
     let ParsingNoOutputGivesFailure() =
       Runner.init()
       try
@@ -981,7 +1117,10 @@ module AltCoverTests =
       finally
         Runner.output <- None
 
+#if NETCOREAPP2_0
+#else
     [<Test>]
+#endif
     let ParsingDropGivesDrop() =
       Runner.init()
       try
@@ -998,7 +1137,10 @@ module AltCoverTests =
       finally
         CommandLine.dropReturnCode := false
 
+#if NETCOREAPP2_0
+#else
     [<Test>]
+#endif
     let ParsingMultipleDropGivesFailure() =
       Runner.init()
       try
@@ -1015,7 +1157,10 @@ module AltCoverTests =
       finally
         CommandLine.dropReturnCode := false
 
+#if NETCOREAPP2_0
+#else
     [<Test>]
+#endif
     let ParsingTCString() =
       Runner.init()
       [
@@ -1039,7 +1184,10 @@ module AltCoverTests =
                                                Is.EqualTo y,
                                                x))
 
+#if NETCOREAPP2_0
+#else
     [<Test>]
+#endif
     let ParsingTCGivesTC() =
       Runner.init()
       [
@@ -1072,7 +1220,10 @@ module AltCoverTests =
           | x when v = x -> Assert.Pass()
           | _ -> Assert.Fail(sprintf "%A %A => %A" a v Runner.SummaryFormat) ))
 
+#if NETCOREAPP2_0
+#else
     [<Test>]
+#endif
     let ParsingMultipleTCGivesFailure() =
       Runner.init()
       lock Runner.SummaryFormat (fun () ->
@@ -1087,7 +1238,10 @@ module AltCoverTests =
           Assert.That(x, Is.EqualTo "UsageError")
           Assert.That(CommandLine.error |> Seq.head, Is.EqualTo "--teamcity : specify this only once"))
 
+#if NETCOREAPP2_0
+#else
     [<Test>]
+#endif
     let ParsingBadTCGivesFailure() =
       Runner.init()
       lock Runner.SummaryFormat (fun () ->
@@ -1102,7 +1256,10 @@ module AltCoverTests =
           Assert.That(y, Is.SameAs options)
           Assert.That(x, Is.EqualTo "UsageError"))
 
+#if NETCOREAPP2_0
+#else
     [<Test>]
+#endif
     let ShouldRequireExe() =
       Runner.init()
       lock Runner.executable (fun () ->
@@ -1118,7 +1275,10 @@ module AltCoverTests =
         finally
           Runner.executable := None)
 
+#if NETCOREAPP2_0
+#else
     [<Test>]
+#endif
     let ShouldAcceptExe() =
       Runner.init()
       lock Runner.executable (fun () ->
@@ -1135,7 +1295,10 @@ module AltCoverTests =
         finally
           Runner.executable := None)
 
+#if NETCOREAPP2_0
+#else
     [<Test>]
+#endif
     let ShouldRequireCollectIfNotExe() =
       Runner.init()
       lock Runner.executable (fun () ->
@@ -1151,7 +1314,10 @@ module AltCoverTests =
           Runner.collect := false
           Runner.executable := None)
 
+#if NETCOREAPP2_0
+#else
     [<Test>]
+#endif
     let ShouldRejectExeIfCollect() =
       Runner.init()
       lock Runner.executable (fun () ->
@@ -1169,7 +1335,10 @@ module AltCoverTests =
           Runner.collect := false
           Runner.executable := None)
 
+#if NETCOREAPP2_0
+#else
     [<Test>]
+#endif
     let ShouldRequireWorker() =
       Runner.init()
       try
@@ -1185,7 +1354,10 @@ module AltCoverTests =
       finally
         Runner.workingDirectory <- None
 
+#if NETCOREAPP2_0
+#else
     [<Test>]
+#endif
     let ShouldAcceptWorker() =
       Runner.init()
       try
@@ -1201,7 +1373,10 @@ module AltCoverTests =
       finally
         Runner.workingDirectory <- None
 
+#if NETCOREAPP2_0
+#else
     [<Test>]
+#endif
     let ShouldRequireRecorder() =
       Runner.init()
       try
@@ -1217,7 +1392,10 @@ module AltCoverTests =
       finally
         Runner.recordingDirectory <- None
 
+#if NETCOREAPP2_0
+#else
     [<Test>]
+#endif
     let ShouldRequireRecorderDll() =
       Runner.init()
       try
@@ -1242,7 +1420,10 @@ module AltCoverTests =
       finally
         Runner.recordingDirectory <- None
 
+#if NETCOREAPP2_0
+#else
     [<Test>]
+#endif
     let ShouldAcceptRecorder() =
       Runner.init()
       try
@@ -1268,7 +1449,10 @@ module AltCoverTests =
       finally
         Runner.recordingDirectory <- None
 
+#if NETCOREAPP2_0
+#else
     [<Test>]
+#endif
     let ShouldHandleReturnCodes() =
       Runner.init()
       // Hack for running while instrumented
@@ -1302,7 +1486,10 @@ module AltCoverTests =
       finally
         CommandLine.dropReturnCode := false
 
+#if NETCOREAPP2_0
+#else
     [<Test>]
+#endif
     let ShouldProcessTrailingArguments() =
       Runner.init()
       // Hack for running while instrumented
@@ -1366,14 +1553,20 @@ module AltCoverTests =
         Console.SetOut(fst saved)
         Console.SetError(snd saved)
 
+#if NETCOREAPP2_0
+#else
     [<Test>]
+#endif
     let ShouldNoOp() =
       Runner.init()
       let where = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location)
       let r = CommandLine.ProcessTrailingArguments [] <| DirectoryInfo(where)
       Assert.That(r, Is.EqualTo 0)
 
+#if NETCOREAPP2_0
+#else
     [<Test>]
+#endif
     let ErrorResponseIsAsExpected() =
       Runner.init()
       let saved = Console.Error
@@ -1508,7 +1701,10 @@ or
 
     let synchronized = Object()
 
+#if NETCOREAPP2_0
+#else
     [<Test>]
+#endif
     let ShouldGetStringConstants() =
       Runner.init()
       let where = Assembly.GetExecutingAssembly().Location |> Path.GetDirectoryName
@@ -1532,7 +1728,10 @@ or
           Runner.recordingDirectory <- None
           Runner.RecorderName <- save)
 
+#if NETCOREAPP2_0
+#else
     [<Test>]
+#endif
     let ShouldProcessPayload() =
       Runner.init()
       // Hack for running while instrumented
@@ -1598,7 +1797,10 @@ or
         Console.SetError(snd saved)
         Runner.workingDirectory <- None
 
+#if NETCOREAPP2_0
+#else
     [<Test>]
+#endif
     let WriteLeavesExpectedTraces() =
       Runner.init()
       let saved = Console.Out
@@ -1651,7 +1853,10 @@ or
           Directory.Delete(unique)
         with :? IOException -> ()
 
+#if NETCOREAPP2_0
+#else
     [<Test>]
+#endif
     let NullPayloadShouldReportNothing() =
       Runner.init()
       let counts = Dictionary<string, Dictionary<int, PointVisit>>()
@@ -1664,7 +1869,10 @@ or
       Assert.That(File.Exists(unique + ".acv"))
       Assert.That(counts, Is.Empty)
 
+#if NETCOREAPP2_0
+#else
     [<Test>]
+#endif
     let ActivePayloadShouldReportAsExpected() =
       Runner.init()
       let counts = Dictionary<string, Dictionary<int, PointVisit>>()
@@ -1709,7 +1917,10 @@ or
 
       if File.Exists(unique + ".acv") then File.Delete(unique + ".acv")
 
+#if NETCOREAPP2_0
+#else
     [<Test>]
+#endif
     let CollectShouldReportAsExpected() =
       Runner.init()
       try
@@ -1739,7 +1950,10 @@ or
       finally
         Runner.collect := false
 
+#if NETCOREAPP2_0
+#else
     [<Test>]
+#endif
     let JunkPayloadShouldReportAsExpected() =
       Runner.init()
       let counts = Dictionary<string, Dictionary<int, PointVisit>>()
@@ -1760,7 +1974,10 @@ or
       Assert.That(File.Exists(unique + ".acv"))
       Assert.That(counts, Is.EquivalentTo [])
 
+#if NETCOREAPP2_0
+#else
     [<Test>]
+#endif
     let TrackingPayloadShouldReportAsExpected() =
       Runner.init()
       let counts = Dictionary<string, Dictionary<int, PointVisit>>()
@@ -1868,7 +2085,10 @@ or
 
       Assert.That(result, Is.EquivalentTo expected)
 
+#if NETCOREAPP2_0
+#else
     [<Test>]
+#endif
     let PointProcessShouldCaptureTimes() =
       Runner.init()
       let x = XmlDocument()
@@ -1888,7 +2108,10 @@ or
          Is.EqualTo
            """<root><Times><Time time="5" vc="2" /><Time time="23" vc="1" /><Time time="42" vc="1" /></Times><TrackedMethodRefs><TrackedMethodRef uid="17" vc="1" /><TrackedMethodRef uid="42" vc="1" /></TrackedMethodRefs></root>""")
 
+#if NETCOREAPP2_0
+#else
     [<Test>]
+#endif
     let PostprocessShouldRestoreKnownOpenCoverState() =
       Runner.init()
       Counter.measureTime <- DateTime.ParseExact
@@ -1922,7 +2145,10 @@ or
         (after.OuterXml.Replace("uspid=\"100663298", "uspid=\"13"), Is.EqualTo before,
          after.OuterXml)
 
+#if NETCOREAPP2_0
+#else
     [<Test>]
+#endif
     let PostprocessShouldRestoreKnownOpenCoverStateFromMono() =
       Counter.measureTime <- DateTime.ParseExact
                                ("2017-12-29T16:33:40.9564026+00:00", "o", null)
@@ -1966,7 +2192,10 @@ or
         (after.OuterXml.Replace("uspid=\"100663298", "uspid=\"13"), Is.EqualTo before,
          after.OuterXml)
 
+#if NETCOREAPP2_0
+#else
     [<Test>]
+#endif
     let PostprocessShouldRestoreDegenerateOpenCoverState() =
       Runner.init()
       Counter.measureTime <- DateTime.ParseExact
@@ -2034,7 +2263,10 @@ or
       Runner.PostProcess empty Base.ReportFormat.OpenCover after
       Assert.That(after.OuterXml, Is.EqualTo before, after.OuterXml)
 
+#if NETCOREAPP2_0
+#else
     [<Test>]
+#endif
     let PostprocessShouldRestoreBranchOnlyOpenCoverState() =
       Runner.init()
       Counter.measureTime <- DateTime.ParseExact
@@ -2100,7 +2332,10 @@ or
       Runner.PostProcess empty Base.ReportFormat.OpenCover after
       Assert.That(after.OuterXml, Is.EqualTo before, after.OuterXml)
 
+#if NETCOREAPP2_0
+#else
     [<Test>]
+#endif
     let JunkTokenShouldDefaultZero() =
       Runner.init()
       let visits = Dictionary<int, PointVisit>()
@@ -2110,7 +2345,10 @@ or
       | (0L, []) -> ()
       | _ -> Assert.Fail(sprintf "%A" result)
 
+#if NETCOREAPP2_0
+#else
     [<Test>]
+#endif
     let EmptyNCoverGeneratesExpectedSummary() =
       Runner.init()
       let report = XDocument()
@@ -2133,7 +2371,10 @@ or
       finally
         Output.Info <- ignore
 
+#if NETCOREAPP2_0
+#else
     [<Test>]
+#endif
     let EmptyNCoverGeneratesExpectedTCSummary() =
       Runner.init()
       let report = XDocument()
@@ -2158,7 +2399,10 @@ or
       finally
         Output.Info <- ignore
 
+#if NETCOREAPP2_0
+#else
     [<Test>]
+#endif
     let EmptyNCoverGeneratesExpectedSummaries() =
       Runner.init()
       let report = XDocument()
@@ -2183,7 +2427,10 @@ or
       finally
         Output.Info <- ignore
 
+#if NETCOREAPP2_0
+#else
     [<Test>]
+#endif
     let NCoverShouldGeneratePlausibleSummary() =
       Runner.init()
       let resource =
@@ -2213,7 +2460,10 @@ or
       finally
         Output.Info <- ignore
 
+#if NETCOREAPP2_0
+#else
     [<Test>]
+#endif
     let EmptyOpenCoverGeneratesExpectedSummary() =
       Runner.init()
       let report = XDocument.Load(new System.IO.StringReader("""<CoverageSession>
@@ -2236,7 +2486,10 @@ or
       finally
         Output.Info <- ignore
 
+#if NETCOREAPP2_0
+#else
     [<Test>]
+#endif
     let EmptyOpenCoverGeneratesExpectedTCSummary() =
       Runner.init()
       let report = XDocument.Load(new System.IO.StringReader("""<CoverageSession>
@@ -2263,7 +2516,10 @@ or
       finally
         Output.Info <- ignore
 
+#if NETCOREAPP2_0
+#else
     [<Test>]
+#endif
     let EmptyOpenCoverGeneratesExpectedSummaries() =
       Runner.init()
       let report = XDocument.Load(new System.IO.StringReader("""<CoverageSession>
@@ -2294,7 +2550,10 @@ or
       finally
         Output.Info <- ignore
 
+#if NETCOREAPP2_0
+#else
     [<Test>]
+#endif
     let OpenCoverShouldGeneratePlausibleSummary() =
       Runner.init()
       let resource =
@@ -2329,7 +2588,10 @@ or
       finally
         Output.Info <- ignore
 
+#if NETCOREAPP2_0
+#else
     [<Test>]
+#endif
     let OpenCoverShouldGeneratePlausibleLcov() =
       Runner.init()
       let resource =
@@ -2362,7 +2624,10 @@ or
       finally
         LCov.path := None
 
+#if NETCOREAPP2_0
+#else
     [<Test>]
+#endif
     let NCoverShouldGeneratePlausibleLcov() =
       Runner.init()
       let resource =
@@ -2394,7 +2659,10 @@ or
       finally
         LCov.path := None
 
+#if NETCOREAPP2_0
+#else
     [<Test>]
+#endif
     let NCoverShouldGeneratePlausibleLcovWithMissingFullName() =
       Runner.init()
       let resource =
@@ -2431,7 +2699,10 @@ or
       finally
         LCov.path := None
 
+#if NETCOREAPP2_0
+#else
     [<Test>]
+#endif
     let MultiSortDoesItsThing() =
       Runner.init()
       let load f =
@@ -2501,7 +2772,10 @@ or
         xmlDocument.Schemas <- schema
         xmlDocument.Validate(null)
 
+#if NETCOREAPP2_0
+#else
     [<Test>]
+#endif
     let NCoverShouldGeneratePlausibleCobertura() =
       Runner.init()
       let resource =
@@ -2539,7 +2813,10 @@ or
       finally
         Cobertura.path := None
 
+#if NETCOREAPP2_0
+#else
     [<Test>]
+#endif
     let NCoverShouldGeneratePlausibleCoberturaWithMissingFullName() =
       Runner.init()
       let resource =
@@ -2583,7 +2860,10 @@ or
       finally
         Cobertura.path := None
 
+#if NETCOREAPP2_0
+#else
     [<Test>]
+#endif
     let OpenCoverShouldGeneratePlausibleCobertura() =
       Runner.init()
       let resource =
@@ -2625,7 +2905,10 @@ or
       finally
         Cobertura.path := None
 
+#if NETCOREAPP2_0
+#else
     [<Test>]
+#endif
     let ThresholdViolationShouldBeReported() =
       Runner.init()
       let saveErr = Output.Error
@@ -2646,7 +2929,10 @@ or
         Runner.Summaries <- saveSummaries
         Runner.threshold <- saved
 
+#if NETCOREAPP2_0
+#else
     [<Test>]
+#endif
     let TryGetValueHandlesNull() =
       Runner.init()
       let dict : Dictionary<int, int> = null

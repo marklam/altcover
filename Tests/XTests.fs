@@ -162,7 +162,7 @@ module XTests =
          RecursiveValidateOpenCover (r.Elements()) (e.Elements()) (depth + 1) zero
            expectSkipped)
 
-  [<Test>]
+  //[<Test>]
   let CollectParamsCanBeValidated() =
     let subject =
       { Primitive.CollectParams.Create() with Threshold = "23"
@@ -175,7 +175,7 @@ module XTests =
     test <@ (FSApi.CollectParams.Primitive subject)
             |> FSApi.Args.Collect = [ "Runner"; "-t"; "23"; "--collect" ] @>
 
-  [<Test>]
+  //[<Test>]
   let TypeSafeCollectParamsCanBeValidated() =
     let subject =
       { TypeSafe.CollectParams.Create() with Threshold = TypeSafe.Threshold 23uy
@@ -187,7 +187,7 @@ module XTests =
       <@ (FSApi.CollectParams.TypeSafe subject)
          |> FSApi.Args.Collect = [ "Runner"; "-t"; "23"; "--collect"; "--teamcity:+B" ] @>
 
-  [<Test>]
+  //[<Test>]
   let TypeSafeCollectSummaryCanBeValidated() =
     let inputs =
       [ TypeSafe.Default; TypeSafe.B; TypeSafe.BPlus; TypeSafe.R; TypeSafe.RPlus ]
@@ -197,19 +197,19 @@ module XTests =
     |> List.zip expected
     |> List.iter (fun (a, b) -> test <@ a = b @>)
 
-  [<Test>]
+  //[<Test>]
   let CollectParamsCanBeValidatedWithErrors() =
     let subject = Primitive.CollectParams.Create()
     let scan = (FSApi.CollectParams.Primitive subject).Validate(true)
     test <@ scan.Length = 1 @>
 
-  [<Test>]
+  //[<Test>]
   let TypeSafeCollectParamsCanBeValidatedWithErrors() =
     let subject = TypeSafe.CollectParams.Create()
     let scan = (FSApi.CollectParams.TypeSafe subject).Validate(true)
     test <@ scan.Length = 1 @>
 
-  [<Test>]
+  //[<Test>]
   let CollectParamsCanBePositivelyValidatedWithErrors() =
     let test =
       { Primitive.CollectParams.Create() with RecorderDirectory =
@@ -217,7 +217,7 @@ module XTests =
     let scan = (FSApi.CollectParams.Primitive test).Validate(true)
     test' <@ scan.Length = 2 @> <| String.Join(Environment.NewLine, scan)
 
-  [<Test>]
+  //[<Test>]
   let TypeSafeCollectParamsCanBePositivelyValidatedWithErrors() =
     let test =
       { TypeSafe.CollectParams.Create() with RecorderDirectory =
@@ -226,7 +226,7 @@ module XTests =
     let scan = (FSApi.CollectParams.TypeSafe test).Validate(true)
     test' <@ scan.Length = 2 @> <| String.Join(Environment.NewLine, scan)
 
-  [<Test>]
+  //[<Test>]
   let PrepareParamsCanBeValidated() =
     let here = Assembly.GetExecutingAssembly().Location |> Path.GetDirectoryName
 
@@ -249,7 +249,7 @@ module XTests =
       <@ rendered = [ "-i"; here; "-o"; here; "-y"; here; "-d"; location; "-p"; "ok"; "-c";
                       "[Fact]"; "--opencover"; "--inplace"; "--save" ] @>
 
-  [<Test>]
+  //[<Test>]
   let TypeSafePrepareParamsCanBeValidated() =
     let here = Assembly.GetExecutingAssembly().Location |> Path.GetDirectoryName
 
@@ -286,7 +286,7 @@ module XTests =
                                    "-p"; "ok"; "-c"; "[Fact]"; "--opencover"; "--inplace";
                                    "--save" ] @>
 
-  [<Test>]
+  //[<Test>]
   let TypeSafePrepareParamsCanBeValidatedAgain() =
     let here = Assembly.GetExecutingAssembly().Location |> Path.GetDirectoryName
 
@@ -318,7 +318,7 @@ module XTests =
                                    "-p"; "ok"; "--opencover"; "--inplace"; "--save"; "--";
                                    "[Fact]" ] @>
 
-  [<Test>]
+  //[<Test>]
   let PrepareParamsStrongNamesCanBeValidated() =
     let input = Path.Combine(AltCover.SolutionRoot.location, "Build/Infrastructure.snk")
 
@@ -333,7 +333,7 @@ module XTests =
     test <@ scan.Length = 0 @>
 #endif
 
-  [<Test>]
+  //[<Test>]
   let TypeSafePrepareParamsStrongNamesCanBeValidated() =
     let input = Path.Combine(AltCover.SolutionRoot.location, "Build/Infrastructure.snk")
 
@@ -351,13 +351,13 @@ module XTests =
     test <@ scan.Length = 0 @>
 #endif
 
-  [<Test>]
+  //[<Test>]
   let PrepareParamsCanBeValidatedWithNulls() =
     let subject = { Primitive.PrepareParams.Create() with CallContext = null }
     let scan = (FSApi.PrepareParams.Primitive subject).Validate()
     test <@ scan.Length = 0 @>
 
-  [<Test>]
+  //[<Test>]
   let PrepareParamsCanBeValidatedAndDetectInconsistency() =
     let subject =
       { Primitive.PrepareParams.Create() with BranchCover = true
@@ -368,7 +368,7 @@ module XTests =
     let scan = (FSApi.PrepareParams.Primitive subject).Validate()
     test <@ scan.Length = 2 @>
 
-  [<Test>]
+  //[<Test>]
   let TypeSafePrepareParamsCanBeValidatedAndDetectInconsistency() =
     let subject =
       { TypeSafe.PrepareParams.Create() with BranchCover = TypeSafe.Flag true
@@ -386,7 +386,7 @@ module XTests =
       <@ rendered = [ "-c"; "0"; "--opencover"; "--inplace"; "--save"; "--single";
                       "--linecover"; "--branchcover" ] @>
 
-  [<Test>]
+  //[<Test>]
   let PrepareParamsCanBeValidatedWithErrors() =
     let subject =
       { Primitive.PrepareParams.Create() with XmlReport =
@@ -396,12 +396,12 @@ module XTests =
     let scan = (FSApi.PrepareParams.Primitive subject).Validate()
     test <@ scan.Length = 2 @>
 
-  [<Test>]
+  //[<Test>]
   let NullListsAreEmpty() =
     let subject = FSApi.Args.ItemList String.Empty null
     test <@ subject |> List.isEmpty @>
 
-  [<Test>]
+  //[<Test>]
   let ADotNetDryRunLooksAsExpected() =
     let where = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location)
     let here = SolutionDir()
@@ -586,7 +586,7 @@ module XTests =
              |> Set.contains
                   ("AltCover.Recorder.g/" + System.AssemblyVersionInformation.AssemblyVersion)) @>
 
-  [<Test>]
+  //[<Test>]
   let ADryRunLooksAsExpected() =
     let where = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location)
     let here = SolutionDir()
@@ -709,7 +709,7 @@ module XTests =
       Output.Error <- snd save2
       Output.Info <- fst save2
 
-  [<Test>]
+  //[<Test>]
   let AfterAssemblyCommitsThatAssembly() =
     let hack = Path.Combine(SolutionDir(), "_Binaries/AltCover.Tests/Debug+AnyCPU")
     let local = Assembly.GetExecutingAssembly().Location |> Path.GetDirectoryName
@@ -750,7 +750,7 @@ module XTests =
     finally
       Visitor.outputDirectories.AddRange saved
 
-  [<Test>]
+  //[<Test>]
   let AfterAssemblyCommitsThatAssemblyForMono() =
     // Hack for running while instrumented
     let where = Assembly.GetExecutingAssembly().Location
@@ -789,7 +789,7 @@ module XTests =
       Visitor.outputDirectories.Clear()
       Visitor.outputDirectories.AddRange saved
 
-  [<Test>]
+  //[<Test>]
   let FinishCommitsTheRecordingAssembly() =
     let hack = Path.Combine(SolutionDir(), "_Binaries/AltCover.Tests/Debug+AnyCPU")
     let local = Assembly.GetExecutingAssembly().Location |> Path.GetDirectoryName
@@ -827,7 +827,7 @@ module XTests =
       Visitor.outputDirectories.Clear()
       Visitor.outputDirectories.AddRange saved
 
-  [<Test>]
+  //[<Test>]
   let ShouldDoCoverage() =
     let start = Directory.GetCurrentDirectory()
     let hack = Path.Combine(SolutionDir(), "_Binaries/AltCover.XTests/Debug+AnyCPU")
@@ -894,7 +894,7 @@ module XTests =
       Runner.RecorderName <- save
       Directory.SetCurrentDirectory start
 
-  [<Test>]
+  //[<Test>]
   let ShouldGenerateExpectedXmlReportFromMono() =
     let visitor, document = Report.ReportGenerator()
     // Hack for running while instrumented
@@ -916,7 +916,7 @@ module XTests =
     let expected = baseline.Elements()
     RecursiveValidate result expected 0 true
 
-  [<Test>]
+  //[<Test>]
   let ShouldGenerateExpectedXmlReportFromMonoOpenCoverStyle() =
     let visitor, document = OpenCover.ReportGenerator()
     // Hack for running while instrumented
