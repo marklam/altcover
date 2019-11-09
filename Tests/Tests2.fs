@@ -15,6 +15,18 @@ open System.Security.Policy
 
 [<TestFixture>]
 module AltCoverTests2 =
+    // Hack for running while instrumented
+    let Hack() =
+      let where = Assembly.GetExecutingAssembly().Location
+
+      let dir =
+        where
+        |> Path.GetDirectoryName
+        |> Path.GetFileName
+      match dir.IndexOf "__" with
+      | 0 -> "/.."
+      | _ -> String.Empty
+
 #if NETCOREAPP2_0
     let sample1 = "Sample1.dll"
     let monoSample1 = "../_Mono/Sample1"
@@ -47,7 +59,7 @@ module AltCoverTests2 =
       let where = Assembly.GetExecutingAssembly().Location
       let path =
         Path.Combine
-          (Path.GetDirectoryName(where) + AltCoverTests.Hack(), "AltCover.Recorder.dll")
+          (Path.GetDirectoryName(where) + Hack(), "AltCover.Recorder.dll")
       let def = Mono.Cecil.AssemblyDefinition.ReadAssembly path
       let recorder = AltCover.Instrument.RecordingMethod def
       recorder
@@ -61,7 +73,7 @@ module AltCoverTests2 =
     let ShouldBeAbleToClearTheStrongNameKey() =
       let where = Assembly.GetExecutingAssembly().Location
       let path =
-        Path.Combine(Path.GetDirectoryName(where) + AltCoverTests.Hack(), "Sample3.dll")
+        Path.Combine(Path.GetDirectoryName(where) + Hack(), "Sample3.dll")
       let def = Mono.Cecil.AssemblyDefinition.ReadAssembly path
 
       Assert.That (def.Name.HasPublicKey)
@@ -81,7 +93,7 @@ module AltCoverTests2 =
     let ShouldBeAbleToUpdateTheStrongNameKeyWherePossible() =
       let where = Assembly.GetExecutingAssembly().Location
       let path =
-        Path.Combine(Path.GetDirectoryName(where) + AltCoverTests.Hack(), "Sample3.dll")
+        Path.Combine(Path.GetDirectoryName(where) + Hack(), "Sample3.dll")
       let def = Mono.Cecil.AssemblyDefinition.ReadAssembly path
       let key0 = def.Name.PublicKey
       let token0 = def.Name.PublicKeyToken
@@ -113,7 +125,7 @@ module AltCoverTests2 =
         Visitor.keys.Clear()
         let where = Assembly.GetExecutingAssembly().Location
         let path =
-          Path.Combine(Path.GetDirectoryName(where) + AltCoverTests.Hack(), "Sample3.dll")
+          Path.Combine(Path.GetDirectoryName(where) + Hack(), "Sample3.dll")
         let def = Mono.Cecil.AssemblyDefinition.ReadAssembly path
         Assert.That(Option.isNone (Instrument.KnownKey def.Name))
       finally
@@ -125,7 +137,7 @@ module AltCoverTests2 =
         Visitor.keys.Clear()
         let where = Assembly.GetExecutingAssembly().Location
         let path =
-          Path.Combine(Path.GetDirectoryName(where) + AltCoverTests.Hack(), "Sample3.dll")
+          Path.Combine(Path.GetDirectoryName(where) + Hack(), "Sample3.dll")
         let def = Mono.Cecil.AssemblyDefinition.ReadAssembly path
         ProvideKeyPair() |> Visitor.Add
         Assert.That (Option.isSome(Instrument.KnownKey def.Name))
@@ -164,7 +176,7 @@ module AltCoverTests2 =
         Visitor.keys.Clear()
         let where = Assembly.GetExecutingAssembly().Location
         let path =
-          Path.Combine(Path.GetDirectoryName(where) + AltCoverTests.Hack(), "Sample3.dll")
+          Path.Combine(Path.GetDirectoryName(where) + Hack(), "Sample3.dll")
         let def = Mono.Cecil.AssemblyDefinition.ReadAssembly path
         AltCover.Instrument.UpdateStrongNaming def None
         ProvideKeyPair() |> Visitor.Add
@@ -178,7 +190,7 @@ module AltCoverTests2 =
         Visitor.keys.Clear()
         let where = Assembly.GetExecutingAssembly().Location
         let path =
-          Path.Combine(Path.GetDirectoryName(where) + AltCoverTests.Hack(), "Sample3.dll")
+          Path.Combine(Path.GetDirectoryName(where) + Hack(), "Sample3.dll")
         let def = Mono.Cecil.AssemblyDefinition.ReadAssembly path
         Assert.That(Option.isNone (Instrument.KnownToken def.Name))
       finally
@@ -190,7 +202,7 @@ module AltCoverTests2 =
         Visitor.keys.Clear()
         let where = Assembly.GetExecutingAssembly().Location
         let path =
-          Path.Combine(Path.GetDirectoryName(where) + AltCoverTests.Hack(), "Sample3.dll")
+          Path.Combine(Path.GetDirectoryName(where) + Hack(), "Sample3.dll")
         let def = Mono.Cecil.AssemblyDefinition.ReadAssembly path
         ProvideKeyPair() |> Visitor.Add
         Assert.That (Option.isSome(Instrument.KnownToken def.Name))
@@ -203,7 +215,7 @@ module AltCoverTests2 =
         Visitor.keys.Clear()
         let where = Assembly.GetExecutingAssembly().Location
         let path =
-          Path.Combine(Path.GetDirectoryName(where) + AltCoverTests.Hack(), "Sample3.dll")
+          Path.Combine(Path.GetDirectoryName(where) + Hack(), "Sample3.dll")
         let def = Mono.Cecil.AssemblyDefinition.ReadAssembly path
         AltCover.Instrument.UpdateStrongNaming def None
         ProvideKeyPair() |> Visitor.Add
@@ -242,7 +254,7 @@ module AltCoverTests2 =
     let GuardShouldDisposeRecordingAssemblyOnException() =
       let where = Assembly.GetExecutingAssembly().Location
       let path =
-        Path.Combine(Path.GetDirectoryName(where) + AltCoverTests.Hack(), "Sample3.dll")
+        Path.Combine(Path.GetDirectoryName(where) + Hack(), "Sample3.dll")
       let prepared = AssemblyDefinition.ReadAssembly path
       ProgramDatabase.ReadSymbols prepared
       let bang = fun () -> InvalidOperationException("Bang") |> raise
@@ -360,7 +372,7 @@ module AltCoverTests2 =
         Main.init()
         let where = Assembly.GetExecutingAssembly().Location
         let path =
-          Path.Combine(Path.GetDirectoryName(where) + AltCoverTests.Hack(), "Sample3.dll")
+          Path.Combine(Path.GetDirectoryName(where) + Hack(), "Sample3.dll")
         let prepared = Instrument.PrepareAssembly path
         let raw = Mono.Cecil.AssemblyDefinition.ReadAssembly path
         ProgramDatabase.ReadSymbols raw
@@ -448,7 +460,7 @@ module AltCoverTests2 =
         Visitor.keys.Clear()
         Main.init()
         let where = Assembly.GetExecutingAssembly().Location
-        let path = Path.Combine(Path.GetDirectoryName(where) + AltCoverTests.Hack(), "Sample3.dll")
+        let path = Path.Combine(Path.GetDirectoryName(where) + Hack(), "Sample3.dll")
         let unique = Guid.NewGuid().ToString()
         let output = Path.GetTempFileName()
         let outputdll = output + ".dll"
@@ -581,7 +593,7 @@ module AltCoverTests2 =
         Visitor.keys.Clear()
         let where = Assembly.GetExecutingAssembly().Location
         let pdb = Path.ChangeExtension(where, ".pdb")
-        let path = Path.Combine(Path.GetDirectoryName(where) + AltCoverTests.Hack(), "Sample3.dll")
+        let path = Path.Combine(Path.GetDirectoryName(where) + Hack(), "Sample3.dll")
         let unique = Guid.NewGuid().ToString()
         let output = Path.GetTempFileName()
         let outputdll = output + ".dll"
@@ -651,7 +663,7 @@ module AltCoverTests2 =
     let ShouldUpdateHandlerOK([<Range(0, 31)>] selection) =
       let where = Assembly.GetExecutingAssembly().Location
       let path =
-        Path.Combine(Path.GetDirectoryName(where) + AltCoverTests.Hack(), sample1)
+        Path.Combine(Path.GetDirectoryName(where) + Hack(), sample1)
       let def = Mono.Cecil.AssemblyDefinition.ReadAssembly path
       ProgramDatabase.ReadSymbols def
       let program = def.MainModule.GetType("TouchTest.Program")
@@ -693,7 +705,7 @@ module AltCoverTests2 =
     let ShouldSubstituteInstructionOperand() =
       let where = Assembly.GetExecutingAssembly().Location
       let path =
-        Path.Combine(Path.GetDirectoryName(where) + AltCoverTests.Hack(), "Sample2.dll")
+        Path.Combine(Path.GetDirectoryName(where) + Hack(), "Sample2.dll")
       let def = Mono.Cecil.AssemblyDefinition.ReadAssembly path
       ProgramDatabase.ReadSymbols def
       let module' = def.MainModule.GetType("N.DU")
@@ -721,7 +733,7 @@ module AltCoverTests2 =
     let ShouldNotSubstituteDifferentInstructionOperand() =
       let where = Assembly.GetExecutingAssembly().Location
       let path =
-        Path.Combine(Path.GetDirectoryName(where) + AltCoverTests.Hack(), "Sample2.dll")
+        Path.Combine(Path.GetDirectoryName(where) + Hack(), "Sample2.dll")
       let def = Mono.Cecil.AssemblyDefinition.ReadAssembly path
       ProgramDatabase.ReadSymbols def
       let module' = def.MainModule.GetType("N.DU")
@@ -757,7 +769,7 @@ module AltCoverTests2 =
     let ShouldSubstituteIntoInstructionOperandArray() =
       let where = Assembly.GetExecutingAssembly().Location
       let path =
-        Path.Combine(Path.GetDirectoryName(where) + AltCoverTests.Hack(), "Sample2.dll")
+        Path.Combine(Path.GetDirectoryName(where) + Hack(), "Sample2.dll")
       let def = Mono.Cecil.AssemblyDefinition.ReadAssembly path
       ProgramDatabase.ReadSymbols def
       let module' = def.MainModule.GetType("N.DU")
@@ -789,7 +801,7 @@ module AltCoverTests2 =
     let ShouldNotSubstituteOutsideInstructionOperandArray() =
       let where = Assembly.GetExecutingAssembly().Location
       let path =
-        Path.Combine(Path.GetDirectoryName(where) + AltCoverTests.Hack(), "Sample2.dll")
+        Path.Combine(Path.GetDirectoryName(where) + Hack(), "Sample2.dll")
       let def = Mono.Cecil.AssemblyDefinition.ReadAssembly path
       ProgramDatabase.ReadSymbols def
       let module' = def.MainModule.GetType("N.DU")
@@ -819,7 +831,7 @@ module AltCoverTests2 =
     let ShouldNotSubstituteOtherOperand() =
       let where = Assembly.GetExecutingAssembly().Location
       let path =
-        Path.Combine(Path.GetDirectoryName(where) + AltCoverTests.Hack(), "Sample2.dll")
+        Path.Combine(Path.GetDirectoryName(where) + Hack(), "Sample2.dll")
       let def = Mono.Cecil.AssemblyDefinition.ReadAssembly path
       ProgramDatabase.ReadSymbols def
       let module' = def.MainModule.GetType("N.DU")
@@ -852,11 +864,11 @@ module AltCoverTests2 =
 #if NETCOREAPP2_0
       let shift = String.Empty
 #else
-      let shift = "/netcoreapp2.1"
+      let shift = "/netcoreapp3.0"
 #endif
       let path =
         Path.Combine
-          (Path.GetDirectoryName(where) + AltCoverTests.Hack() + shift,
+          (Path.GetDirectoryName(where) + Hack() + shift,
            "AltCover.Recorder.dll")
       let def = Mono.Cecil.AssemblyDefinition.ReadAssembly path
       let recorder = AltCover.Instrument.RecordingMethod def
@@ -888,11 +900,11 @@ module AltCoverTests2 =
 #if NETCOREAPP2_0
       let shift = String.Empty
 #else
-      let shift = "/netcoreapp2.1"
+      let shift = "/netcoreapp3.0"
 #endif
       let rpath =
         Path.Combine
-          (Path.GetDirectoryName(where) + AltCoverTests.Hack() + shift,
+          (Path.GetDirectoryName(where) + Hack() + shift,
            "AltCover.Recorder.dll")
       let res =
         Assembly.GetExecutingAssembly().GetManifestResourceNames()
@@ -933,11 +945,11 @@ module AltCoverTests2 =
 #if NETCOREAPP2_0
       let shift = String.Empty
 #else
-      let shift = "/netcoreapp2.1"
+      let shift = "/netcoreapp3.0"
 #endif
       let rpath =
         Path.Combine
-          (Path.GetDirectoryName(where) + AltCoverTests.Hack() + shift,
+          (Path.GetDirectoryName(where) + Hack() + shift,
            "AltCover.Recorder.dll")
       let res =
         Assembly.GetExecutingAssembly().GetManifestResourceNames()
@@ -1016,7 +1028,7 @@ module AltCoverTests2 =
       let where = Assembly.GetExecutingAssembly().Location
       let path =
         Path.Combine
-          (Path.GetDirectoryName(where) + AltCoverTests.Hack(), "AltCover.Recorder.dll")
+          (Path.GetDirectoryName(where) + Hack(), "AltCover.Recorder.dll")
       let def = Mono.Cecil.AssemblyDefinition.ReadAssembly path
       let recorder = AltCover.Instrument.RecordingMethod def
       let state = AltCover.InstrumentContext.Build([])
@@ -1226,7 +1238,7 @@ module AltCoverTests2 =
     let IncludedMethodShouldChangeState() =
       let where = Assembly.GetExecutingAssembly().Location
       let path =
-        Path.Combine(Path.GetDirectoryName(where) + AltCoverTests.Hack(), "Sample2.dll")
+        Path.Combine(Path.GetDirectoryName(where) + Hack(), "Sample2.dll")
       let def = Mono.Cecil.AssemblyDefinition.ReadAssembly path
       ProgramDatabase.ReadSymbols def
       let module' = def.MainModule.GetType("N.DU")
@@ -1247,7 +1259,7 @@ module AltCoverTests2 =
     let ExcludedAfterMethodShouldNotChangeState() =
       let where = Assembly.GetExecutingAssembly().Location
       let path =
-        Path.Combine(Path.GetDirectoryName(where) + AltCoverTests.Hack(), "Sample2.dll")
+        Path.Combine(Path.GetDirectoryName(where) + Hack(), "Sample2.dll")
       let def = Mono.Cecil.AssemblyDefinition.ReadAssembly path
       ProgramDatabase.ReadSymbols def
       let module' = def.MainModule.GetType("N.DU")
@@ -1280,7 +1292,7 @@ module AltCoverTests2 =
     let IncludedAfterMethodShouldRewriteMethod() =
       let where = Assembly.GetExecutingAssembly().Location
       let path =
-        Path.Combine(Path.GetDirectoryName(where) + AltCoverTests.Hack(), "Sample2.dll")
+        Path.Combine(Path.GetDirectoryName(where) + Hack(), "Sample2.dll")
       let def = Mono.Cecil.AssemblyDefinition.ReadAssembly path
       ProgramDatabase.ReadSymbols def
       let module' = def.MainModule.GetType("N.DU")
@@ -1312,7 +1324,7 @@ module AltCoverTests2 =
     let UpdateStrongReferencesShouldChangeSigningKeyWherePossible() =
       let where = Assembly.GetExecutingAssembly().Location
       let path =
-        Path.Combine(Path.GetDirectoryName(where) + AltCoverTests.Hack(), "Sample2.dll")
+        Path.Combine(Path.GetDirectoryName(where) + Hack(), "Sample2.dll")
       let def = Mono.Cecil.AssemblyDefinition.ReadAssembly path
       ProgramDatabase.ReadSymbols def
       let token0 = def.Name.PublicKeyToken
@@ -1334,7 +1346,7 @@ module AltCoverTests2 =
     let UpdateStrongReferencesShouldRemoveSigningKeyIfRequired() =
       let where = Assembly.GetExecutingAssembly().Location
       let path =
-        Path.Combine(Path.GetDirectoryName(where) + AltCoverTests.Hack(), "Sample2.dll")
+        Path.Combine(Path.GetDirectoryName(where) + Hack(), "Sample2.dll")
       let def = Mono.Cecil.AssemblyDefinition.ReadAssembly path
       ProgramDatabase.ReadSymbols def
       let token0 = def.Name.PublicKeyToken
@@ -1389,7 +1401,7 @@ module AltCoverTests2 =
     let UpdateStrongReferencesShouldTrackReferences() =
       let where = Assembly.GetExecutingAssembly().Location
       let path =
-        Path.Combine(Path.GetDirectoryName(where) + AltCoverTests.Hack(), "Sample2.dll")
+        Path.Combine(Path.GetDirectoryName(where) + Hack(), "Sample2.dll")
       let def = Mono.Cecil.AssemblyDefinition.ReadAssembly path
       ProgramDatabase.ReadSymbols def |> ignore
       use stream = typeof<AltCover.Node>.Assembly.GetManifestResourceStream(recorderSnk)
@@ -1410,7 +1422,7 @@ module AltCoverTests2 =
       try
         let where = Assembly.GetExecutingAssembly().Location
         let path =
-          Path.Combine(Path.GetDirectoryName(where) + AltCoverTests.Hack(), "Sample2.dll")
+          Path.Combine(Path.GetDirectoryName(where) + Hack(), "Sample2.dll")
         let def = Mono.Cecil.AssemblyDefinition.ReadAssembly path
         ProgramDatabase.ReadSymbols def |> ignore
         let npath = typeof<TestAttribute>.Assembly.Location
@@ -1439,7 +1451,7 @@ module AltCoverTests2 =
     let ExcludedAssemblyRefsAreNotUpdated() =
       let where = Assembly.GetExecutingAssembly().Location
       let path =
-        Path.Combine(Path.GetDirectoryName(where) + AltCoverTests.Hack(), "Sample2.dll")
+        Path.Combine(Path.GetDirectoryName(where) + Hack(), "Sample2.dll")
       let def = Mono.Cecil.AssemblyDefinition.ReadAssembly path
       ProgramDatabase.ReadSymbols def
       let refs = def.MainModule.AssemblyReferences |> Seq.toList
@@ -1465,7 +1477,7 @@ module AltCoverTests2 =
     let IncludedAssemblyRefsAreUpdated() =
       let where = Assembly.GetExecutingAssembly().Location
       let path =
-        Path.Combine(Path.GetDirectoryName(where) + AltCoverTests.Hack(), "Sample2.dll")
+        Path.Combine(Path.GetDirectoryName(where) + Hack(), "Sample2.dll")
       let def = Mono.Cecil.AssemblyDefinition.ReadAssembly path
       ProgramDatabase.ReadSymbols def
       let refs = def.MainModule.AssemblyReferences |> Seq.toList
@@ -1492,7 +1504,7 @@ module AltCoverTests2 =
     let ExcludedModuleJustRecordsMVid() =
       let where = Assembly.GetExecutingAssembly().Location
       let path =
-        Path.Combine(Path.GetDirectoryName(where) + AltCoverTests.Hack(), "Sample2.dll")
+        Path.Combine(Path.GetDirectoryName(where) + Hack(), "Sample2.dll")
       let def = Mono.Cecil.AssemblyDefinition.ReadAssembly path
       ProgramDatabase.ReadSymbols def
       let visited = Node.Module(def.MainModule, Inspect.Ignore)
@@ -1505,14 +1517,14 @@ module AltCoverTests2 =
     let IncludedModuleEnsuresRecorder() =
       let where = Assembly.GetExecutingAssembly().Location
       let path =
-        Path.Combine(Path.GetDirectoryName(where) + AltCoverTests.Hack(), "Sample2.dll")
+        Path.Combine(Path.GetDirectoryName(where) + Hack(), "Sample2.dll")
       let def = Mono.Cecil.AssemblyDefinition.ReadAssembly path
       ProgramDatabase.ReadSymbols def
       let visited = Node.Module(def.MainModule, Inspect.Instrument)
       let state = InstrumentContext.Build [ "nunit.framework"; "nonesuch" ]
       let path' =
         Path.Combine
-          (Path.GetDirectoryName(where) + AltCoverTests.Hack(), "AltCover.Recorder.dll")
+          (Path.GetDirectoryName(where) + Hack(), "AltCover.Recorder.dll")
       let def' = Mono.Cecil.AssemblyDefinition.ReadAssembly path'
 
       let visit =
@@ -1557,7 +1569,7 @@ module AltCoverTests2 =
     let ExcludedMethodPointIsPassThrough() =
       let where = Assembly.GetExecutingAssembly().Location
       let path =
-        Path.Combine(Path.GetDirectoryName(where) + AltCoverTests.Hack(), "Sample2.dll")
+        Path.Combine(Path.GetDirectoryName(where) + Hack(), "Sample2.dll")
       let def = Mono.Cecil.AssemblyDefinition.ReadAssembly path
       ProgramDatabase.ReadSymbols def
       let visited = Node.MethodPoint(null, None, 0, false)
@@ -1571,7 +1583,7 @@ module AltCoverTests2 =
       let pdb = Path.ChangeExtension(where, ".pdb")
       if File.Exists(pdb) then // skip when we don't have symbols on travis
         let path =
-          Path.Combine(Path.GetDirectoryName(where) + AltCoverTests.Hack(), "Sample2.dll")
+          Path.Combine(Path.GetDirectoryName(where) + Hack(), "Sample2.dll")
         let def = Mono.Cecil.AssemblyDefinition.ReadAssembly path
         ProgramDatabase.ReadSymbols def
         let module' = def.MainModule.GetType("N.DU")
@@ -1611,14 +1623,14 @@ module AltCoverTests2 =
     let IncludedModuleDoesNotChangeRecorderJustTheReference() =
       let where = Assembly.GetExecutingAssembly().Location
       let path =
-        Path.Combine(Path.GetDirectoryName(where) + AltCoverTests.Hack(), "Sample2.dll")
+        Path.Combine(Path.GetDirectoryName(where) + Hack(), "Sample2.dll")
       let def = Mono.Cecil.AssemblyDefinition.ReadAssembly path
       ProgramDatabase.ReadSymbols def
       let visited = Node.Module(def.MainModule, Inspect.Instrument)
       let state = InstrumentContext.Build [ "nunit.framework"; "nonesuch" ]
       let path' =
         Path.Combine
-          (Path.GetDirectoryName(where) + AltCoverTests.Hack(), "AltCover.Recorder.dll")
+          (Path.GetDirectoryName(where) + Hack(), "AltCover.Recorder.dll")
       let def' = Mono.Cecil.AssemblyDefinition.ReadAssembly path'
 
       let visit =
@@ -1705,7 +1717,7 @@ module AltCoverTests2 =
     let NonFinishShouldDisposeRecordingAssembly() =
       let where = Assembly.GetExecutingAssembly().Location
       let path =
-        Path.Combine(Path.GetDirectoryName(where) + AltCoverTests.Hack(), "Sample3.dll")
+        Path.Combine(Path.GetDirectoryName(where) + Hack(), "Sample3.dll")
       let prepared = AssemblyDefinition.ReadAssembly path
       ProgramDatabase.ReadSymbols prepared
       let state = { InstrumentContext.Build [] with RecordingAssembly = prepared }
@@ -1732,7 +1744,7 @@ module AltCoverTests2 =
     let NonFinishShouldNotDisposeNullRecordingAssembly() =
       let where = Assembly.GetExecutingAssembly().Location
       let path =
-        Path.Combine(Path.GetDirectoryName(where) + AltCoverTests.Hack(), "Sample3.dll")
+        Path.Combine(Path.GetDirectoryName(where) + Hack(), "Sample3.dll")
       let state = { InstrumentContext.Build [] with RecordingAssembly = null }
       // Would be NullreferenceException if we tried it
       Assert.Throws<InvalidOperationException>
@@ -1745,7 +1757,7 @@ module AltCoverTests2 =
     let FinishShouldLeaveRecordingAssembly() =
       let where = Assembly.GetExecutingAssembly().Location
       let path =
-        Path.Combine(Path.GetDirectoryName(where) + AltCoverTests.Hack(), "Sample3.dll")
+        Path.Combine(Path.GetDirectoryName(where) + Hack(), "Sample3.dll")
       let state = { InstrumentContext.Build [] with RecordingAssembly = null }
       let prepared = AssemblyDefinition.ReadAssembly path
       ProgramDatabase.ReadSymbols prepared

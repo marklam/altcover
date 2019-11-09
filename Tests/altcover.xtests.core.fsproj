@@ -3,7 +3,7 @@
   <PropertyGroup>
     <TargetFramework>netcoreapp3.0</TargetFramework>
     <IsPackable>false</IsPackable>
-    <AssemblyName>AltCover.Tests</AssemblyName>
+    <AssemblyName>AltCover.XTests</AssemblyName>
     <AssetTargetFallback>$(AssetTargetFallback);netcoreapp1.0;</AssetTargetFallback>
     <GenerateProgramFile>false</GenerateProgramFile>
     <!-- NO!! SolutionDir Condition="'$(SolutionDir)' == '$(ProjectDir)'">$(ProjectDir)../</SolutionDir -->
@@ -23,7 +23,7 @@
     <Compile Include="..\_Generated\SolutionRoot.fs" Link="SolutionRoot.fs" />
     <Compile Include="..\_Generated\AssemblyVersion.fs" Link="AssemblyVersion.fs" />
     <Compile Include="AssemblyInfo.fs" />
-    <Compile Include="Tests.fs" />
+    <Compile Include="XTests.fs" />
     <Compile Include="Program.fs" />
   </ItemGroup>
 
