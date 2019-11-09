@@ -19,10 +19,6 @@ open NUnit.Framework
 open Swensen.Unquote
 
 module AltCoverTests =
-    [<SetUp>]
-    let SetUp() =
-      Runner.init()
-
     // Base.fs
     [<Test>]
     let SafeDisposalProtects() =
