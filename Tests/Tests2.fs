@@ -13,6 +13,7 @@ open NUnit.Framework
 open Swensen.Unquote
 open System.Security.Policy
 
+[<TestFixture>]
 module AltCoverTests2 =
 #if NETCOREAPP2_0
     let sample1 = "Sample1.dll"
@@ -851,7 +852,7 @@ module AltCoverTests2 =
 #if NETCOREAPP2_0
       let shift = String.Empty
 #else
-      let shift = "/netcoreapp3.0"
+      let shift = "/netcoreapp2.1"
 #endif
       let path =
         Path.Combine
@@ -887,7 +888,7 @@ module AltCoverTests2 =
 #if NETCOREAPP2_0
       let shift = String.Empty
 #else
-      let shift = "/netcoreapp3.0"
+      let shift = "/netcoreapp2.1"
 #endif
       let rpath =
         Path.Combine
@@ -932,7 +933,7 @@ module AltCoverTests2 =
 #if NETCOREAPP2_0
       let shift = String.Empty
 #else
-      let shift = "/netcoreapp3.0"
+      let shift = "/netcoreapp2.1"
 #endif
       let rpath =
         Path.Combine

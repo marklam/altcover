@@ -18,11 +18,15 @@ open Mono.Options
 open NUnit.Framework
 open Swensen.Unquote
 
+[<TestFixture>]
 module AltCoverTests =
+    [<SetUp>]
+    let SetUp() =
+      Runner.init()
+
     // Base.fs
     [<Test>]
     let SafeDisposalProtects() =
-      Runner.init()
       let obj1 =
         { new System.IDisposable with
             member x.Dispose() = ObjectDisposedException("Bang!") |> raise }
@@ -31,14 +35,12 @@ module AltCoverTests =
 
     [<Test>]
     let JunkUspidGivesNegativeIndex() =
-      Runner.init()
       let key = " "
       let index = Counter.FindIndexFromUspid 0 key
       test <@ index < 0 @>
 
     [<Test>]
     let RealIdShouldIncrementCount() =
-      Runner.init()
       let visits = new Dictionary<string, Dictionary<int, PointVisit>>()
       let key = " "
       let v1 = Counter.AddVisit visits key 23 Null
@@ -51,7 +53,6 @@ module AltCoverTests =
 
     [<Test>]
     let RealIdShouldIncrementList() =
-      Runner.init()
       let visits = new Dictionary<string, Dictionary<int, PointVisit>>()
       let key = " "
       let payload = Time DateTime.UtcNow.Ticks
@@ -65,7 +66,6 @@ module AltCoverTests =
 
     [<Test>]
     let DistinctIdShouldBeDistinct() =
-      Runner.init()
       let visits = new Dictionary<string, Dictionary<int, PointVisit>>()
       let key = " "
       let v3 = Counter.AddVisit visits key 23 Null
@@ -76,7 +76,6 @@ module AltCoverTests =
 
     [<Test>]
     let DistinctLineShouldBeDistinct() =
-      Runner.init()
       let visits = new Dictionary<string, Dictionary<int, PointVisit>>()
       let key = " "
       let v5 = Counter.AddVisit visits key 23 Null
@@ -88,7 +87,6 @@ module AltCoverTests =
 
     [<Test>]
     let RepeatVisitsShouldIncrementCount() =
-      Runner.init()
       let visits = new Dictionary<string, Dictionary<int, PointVisit>>()
       let key = " "
       let v7 = Counter.AddVisit visits key 23 Null
@@ -101,7 +99,6 @@ module AltCoverTests =
 
     [<Test>]
     let RepeatVisitsShouldIncrementTotal() =
-      Runner.init()
       let visits = new Dictionary<string, Dictionary<int, PointVisit>>()
       let key = " "
       let payload = Time DateTime.UtcNow.Ticks
@@ -123,7 +120,6 @@ module AltCoverTests =
 
     [<Test>]
     let KnownModuleWithPayloadMakesExpectedChangeInOpenCover() =
-      Runner.init()
       Counter.measureTime <- DateTime.ParseExact
                                ("2017-12-29T16:33:40.9564026+00:00", "o", null)
       use stream =
@@ -157,7 +153,6 @@ module AltCoverTests =
 
     [<Test>]
     let FlushLeavesExpectedTraces() =
-      Runner.init()
       let saved = Console.Out
       let here = Directory.GetCurrentDirectory()
       let where = Assembly.GetExecutingAssembly().Location |> Path.GetDirectoryName
@@ -202,7 +197,6 @@ module AltCoverTests =
 
     [<Test>]
     let FlushLeavesExpectedTracesWhenDiverted() =
-      Runner.init()
       let saved = Console.Out
       let here = Directory.GetCurrentDirectory()
       let where = Assembly.GetExecutingAssembly().Location |> Path.GetDirectoryName
@@ -249,7 +243,6 @@ module AltCoverTests =
     // Runner.fs and CommandLine.fs
     [<Test>]
     let UsageIsAsExpected() =
-      Runner.init()
       let options = Runner.DeclareOptions()
       let saved = Console.Error
       try
@@ -294,7 +287,6 @@ module AltCoverTests =
 
     [<Test>]
     let ShouldLaunchWithExpectedOutput() =
-      Runner.init()
       // Hack for running while instrumented
       let where = Assembly.GetExecutingAssembly().Location
       let path =
@@ -355,7 +347,6 @@ module AltCoverTests =
 
     [<Test>]
     let ShouldHaveExpectedOptions() =
-      Runner.init()
       let options = Runner.DeclareOptions()
       Assert.That(options.Count, Is.EqualTo 12)
       Assert.That
@@ -368,7 +359,6 @@ module AltCoverTests =
 
     [<Test>]
     let ParsingJunkIsAnError() =
-      Runner.init()
       let options = Runner.DeclareOptions()
       let parse = CommandLine.ParseCommandLine [| "/@thisIsNotAnOption" |] options
       match parse with
@@ -379,7 +369,6 @@ module AltCoverTests =
 
     [<Test>]
     let ParsingJunkAfterSeparatorIsExpected() =
-      Runner.init()
       let options = Runner.DeclareOptions()
       let input = [| "--"; "/@thisIsNotAnOption"; "this should be OK" |]
       let parse = CommandLine.ParseCommandLine input options
@@ -391,7 +380,6 @@ module AltCoverTests =
 
     [<Test>]
     let ParsingHelpGivesHelp() =
-      Runner.init()
       let options = Runner.DeclareOptions()
       let input = [| "--?" |]
       let parse = CommandLine.ParseCommandLine input options
@@ -415,7 +403,6 @@ module AltCoverTests =
 
     [<Test>]
     let ParsingErrorHelpGivesHelp() =
-      Runner.init()
       let options = Runner.DeclareOptions()
 
       let input =
@@ -445,7 +432,6 @@ module AltCoverTests =
 
     [<Test>]
     let ParsingExeGivesExe() =
-      Runner.init()
       lock Runner.executable (fun () ->
         try
           Runner.executable := None
@@ -466,7 +452,6 @@ module AltCoverTests =
 
     [<Test>]
     let ParsingMultipleExeGivesFailure() =
-      Runner.init()
       lock Runner.executable (fun () ->
         try
           Runner.executable := None
@@ -491,7 +476,6 @@ module AltCoverTests =
 
     [<Test>]
     let ParsingNoExeGivesFailure() =
-      Runner.init()
       lock Runner.executable (fun () ->
         try
           Runner.executable := None
@@ -509,7 +493,6 @@ module AltCoverTests =
 
     [<Test>]
     let ParsingWorkerGivesWorker() =
-      Runner.init()
       try
         Runner.workingDirectory <- None
         let options = Runner.DeclareOptions()
@@ -529,7 +512,6 @@ module AltCoverTests =
 
     [<Test>]
     let ParsingMultipleWorkerGivesFailure() =
-      Runner.init()
       try
         Runner.workingDirectory <- None
         let options = Runner.DeclareOptions()
@@ -552,7 +534,6 @@ module AltCoverTests =
 
     [<Test>]
     let ParsingBadWorkerGivesFailure() =
-      Runner.init()
       try
         Runner.workingDirectory <- None
         let options = Runner.DeclareOptions()
@@ -569,7 +550,6 @@ module AltCoverTests =
 
     [<Test>]
     let ParsingNoWorkerGivesFailure() =
-      Runner.init()
       try
         Runner.workingDirectory <- None
         let options = Runner.DeclareOptions()
@@ -585,7 +565,6 @@ module AltCoverTests =
 
     [<Test>]
     let ParsingRecorderGivesRecorder() =
-      Runner.init()
       try
         Runner.recordingDirectory <- None
         let options = Runner.DeclareOptions()
@@ -605,7 +584,6 @@ module AltCoverTests =
 
     [<Test>]
     let ParsingMultipleRecorderGivesFailure() =
-      Runner.init()
       try
         Runner.recordingDirectory <- None
         let options = Runner.DeclareOptions()
@@ -628,7 +606,6 @@ module AltCoverTests =
 
     [<Test>]
     let ParsingBadRecorderGivesFailure() =
-      Runner.init()
       try
         Runner.recordingDirectory <- None
         let options = Runner.DeclareOptions()
@@ -645,7 +622,6 @@ module AltCoverTests =
 
     [<Test>]
     let ParsingNoRecorderGivesFailure() =
-      Runner.init()
       try
         Runner.recordingDirectory <- None
         let options = Runner.DeclareOptions()
@@ -661,7 +637,6 @@ module AltCoverTests =
 
     [<Test>]
     let ParsingCollectGivesCollect() =
-      Runner.init()
       try
         Runner.collect := false
         let options = Runner.DeclareOptions()
@@ -678,7 +653,6 @@ module AltCoverTests =
 
     [<Test>]
     let ParsingMultipleCollectGivesFailure() =
-      Runner.init()
       try
         Runner.collect := false
         let options = Runner.DeclareOptions()
@@ -695,7 +669,6 @@ module AltCoverTests =
 
     [<Test>]
     let ParsingLcovGivesLcov() =
-      Runner.init()
       lock LCov.path (fun () ->
         try
           LCov.path := None
@@ -719,7 +692,6 @@ module AltCoverTests =
 
     [<Test>]
     let ParsingMultipleLcovGivesFailure() =
-      Runner.init()
       lock LCov.path (fun () ->
         try
           LCov.path := None
@@ -746,7 +718,6 @@ module AltCoverTests =
 
     [<Test>]
     let ParsingNoLcovGivesFailure() =
-      Runner.init()
       lock LCov.path (fun () ->
         try
           LCov.path := None
@@ -766,7 +737,6 @@ module AltCoverTests =
 
     [<Test>]
     let ParsingThresholdGivesThreshold() =
-      Runner.init()
       try
         Runner.threshold <- None
         let options = Runner.DeclareOptions()
@@ -785,7 +755,6 @@ module AltCoverTests =
 
     [<Test>]
     let ParsingMultipleThresholdGivesFailure() =
-      Runner.init()
       try
         Runner.threshold <- None
         let options = Runner.DeclareOptions()
@@ -802,7 +771,6 @@ module AltCoverTests =
 
     [<Test>]
     let ParsingBadThresholdGivesFailure() =
-      Runner.init()
       try
         Runner.threshold <- None
         let options = Runner.DeclareOptions()
@@ -818,7 +786,6 @@ module AltCoverTests =
 
     [<Test>]
     let ParsingEmptyThresholdGivesFailure() =
-      Runner.init()
       try
         Runner.threshold <- None
         let options = Runner.DeclareOptions()
@@ -834,7 +801,6 @@ module AltCoverTests =
 
     [<Test>]
     let ParsingNoThresholdGivesFailure() =
-      Runner.init()
       try
         Runner.threshold <- None
         let options = Runner.DeclareOptions()
@@ -850,7 +816,6 @@ module AltCoverTests =
 
     [<Test>]
     let ParsingCoberturaGivesCobertura() =
-      Runner.init()
       lock Cobertura.path (fun () ->
         try
           Cobertura.path := None
@@ -874,7 +839,6 @@ module AltCoverTests =
 
     [<Test>]
     let ParsingMultipleCoberturaGivesFailure() =
-      Runner.init()
       lock Cobertura.path (fun () ->
         try
           Cobertura.path := None
@@ -901,7 +865,6 @@ module AltCoverTests =
 
     [<Test>]
     let ParsingNoCoberturaGivesFailure() =
-      Runner.init()
       lock Cobertura.path (fun () ->
         try
           Cobertura.path := None
@@ -921,7 +884,6 @@ module AltCoverTests =
 
     [<Test>]
     let ParsingOutputGivesOutput() =
-      Runner.init()
       try
         Runner.output <- None
         let options = Runner.DeclareOptions()
@@ -941,7 +903,6 @@ module AltCoverTests =
 
     [<Test>]
     let ParsingMultipleOutputGivesFailure() =
-      Runner.init()
       try
         Runner.output <- None
         Runner.collect := false
@@ -966,7 +927,6 @@ module AltCoverTests =
 
     [<Test>]
     let ParsingNoOutputGivesFailure() =
-      Runner.init()
       try
         Runner.output <- None
         let options = Runner.DeclareOptions()
@@ -983,7 +943,6 @@ module AltCoverTests =
 
     [<Test>]
     let ParsingDropGivesDrop() =
-      Runner.init()
       try
         CommandLine.dropReturnCode := false
         let options = Runner.DeclareOptions()
@@ -1000,7 +959,6 @@ module AltCoverTests =
 
     [<Test>]
     let ParsingMultipleDropGivesFailure() =
-      Runner.init()
       try
         CommandLine.dropReturnCode := false
         let options = Runner.DeclareOptions()
@@ -1017,8 +975,7 @@ module AltCoverTests =
 
     [<Test>]
     let ParsingTCString() =
-      Runner.init()
-      [
+       [
         (String.Empty, Default)
         ("+", BPlus)
         ("+b", BPlus)
@@ -1041,7 +998,6 @@ module AltCoverTests =
 
     [<Test>]
     let ParsingTCGivesTC() =
-      Runner.init()
       [
         (String.Empty, B)
         (":+", BPlus)
@@ -1074,7 +1030,6 @@ module AltCoverTests =
 
     [<Test>]
     let ParsingMultipleTCGivesFailure() =
-      Runner.init()
       lock Runner.SummaryFormat (fun () ->
         Runner.SummaryFormat <- Default
         let options = Runner.DeclareOptions()
@@ -1089,7 +1044,6 @@ module AltCoverTests =
 
     [<Test>]
     let ParsingBadTCGivesFailure() =
-      Runner.init()
       lock Runner.SummaryFormat (fun () ->
         Runner.SummaryFormat <- Default
         let options = Runner.DeclareOptions()
@@ -1104,7 +1058,6 @@ module AltCoverTests =
 
     [<Test>]
     let ShouldRequireExe() =
-      Runner.init()
       lock Runner.executable (fun () ->
         try
           Runner.executable := None
@@ -1120,7 +1073,6 @@ module AltCoverTests =
 
     [<Test>]
     let ShouldAcceptExe() =
-      Runner.init()
       lock Runner.executable (fun () ->
         try
           Runner.executable := Some "xxx"
@@ -1137,7 +1089,6 @@ module AltCoverTests =
 
     [<Test>]
     let ShouldRequireCollectIfNotExe() =
-      Runner.init()
       lock Runner.executable (fun () ->
         try
           Runner.executable := None
@@ -1153,7 +1104,6 @@ module AltCoverTests =
 
     [<Test>]
     let ShouldRejectExeIfCollect() =
-      Runner.init()
       lock Runner.executable (fun () ->
         try
           Runner.executable := Some "xxx"
@@ -1171,7 +1121,6 @@ module AltCoverTests =
 
     [<Test>]
     let ShouldRequireWorker() =
-      Runner.init()
       try
         Runner.workingDirectory <- None
         let options = Runner.DeclareOptions()
@@ -1187,7 +1136,6 @@ module AltCoverTests =
 
     [<Test>]
     let ShouldAcceptWorker() =
-      Runner.init()
       try
         Runner.workingDirectory <- Some "ShouldAcceptWorker"
         let options = Runner.DeclareOptions()
@@ -1203,7 +1151,6 @@ module AltCoverTests =
 
     [<Test>]
     let ShouldRequireRecorder() =
-      Runner.init()
       try
         Runner.recordingDirectory <- None
         let options = Runner.DeclareOptions()
@@ -1219,7 +1166,6 @@ module AltCoverTests =
 
     [<Test>]
     let ShouldRequireRecorderDll() =
-      Runner.init()
       try
         let where = Assembly.GetExecutingAssembly().Location
         let path =
@@ -1244,7 +1190,6 @@ module AltCoverTests =
 
     [<Test>]
     let ShouldAcceptRecorder() =
-      Runner.init()
       try
         let here = (Assembly.GetExecutingAssembly().Location |> Path.GetDirectoryName)
         let where = Path.Combine(here, Guid.NewGuid().ToString())
@@ -1270,7 +1215,6 @@ module AltCoverTests =
 
     [<Test>]
     let ShouldHandleReturnCodes() =
-      Runner.init()
       // Hack for running while instrumented
       let where = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location)
 #if NETCOREAPP2_0
@@ -1304,7 +1248,6 @@ module AltCoverTests =
 
     [<Test>]
     let ShouldProcessTrailingArguments() =
-      Runner.init()
       // Hack for running while instrumented
       let where = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location)
       let path =
@@ -1368,14 +1311,12 @@ module AltCoverTests =
 
     [<Test>]
     let ShouldNoOp() =
-      Runner.init()
       let where = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location)
       let r = CommandLine.ProcessTrailingArguments [] <| DirectoryInfo(where)
       Assert.That(r, Is.EqualTo 0)
 
     [<Test>]
     let ErrorResponseIsAsExpected() =
-      Runner.init()
       let saved = Console.Error
       try
         use stderr = new StringWriter()
@@ -1510,7 +1451,6 @@ or
 
     [<Test>]
     let ShouldGetStringConstants() =
-      Runner.init()
       let where = Assembly.GetExecutingAssembly().Location |> Path.GetDirectoryName
       let save = Runner.RecorderName
       lock synchronized (fun () ->
@@ -1534,7 +1474,6 @@ or
 
     [<Test>]
     let ShouldProcessPayload() =
-      Runner.init()
       // Hack for running while instrumented
       let where = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location)
       let path =
@@ -1600,7 +1539,6 @@ or
 
     [<Test>]
     let WriteLeavesExpectedTraces() =
-      Runner.init()
       let saved = Console.Out
       let here = Directory.GetCurrentDirectory()
       let where = Assembly.GetExecutingAssembly().Location |> Path.GetDirectoryName
@@ -1653,7 +1591,6 @@ or
 
     [<Test>]
     let NullPayloadShouldReportNothing() =
-      Runner.init()
       let counts = Dictionary<string, Dictionary<int, PointVisit>>()
       let where = Assembly.GetExecutingAssembly().Location |> Path.GetDirectoryName
       let unique = Path.Combine(where, Guid.NewGuid().ToString())
@@ -1666,7 +1603,6 @@ or
 
     [<Test>]
     let ActivePayloadShouldReportAsExpected() =
-      Runner.init()
       let counts = Dictionary<string, Dictionary<int, PointVisit>>()
       let where = Assembly.GetExecutingAssembly().Location |> Path.GetDirectoryName
       let unique = Path.Combine(where, Guid.NewGuid().ToString())
@@ -1711,7 +1647,6 @@ or
 
     [<Test>]
     let CollectShouldReportAsExpected() =
-      Runner.init()
       try
         Runner.collect := true
         let counts = Dictionary<string, Dictionary<int, PointVisit>>()
@@ -1741,7 +1676,6 @@ or
 
     [<Test>]
     let JunkPayloadShouldReportAsExpected() =
-      Runner.init()
       let counts = Dictionary<string, Dictionary<int, PointVisit>>()
       let where = Assembly.GetExecutingAssembly().Location |> Path.GetDirectoryName
       let unique = Path.Combine(where, Guid.NewGuid().ToString())
@@ -1762,7 +1696,6 @@ or
 
     [<Test>]
     let TrackingPayloadShouldReportAsExpected() =
-      Runner.init()
       let counts = Dictionary<string, Dictionary<int, PointVisit>>()
       let where = Assembly.GetExecutingAssembly().Location |> Path.GetDirectoryName
       let unique = Path.Combine(where, Guid.NewGuid().ToString())
@@ -1870,7 +1803,6 @@ or
 
     [<Test>]
     let PointProcessShouldCaptureTimes() =
-      Runner.init()
       let x = XmlDocument()
       x.LoadXml("<root />")
       let root = x.DocumentElement
@@ -1890,7 +1822,6 @@ or
 
     [<Test>]
     let PostprocessShouldRestoreKnownOpenCoverState() =
-      Runner.init()
       Counter.measureTime <- DateTime.ParseExact
                                ("2017-12-29T16:33:40.9564026+00:00", "o", null)
       use stream =
@@ -1968,7 +1899,6 @@ or
 
     [<Test>]
     let PostprocessShouldRestoreDegenerateOpenCoverState() =
-      Runner.init()
       Counter.measureTime <- DateTime.ParseExact
                                ("2017-12-29T16:33:40.9564026+00:00", "o", null)
       use stream =
@@ -2036,7 +1966,6 @@ or
 
     [<Test>]
     let PostprocessShouldRestoreBranchOnlyOpenCoverState() =
-      Runner.init()
       Counter.measureTime <- DateTime.ParseExact
                                ("2017-12-29T16:33:40.9564026+00:00", "o", null)
       use stream =
@@ -2102,7 +2031,6 @@ or
 
     [<Test>]
     let JunkTokenShouldDefaultZero() =
-      Runner.init()
       let visits = Dictionary<int, PointVisit>()
       let key = " "
       let result = Runner.LookUpVisitsByToken key visits
@@ -2112,7 +2040,6 @@ or
 
     [<Test>]
     let EmptyNCoverGeneratesExpectedSummary() =
-      Runner.init()
       let report = XDocument()
       let builder = System.Text.StringBuilder()
       Runner.Summary.Clear() |> ignore
@@ -2135,7 +2062,6 @@ or
 
     [<Test>]
     let EmptyNCoverGeneratesExpectedTCSummary() =
-      Runner.init()
       let report = XDocument()
       let builder = System.Text.StringBuilder()
       Runner.Summary.Clear() |> ignore
@@ -2160,7 +2086,6 @@ or
 
     [<Test>]
     let EmptyNCoverGeneratesExpectedSummaries() =
-      Runner.init()
       let report = XDocument()
       let builder = System.Text.StringBuilder()
       Runner.Summary.Clear() |> ignore
@@ -2185,7 +2110,6 @@ or
 
     [<Test>]
     let NCoverShouldGeneratePlausibleSummary() =
-      Runner.init()
       let resource =
         Assembly.GetExecutingAssembly().GetManifestResourceNames()
         |> Seq.find (fun n -> n.EndsWith("SimpleCoverage.xml", StringComparison.Ordinal))
@@ -2215,7 +2139,6 @@ or
 
     [<Test>]
     let EmptyOpenCoverGeneratesExpectedSummary() =
-      Runner.init()
       let report = XDocument.Load(new System.IO.StringReader("""<CoverageSession>
   <Summary numSequencePoints="0" visitedSequencePoints="0" numBranchPoints="0" visitedBranchPoints="0" sequenceCoverage="0" branchCoverage="0" maxCyclomaticComplexity="0" minCyclomaticComplexity="1" visitedClasses="0" numClasses="0" visitedMethods="0" numMethods="0" />
 </CoverageSession>"""))
@@ -2238,7 +2161,6 @@ or
 
     [<Test>]
     let EmptyOpenCoverGeneratesExpectedTCSummary() =
-      Runner.init()
       let report = XDocument.Load(new System.IO.StringReader("""<CoverageSession>
   <Summary numSequencePoints="0" visitedSequencePoints="0" numBranchPoints="0" visitedBranchPoints="0" sequenceCoverage="0" branchCoverage="0" maxCyclomaticComplexity="0" minCyclomaticComplexity="1" visitedClasses="0" numClasses="0" visitedMethods="0" numMethods="0" />
 </CoverageSession>"""))
@@ -2265,7 +2187,6 @@ or
 
     [<Test>]
     let EmptyOpenCoverGeneratesExpectedSummaries() =
-      Runner.init()
       let report = XDocument.Load(new System.IO.StringReader("""<CoverageSession>
   <Summary numSequencePoints="0" visitedSequencePoints="0" numBranchPoints="0" visitedBranchPoints="0" sequenceCoverage="0" branchCoverage="0" maxCyclomaticComplexity="0" minCyclomaticComplexity="1" visitedClasses="0" numClasses="0" visitedMethods="0" numMethods="0" />
 </CoverageSession>"""))
@@ -2296,7 +2217,6 @@ or
 
     [<Test>]
     let OpenCoverShouldGeneratePlausibleSummary() =
-      Runner.init()
       let resource =
         Assembly.GetExecutingAssembly().GetManifestResourceNames()
         |> Seq.find
@@ -2331,7 +2251,6 @@ or
 
     [<Test>]
     let OpenCoverShouldGeneratePlausibleLcov() =
-      Runner.init()
       let resource =
         Assembly.GetExecutingAssembly().GetManifestResourceNames()
         |> Seq.find
@@ -2364,7 +2283,6 @@ or
 
     [<Test>]
     let NCoverShouldGeneratePlausibleLcov() =
-      Runner.init()
       let resource =
         Assembly.GetExecutingAssembly().GetManifestResourceNames()
         |> Seq.find (fun n -> n.EndsWith("SimpleCoverage.xml", StringComparison.Ordinal))
@@ -2396,7 +2314,6 @@ or
 
     [<Test>]
     let NCoverShouldGeneratePlausibleLcovWithMissingFullName() =
-      Runner.init()
       let resource =
         Assembly.GetExecutingAssembly().GetManifestResourceNames()
         |> Seq.find
@@ -2433,7 +2350,6 @@ or
 
     [<Test>]
     let MultiSortDoesItsThing() =
-      Runner.init()
       let load f =
         use r = new System.IO.StringReader(f)
         XDocument.Load r
@@ -2503,7 +2419,6 @@ or
 
     [<Test>]
     let NCoverShouldGeneratePlausibleCobertura() =
-      Runner.init()
       let resource =
         Assembly.GetExecutingAssembly().GetManifestResourceNames()
         |> Seq.find (fun n -> n.EndsWith("SimpleCoverage.xml", StringComparison.Ordinal))
@@ -2541,7 +2456,6 @@ or
 
     [<Test>]
     let NCoverShouldGeneratePlausibleCoberturaWithMissingFullName() =
-      Runner.init()
       let resource =
         Assembly.GetExecutingAssembly().GetManifestResourceNames()
         |> Seq.find
@@ -2585,7 +2499,6 @@ or
 
     [<Test>]
     let OpenCoverShouldGeneratePlausibleCobertura() =
-      Runner.init()
       let resource =
         Assembly.GetExecutingAssembly().GetManifestResourceNames()
         |> Seq.find
@@ -2627,7 +2540,6 @@ or
 
     [<Test>]
     let ThresholdViolationShouldBeReported() =
-      Runner.init()
       let saveErr = Output.Error
       let saveSummaries = Runner.Summaries
       let builder = System.Text.StringBuilder()
@@ -2648,6 +2560,5 @@ or
 
     [<Test>]
     let TryGetValueHandlesNull() =
-      Runner.init()
       let dict : Dictionary<int, int> = null
       Assert.That(Runner.TryGetValue dict 0 |> fst, Is.False)
