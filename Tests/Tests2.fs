@@ -1003,7 +1003,11 @@ module AltCoverTests2 =
       //IL_0012: switch IL_002b,IL_002d,IL_002b,IL_002d,IL_002b
       //IL_002b: br.s IL_0041
 
+#if NETCOREAPP2_0
+      let expected = 46
+#else
       let expected = 43
+#endif
       if next <> expected
       then target.Body.Instructions
            |> Seq.iter (printfn "%A")

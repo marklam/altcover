@@ -664,7 +664,10 @@ _Target "BuildForUnitTestDotNet"
 _Target "UnitTestDotNet" (fun _ ->
   Directory.ensure "./_Reports"
   try
-    !!(@"./*Tests/*.tests.core.fsproj")
+    !!(@"./*Tests/*ver.tests.core.fsproj")
+    |> Seq.iter (fun p -> Actions.RunDotnet dotnetOptions "run" ("--no-build --project  " + p) "expecto test")
+
+    !!(@"./*Tests/*der.tests.core.fsproj")
     |> Seq.iter
          (DotNet.test (fun p ->
            { p.WithCommon dotnetOptions with

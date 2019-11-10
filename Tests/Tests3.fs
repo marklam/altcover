@@ -1477,7 +1477,11 @@ module AltCoverTests3 =
           Assert.That(x, Is.Empty)
         Assert.That(Visitor.coverstyle, Is.EqualTo CoverStyle.LineOnly)
         match Visitor.reportFormat with
+#if NETCOREAPP2_0
+        | None -> ()
+#else
         | None -> Assert.Pass()
+#endif
         | Some x -> Assert.Fail()
       finally
         Visitor.coverstyle <- CoverStyle.All
@@ -1574,7 +1578,12 @@ module AltCoverTests3 =
           Assert.That(x, Is.Empty)
         Assert.That(Visitor.coverstyle, Is.EqualTo CoverStyle.BranchOnly)
         match Visitor.reportFormat with
-        | None -> Assert.Pass()
+        | None ->
+#if NETCOREAPP2_0
+          ()
+#else
+          Assert.Pass()
+#endif
         | Some x -> Assert.Fail()
       finally
         Visitor.coverstyle <- CoverStyle.All
@@ -2054,7 +2063,8 @@ module AltCoverTests3 =
            |> Seq.filter
                 (fun f -> (f |> Path.GetFileName).StartsWith("xunit.", StringComparison.OrdinalIgnoreCase) |> not)
            |> Seq.filter
-                (fun f -> (f |> Path.GetFileName).StartsWith("FSharp.", StringComparison.OrdinalIgnoreCase) |> not),
+                (fun f -> (f |> Path.GetFileName).StartsWith("FSharp.", StringComparison.OrdinalIgnoreCase) |> not)
+           |> Seq.sort,
            Is.EquivalentTo
              (f.EnumerateFiles()
               |> Seq.map (fun x -> x.FullName)
@@ -2062,11 +2072,13 @@ module AltCoverTests3 =
                    (fun f ->
                    f.EndsWith(".exe", StringComparison.OrdinalIgnoreCase)
                    || f.EndsWith(".dll", StringComparison.OrdinalIgnoreCase))
+              |> Seq.filter (fun f -> f |> Path.GetFileName <> "AltCover.Tests.exe")
               |> Seq.filter
                    (fun f ->
                    File.Exists(Path.ChangeExtension(f, ".pdb")) ||
                    File.Exists(f + ".mdb") ||
-                   f |> Path.GetFileNameWithoutExtension = "Sample8")),
+                   f |> Path.GetFileNameWithoutExtension = "Sample8")
+             |> Seq.sort),
            "First list mismatch with from files")
         Assert.That(y,
                     Is.EquivalentTo(x

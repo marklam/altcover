@@ -1217,7 +1217,12 @@ module AltCoverTests =
             Assert.That(y, Is.SameAs options)
             Assert.That(x, Is.Empty)
           match Runner.SummaryFormat with
-          | x when v = x -> Assert.Pass()
+          | x when v = x ->
+#if NETCOREAPP2_0
+            ()
+#else
+            Assert.Pass()
+#endif
           | _ -> Assert.Fail(sprintf "%A %A => %A" a v Runner.SummaryFormat) ))
 
 #if NETCOREAPP2_0

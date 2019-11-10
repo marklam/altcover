@@ -96,6 +96,7 @@ module AltCoverTests =
                x.EndsWith(".dll", StringComparison.OrdinalIgnoreCase)
                || x.EndsWith(".exe", StringComparison.OrdinalIgnoreCase))
           |> Seq.filter (fun f -> f |> Path.GetFileNameWithoutExtension <> "testhost")
+          |> Seq.filter (fun f -> f |> Path.GetFileName <> "AltCover.Tests.exe")
           |> Seq.map (fun x -> (x, Mono.Cecil.AssemblyDefinition.ReadAssembly x))
           |> Seq.filter (fun x ->
                (fst x) + ".mdb"
@@ -106,6 +107,10 @@ module AltCoverTests =
                not
                <| (snd x).FullName.StartsWith("altcode.", StringComparison.OrdinalIgnoreCase))
 #if NETCOREAPP2_0
+          |> Seq.filter
+               (fun x ->
+               not
+               <| (snd x).FullName.StartsWith("Expecto", StringComparison.OrdinalIgnoreCase))
           |> Seq.filter
                (fun x ->
                not
@@ -250,6 +255,7 @@ module AltCoverTests =
            |> File.Exists
            |> not)
       |> Seq.filter (fun f -> f |> Path.GetFileNameWithoutExtension <> "testhost")
+      |> Seq.filter (fun f -> f |> Path.GetFileName <> "AltCover.Tests.exe")
       |> Seq.iter
            (fun x ->
            let def = Mono.Cecil.AssemblyDefinition.ReadAssembly x
@@ -384,6 +390,7 @@ module AltCoverTests =
              x.EndsWith(".dll", StringComparison.OrdinalIgnoreCase)
              || x.EndsWith(".exe", StringComparison.OrdinalIgnoreCase))
         |> Seq.filter (fun f -> f |> Path.GetFileNameWithoutExtension <> "testhost")
+        |> Seq.filter (fun f -> f |> Path.GetFileName <> "AltCover.Tests.exe")
         |> Seq.map Mono.Cecil.AssemblyDefinition.ReadAssembly
         |> Seq.filter
              (fun x ->
@@ -1277,6 +1284,7 @@ module AltCoverTests =
     //[<Test>]
     let KeyHasExpectedPlaceInIndex() =
       try
+        Visitor.keys.Clear()
         Assert.That(Visitor.keys.Keys.Count, Is.EqualTo(0))
         let pair = ProvideKeyPair()
         Visitor.Add(pair)
