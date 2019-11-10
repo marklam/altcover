@@ -9,9 +9,7 @@ open Mono.Cecil
 open Mono.Cecil.Cil
 open Mono.Cecil.Rocks
 open Mono.Options
-open NUnit.Framework
 open Swensen.Unquote
-open System.Security.Policy
 
 module AltCoverTests2 =
 #if NETCOREAPP2_0
@@ -647,7 +645,7 @@ module AltCoverTests2 =
   #endif
 
     [<Test>]
-    let ShouldUpdateHandlerOK([<Range(0, 31)>] selection) =
+    let ShouldUpdateHandlerOK([<NUnit.Framework.Range(0, 31)>] selection) =
       let where = Assembly.GetExecutingAssembly().Location
       let path =
         Path.Combine(Path.GetDirectoryName(where) + AltCoverTests.Hack(), sample1)

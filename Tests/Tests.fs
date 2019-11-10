@@ -14,9 +14,8 @@ open Mono.Cecil
 open Mono.Cecil.Cil
 open Mono.Cecil.Rocks
 open N
-open NUnit.Framework
 
-[<IncludeExcludeAttribute>]
+[<NUnit.Framework.IncludeExcludeAttribute>]
 type ProxyObject() =
   inherit MarshalByRefObject()
 

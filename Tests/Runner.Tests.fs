@@ -1,4 +1,4 @@
-namespace Tests.Runner
+namespace Tests
 
 open System
 open System.Collections.Generic
@@ -15,20 +15,25 @@ open AltCover
 open AltCover.Augment
 open AltCover.Base
 open Mono.Options
-open NUnit.Framework
 open Swensen.Unquote
 
-#if NETCOREAPP2_0
+type Assert = NUnit.Framework.Assert
+type Does = NUnit.Framework.Does
+type Is = NUnit.Framework.Is
+
+#if NETCOREAPP2_1
+[<AttributeUsage(AttributeTargets.Method)>]
+type TestAttribute() = class
+    inherit Attribute()
+end
 #else
-    [<TestFixture>]
+type TestAttribute = NUnit.Framework.TestAttribute
 #endif
-module AltCoverTests =
+
+module AltCoverRunnerTests =
     // Base.fs
 
-#if NETCOREAPP2_0
-#else
     [<Test>]
-#endif
     let SafeDisposalProtects() =
       Runner.init()
       let obj1 =

@@ -7,7 +7,6 @@ open System.Reflection
 open AltCover
 open AltCover.Augment
 open Mono.Options
-open NUnit.Framework
 open Mono.Cecil.Cil
 
 module AltCoverTests3 =
