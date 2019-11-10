@@ -664,7 +664,7 @@ _Target "BuildForUnitTestDotNet"
 _Target "UnitTestDotNet" (fun _ ->
   Directory.ensure "./_Reports"
   try
-    !!(@"./*Tests/*.tests.core.fsproj")
+    !!(@"./*Tests/*.core.fsproj")
     |> Seq.iter
          (DotNet.test (fun p ->
            { p.WithCommon dotnetOptions with
@@ -688,7 +688,7 @@ _Target "UnitTestDotNetWithCoverlet" (fun _ ->
   Directory.ensure "./_Reports"
   try
     let xml =
-      !!(@"./*Tests/*.tests.core.fsproj")
+      !!(@"./*Tests/*.core.fsproj")
       |> Seq.fold (fun l f ->
            try
              f |> DotNet.test coverletTestOptions
