@@ -18,6 +18,10 @@ open Mono.Options
 open NUnit.Framework
 open Swensen.Unquote
 
+#if NETCOREAPP2_0
+#else
+    [<TestFixture>]
+#endif
 module AltCoverTests =
     // Base.fs
 

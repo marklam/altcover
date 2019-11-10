@@ -41,7 +41,7 @@ module AltCoverTests2 =
       StrongNameKeyData.Make(buffer.ToArray())
 
     // Instrument.fs
-    //[<Test>]
+    [<Test>]
     let ShouldBeAbleToGetTheVisitReportMethod() =
       let where = Assembly.GetExecutingAssembly().Location
       let path =
@@ -56,7 +56,7 @@ module AltCoverTests2 =
              "System.Void AltCover.Recorder.Instance.Pop()" ]
       |> List.iter (fun (n, m) -> test <@ Naming.FullMethodName m = n @>)
 
-    //[<Test>]
+    [<Test>]
     let ShouldBeAbleToClearTheStrongNameKey() =
       let where = Assembly.GetExecutingAssembly().Location
       let path =
@@ -76,7 +76,7 @@ module AltCoverTests2 =
       let token1 = def.Name.PublicKeyToken
       Assert.That(token1, Is.Empty)
 
-    //[<Test>]
+    [<Test>]
     let ShouldBeAbleToUpdateTheStrongNameKeyWherePossible() =
       let where = Assembly.GetExecutingAssembly().Location
       let path =
@@ -106,7 +106,7 @@ module AltCoverTests2 =
       let token' = String.Join(String.Empty, token1|> Seq.map (fun x -> x.ToString("x2")))
       Assert.That (token', Is.EqualTo("4ebffcaabf10ce6a"))
 
-    //[<Test>]
+    [<Test>]
     let NoKnownKeyInEmptyIndex() =
       try
         Visitor.keys.Clear()
@@ -118,7 +118,7 @@ module AltCoverTests2 =
       finally
         Visitor.keys.Clear()
 
-    //[<Test>]
+    [<Test>]
     let KnownKeyMatchedInIndex() =
       try
         Visitor.keys.Clear()
@@ -131,7 +131,7 @@ module AltCoverTests2 =
       finally
         Visitor.keys.Clear()
 
-    //[<Test>]
+    [<Test>]
     let ThirdPartyKeyNotMatchedInIndex() =
       try
         Visitor.keys.Clear()
@@ -142,7 +142,7 @@ module AltCoverTests2 =
       finally
         Visitor.keys.Clear()
 
-    //[<Test>]
+    [<Test>]
     let FakedUpKeyIsMatchedInIndex() =
       try
         Visitor.keys.Clear()
@@ -157,7 +157,7 @@ module AltCoverTests2 =
       finally
         Visitor.keys.Clear()
 
-    //[<Test>]
+    [<Test>]
     let NoKnownKeyIfAssemblyHasNone() =
       try
         Visitor.keys.Clear()
@@ -171,7 +171,7 @@ module AltCoverTests2 =
       finally
         Visitor.keys.Clear()
 
-    //[<Test>]
+    [<Test>]
     let NoKnownTokenInEmptyIndex() =
       try
         Visitor.keys.Clear()
@@ -183,7 +183,7 @@ module AltCoverTests2 =
       finally
         Visitor.keys.Clear()
 
-    //[<Test>]
+    [<Test>]
     let KnownTokenMatchedInIndex() =
       try
         Visitor.keys.Clear()
@@ -196,7 +196,7 @@ module AltCoverTests2 =
       finally
         Visitor.keys.Clear()
 
-    //[<Test>]
+    [<Test>]
     let NoKnownTokenIfAssemblyHasNone() =
       try
         Visitor.keys.Clear()
@@ -210,7 +210,7 @@ module AltCoverTests2 =
       finally
         Visitor.keys.Clear()
 
-    //[<Test>]
+    [<Test>]
     let ForeignTokenIsNotMatchedInIndex() =
       try
         Visitor.keys.Clear()
@@ -222,7 +222,7 @@ module AltCoverTests2 =
       finally
         Visitor.keys.Clear()
 
-    //[<Test>]
+    [<Test>]
     let FakedUpTokenIsMatchedInIndex() =
       try
         Visitor.keys.Clear()
@@ -237,7 +237,7 @@ module AltCoverTests2 =
       finally
         Visitor.keys.Clear()
 
-    //[<Test>]
+    [<Test>]
     let GuardShouldDisposeRecordingAssemblyOnException() =
       let where = Assembly.GetExecutingAssembly().Location
       let path =
@@ -261,7 +261,7 @@ module AltCoverTests2 =
              with // occasionally the dll file is locked by another process
                   :? System.UnauthorizedAccessException | :? IOException -> ())
 
-    //[<Test>]
+    [<Test>]
     let ShouldBeAbleToTellAnAssembly() =
       let where = Assembly.GetExecutingAssembly().Location
       let here = Path.GetDirectoryName where
@@ -280,7 +280,7 @@ module AltCoverTests2 =
                        |> String.IsNullOrWhiteSpace
                        |> not, d))
 
-    //[<Test>]
+    [<Test>]
     let ShouldBeAbleToValidateAnAssembly() =
       let where = Assembly.GetExecutingAssembly().Location
       let here = Path.GetDirectoryName where
@@ -307,7 +307,7 @@ module AltCoverTests2 =
       let x = CommandLine.ValidateAssembly "*" "**"
       Assert.That(x, Is.EqualTo(String.Empty, false))
 
-    //[<Test>]
+    [<Test>]
     let ShouldBeAbleToLocateAReference() =
       let where = Assembly.GetExecutingAssembly().Location
       let here = Path.GetDirectoryName where
@@ -352,7 +352,7 @@ module AltCoverTests2 =
       finally
         Instrument.ResolutionTable.Clear()
 
-    //[<Test>]
+    [<Test>]
     let ShouldBeAbleToPrepareTheAssembly() =
       try
         Visitor.keys.Clear()
@@ -392,7 +392,7 @@ module AltCoverTests2 =
       finally
         Visitor.keys.Clear()
 
-    //[<Test>]
+    [<Test>]
     let ShouldGetTrackingStyleIfSet() =
       let save2 = Visitor.reportFormat
       let save3 = Visitor.interval
@@ -426,7 +426,7 @@ module AltCoverTests2 =
 #if NETCOREAPP2_0
     // TODO
 #else
-    //[<Test>]
+    [<Test>]
     let ShouldSymbolWriterOnWindowsOnly () =
       match Instrument.CreateSymbolWriter ".pdb" true true with
       | :? Mono.Cecil.Mdb.MdbWriterProvider -> ()
@@ -441,7 +441,7 @@ module AltCoverTests2 =
       | :? Mono.Cecil.Mdb.MdbWriterProvider -> ()
       | x -> Assert.Fail("Mono.Cecil.Mdb.MdbWriterProvider expected but got " + x.GetType().FullName)
 
-    //[<Test>]
+    [<Test>]
     let ShouldGetNewFilePathFromPreparedAssembly () =
       try
         Visitor.keys.Clear()
@@ -526,7 +526,7 @@ module AltCoverTests2 =
       finally
         Visitor.keys.Clear()
 
-    //[<Test>]
+    [<Test>]
     let ShouldWriteMonoAssemblyOK () =
       try
         Visitor.keys.Clear()
@@ -574,7 +574,7 @@ module AltCoverTests2 =
         Visitor.keys.Clear()
         Visitor.defaultStrongNameKey <- None
 
-    //[<Test>]
+    [<Test>]
     let ShouldGetVisitFromWrittenAssembly () =
       try
         Visitor.keys.Clear()
@@ -646,7 +646,7 @@ module AltCoverTests2 =
         Visitor.keys.Clear()
   #endif
 
-    //[<Test>]
+    [<Test>]
     let ShouldUpdateHandlerOK([<Range(0, 31)>] selection) =
       let where = Assembly.GetExecutingAssembly().Location
       let path =
@@ -688,7 +688,7 @@ module AltCoverTests2 =
                   Is.EqualTo(if selection &&& 16 = 16 then newValue
                              else other))
 
-    //[<Test>]
+    [<Test>]
     let ShouldSubstituteInstructionOperand() =
       let where = Assembly.GetExecutingAssembly().Location
       let path =
@@ -716,7 +716,7 @@ module AltCoverTests2 =
            subject.SubstituteInstructionOperand i
            Assert.That(i.Operand, Is.EqualTo newValue))
 
-    //[<Test>]
+    [<Test>]
     let ShouldNotSubstituteDifferentInstructionOperand() =
       let where = Assembly.GetExecutingAssembly().Location
       let path =
@@ -752,7 +752,7 @@ module AltCoverTests2 =
       |> Seq.map snd
       |> Seq.head
 
-    //[<Test>]
+    [<Test>]
     let ShouldSubstituteIntoInstructionOperandArray() =
       let where = Assembly.GetExecutingAssembly().Location
       let path =
@@ -784,7 +784,7 @@ module AltCoverTests2 =
            let t' = AsIArray i.Operand
            Assert.That(t' o, Is.EqualTo newValue))
 
-    //[<Test>]
+    [<Test>]
     let ShouldNotSubstituteOutsideInstructionOperandArray() =
       let where = Assembly.GetExecutingAssembly().Location
       let path =
@@ -814,7 +814,7 @@ module AltCoverTests2 =
            Seq.zip (i.Operand :?> Instruction []) before
            |> Seq.iter (fun (after, before) -> Assert.That(after, Is.SameAs before)))
 
-    //[<Test>]
+    [<Test>]
     let ShouldNotSubstituteOtherOperand() =
       let where = Assembly.GetExecutingAssembly().Location
       let path =
@@ -845,7 +845,7 @@ module AltCoverTests2 =
            subject.SubstituteInstructionOperand i
            Assert.That(i.Operand, Is.SameAs before))
 
-    //[<Test>]
+    [<Test>]
     let ShouldBeAbleToTrackAMethod() =
       let where = Assembly.GetExecutingAssembly().Location
 #if NETCOREAPP2_0
@@ -881,7 +881,7 @@ module AltCoverTests2 =
       Assert.That
         (recorder.Head.Body.ExceptionHandlers.Count, Is.EqualTo(handlersBefore + 1))
 
-    //[<Test>]
+    [<Test>]
     let ShouldBeAbleToTrackAMethodWithTailCalls() =
       let where = Assembly.GetExecutingAssembly().Location
 #if NETCOREAPP2_0
@@ -926,7 +926,7 @@ module AltCoverTests2 =
         (target.Body.Instructions.Count, Is.EqualTo(countBefore + 5 - tailsBefore))
       Assert.That(target.Body.ExceptionHandlers.Count, Is.EqualTo(handlersBefore + 1))
 
-    //[<Test>]
+    [<Test>]
     let ShouldBeAbleToInstrumentASwitchForNCover() =
       let where = Assembly.GetExecutingAssembly().Location
 #if NETCOREAPP2_0
@@ -1015,7 +1015,7 @@ module AltCoverTests2 =
       Assert.That (next, Is.EqualTo expected)
       Assert.That (targets2, Is.EquivalentTo [ next; n2; next; n2; next ])
 
-    //[<Test>]
+    [<Test>]
     let ShouldNotChangeAnUntrackedMethod() =
       let where = Assembly.GetExecutingAssembly().Location
       let path =
@@ -1030,7 +1030,7 @@ module AltCoverTests2 =
       Assert.That(recorder.Head.Body.Instructions.Count, Is.EqualTo countBefore)
       Assert.That(recorder.Head.Body.ExceptionHandlers.Count, Is.EqualTo handlersBefore)
 
-    //[<Test>]
+    [<Test>]
     let SwitchBranchesShouldInstrumentByPushingDown() =
       let where = Assembly.GetExecutingAssembly().Location
       let path = Path.Combine(Path.GetDirectoryName(where), "Sample2.dll")
@@ -1088,7 +1088,7 @@ module AltCoverTests2 =
         Visitor.NameFilters.Clear()
         Visitor.reportFormat <- None
 
-    //[<Test>]
+    [<Test>]
     let PseudoSwitchVisibleBranchesShouldSkipNonRepresentativeCases() =
       let where = Assembly.GetExecutingAssembly().Location
       let path = Path.Combine(Path.GetDirectoryName(where), "Sample16.dll")
@@ -1147,7 +1147,7 @@ module AltCoverTests2 =
         Visitor.reportFormat <- None
         Visitor.coalesceBranches := false
 
-    //[<Test>]
+    [<Test>]
     let SimpleBranchShouldInstrumentByPushingDown() =
       let where = Assembly.GetExecutingAssembly().Location
       let path = Path.Combine(Path.GetDirectoryName(where),
@@ -1206,27 +1206,27 @@ module AltCoverTests2 =
         Visitor.reportFormat <- None
 #if COVERLET
 #else
-    //[<Test>]
+    [<Test>]
     let StartShouldLoadRecordingAssembly () =
       let def = Instrument.InstrumentationVisitor (InstrumentContext.Build []) (Start [])
       Assert.That (def.RecordingAssembly.Name.Name, Is.EqualTo "AltCover.Recorder.g")
 #endif
 
-    //[<Test>]
+    [<Test>]
     let TypeShouldNotChangeState() =
       let input = InstrumentContext.Build []
       let output =
         Instrument.InstrumentationVisitor input (Node.Type(null, Inspect.Ignore))
       Assert.That(output, Is.SameAs input)
 
-    //[<Test>]
+    [<Test>]
     let ExcludedMethodShouldNotChangeState() =
       let input = InstrumentContext.Build []
       let output =
         Instrument.InstrumentationVisitor input (Node.Method(null, Inspect.Ignore, None))
       Assert.That(output, Is.SameAs input)
 
-    //[<Test>]
+    [<Test>]
     let IncludedMethodShouldChangeState() =
       let where = Assembly.GetExecutingAssembly().Location
       let path =
@@ -1247,7 +1247,7 @@ module AltCoverTests2 =
           (Node.Method(func, Inspect.Instrument, None))
       Assert.That(output.MethodBody, Is.SameAs func.Body)
 
-    //[<Test>]
+    [<Test>]
     let ExcludedAfterMethodShouldNotChangeState() =
       let where = Assembly.GetExecutingAssembly().Location
       let path =
@@ -1280,7 +1280,7 @@ module AltCoverTests2 =
       let paired' = Seq.zip diff input.MethodBody.Instructions
       Assert.That(paired' |> Seq.forall (fun ((i, x), j) -> x = (i = j.OpCode)))
 
-    //[<Test>]
+    [<Test>]
     let IncludedAfterMethodShouldRewriteMethod() =
       let where = Assembly.GetExecutingAssembly().Location
       let path =
@@ -1312,7 +1312,7 @@ module AltCoverTests2 =
       let paired' = Seq.zip opcodes input.MethodBody.Instructions
       Assert.That(paired' |> Seq.forall (fun (i, j) -> i = j.OpCode))
 
-    //[<Test>]
+    [<Test>]
     let UpdateStrongReferencesShouldChangeSigningKeyWherePossible() =
       let where = Assembly.GetExecutingAssembly().Location
       let path =
@@ -1334,7 +1334,7 @@ module AltCoverTests2 =
       Assert.That (token', Is.EqualTo "4ebffcaabf10ce6a" )
       Assert.That(result, Is.Empty)
 
-    //[<Test>]
+    [<Test>]
     let UpdateStrongReferencesShouldRemoveSigningKeyIfRequired() =
       let where = Assembly.GetExecutingAssembly().Location
       let path =
@@ -1357,7 +1357,7 @@ module AltCoverTests2 =
       Assert.That(key.Substring(0, ptr), Is.EqualTo(value.Substring(0, ptr)))
       Assert.That(value.Substring(ptr), Is.EqualTo "=null")
 
-    //[<Test>]
+    [<Test>]
     let UpdateStrongReferencesShouldNotAddASigningKey() =
       let where = Assembly.GetExecutingAssembly().Location
       let path =
@@ -1389,7 +1389,7 @@ module AltCoverTests2 =
       Assert.That(token1, Is.Empty)
       Assert.That(result, Is.Empty)
 
-    //[<Test>]
+    [<Test>]
     let UpdateStrongReferencesShouldTrackReferences() =
       let where = Assembly.GetExecutingAssembly().Location
       let path =
@@ -1409,7 +1409,7 @@ module AltCoverTests2 =
       Assert.That (result.Values |> Seq.head,
                    Is.EqualTo (key.Substring(0, key.Length - 16) + "4ebffcaabf10ce6a"))
 
-    //[<Test>]
+    [<Test>]
     let UpdateStrongReferencesShouldTrackReferencesEvenFakes() =
       try
         let where = Assembly.GetExecutingAssembly().Location
@@ -1439,7 +1439,7 @@ module AltCoverTests2 =
       finally
         Visitor.keys.Clear()
 
-    //[<Test>]
+    [<Test>]
     let ExcludedAssemblyRefsAreNotUpdated() =
       let where = Assembly.GetExecutingAssembly().Location
       let path =
@@ -1465,7 +1465,7 @@ module AltCoverTests2 =
         Instrument.InstrumentationVisitor { state with RecordingAssembly = fake } visited
       Assert.That(def.MainModule.AssemblyReferences, Is.EquivalentTo refs)
 
-    //[<Test>]
+    [<Test>]
     let IncludedAssemblyRefsAreUpdated() =
       let where = Assembly.GetExecutingAssembly().Location
       let path =
@@ -1492,7 +1492,7 @@ module AltCoverTests2 =
       Assert.That
         (def.MainModule.AssemblyReferences, Is.EquivalentTo(refs @ [ fake.Name ]))
 
-    //[<Test>]
+    [<Test>]
     let ExcludedModuleJustRecordsMVid() =
       let where = Assembly.GetExecutingAssembly().Location
       let path =
@@ -1505,7 +1505,7 @@ module AltCoverTests2 =
       Assert.That
         (result, Is.EqualTo { state with ModuleId = def.MainModule.Mvid.ToString() })
 
-    //[<Test>]
+    [<Test>]
     let IncludedModuleEnsuresRecorder() =
       let where = Assembly.GetExecutingAssembly().Location
       let path =
@@ -1557,7 +1557,7 @@ module AltCoverTests2 =
                                                Push = null
                                                Pop = null } } @>
 
-    //[<Test>]
+    [<Test>]
     let ExcludedMethodPointIsPassThrough() =
       let where = Assembly.GetExecutingAssembly().Location
       let path =
@@ -1569,7 +1569,7 @@ module AltCoverTests2 =
       let result = Instrument.InstrumentationVisitor state visited
       Assert.That(result, Is.SameAs state)
 
-    //[<Test>]
+    [<Test>]
     let IncludedMethodPointInsertsVisit() =
       let where = Assembly.GetExecutingAssembly().Location
       let pdb = Path.ChangeExtension(where, ".pdb")
@@ -1611,7 +1611,7 @@ module AltCoverTests2 =
         Assert.That(result, Is.SameAs state)
         Assert.That(target.Previous.OpCode, Is.EqualTo OpCodes.Call)
 
-    //[<Test>]
+    [<Test>]
     let IncludedModuleDoesNotChangeRecorderJustTheReference() =
       let where = Assembly.GetExecutingAssembly().Location
       let path =
@@ -1653,13 +1653,13 @@ module AltCoverTests2 =
                                            RecordingMethod = [ visit; visit; visit ]
                                            RecordingMethodRef = RecorderRefs.Build() })
 
-    //[<Test>]
+    [<Test>]
     let AfterModuleShouldNotChangeState() =
       let input = InstrumentContext.Build []
       let output = Instrument.InstrumentationVisitor input AfterModule
       Assert.That(output, Is.SameAs input)
 
-    //[<Test>]
+    [<Test>]
     let JSONInjectionTransformsStandaloneFileAsExpected() =
       let inputName = infrastructureSnk.Replace("Infrastructure.snk", "Sample1.deps.json")
       let resultName = infrastructureSnk.Replace("Infrastructure.snk", "Sample1.deps.after.json")
@@ -1677,7 +1677,7 @@ module AltCoverTests2 =
                   "AltCover.Recorder.g\": \"" + version)
       Assert.That(transform result, Is.EqualTo(transform expected))
 
-    //[<Test>]
+    [<Test>]
     let JSONInjectionTransformsDependencyFileAsExpected() =
       let inputName = infrastructureSnk.Replace("Infrastructure.snk", "Sample2.deps.json")
       let resultName = infrastructureSnk.Replace("Infrastructure.snk", "Sample2.deps.after.json")
@@ -1695,7 +1695,7 @@ module AltCoverTests2 =
                   "AltCover.Recorder.g\": \"" + version)
       Assert.That(transform result, Is.EqualTo(transform expected))
 
-    //[<Test>]
+    [<Test>]
     let JSONInjectionIsIdempotent() =
       let resultName = infrastructureSnk.Replace("Infrastructure.snk", "Sample1.deps.after.json")
       use stream = Assembly.GetExecutingAssembly().GetManifestResourceStream(resultName)
@@ -1705,7 +1705,7 @@ module AltCoverTests2 =
       Assert.That
         (result.Replace("\r\n", "\n"), Is.EqualTo(expected.Replace("\r\n", "\n")))
 
-    //[<Test>]
+    [<Test>]
     let NonFinishShouldDisposeRecordingAssembly() =
       let where = Assembly.GetExecutingAssembly().Location
       let path =
@@ -1732,7 +1732,7 @@ module AltCoverTests2 =
              with // occasionally the dll file is locked by another process
                   :? System.UnauthorizedAccessException | :? IOException -> ())
 
-    //[<Test>]
+    [<Test>]
     let NonFinishShouldNotDisposeNullRecordingAssembly() =
       let where = Assembly.GetExecutingAssembly().Location
       let path =
@@ -1745,7 +1745,7 @@ module AltCoverTests2 =
           (fun _ _ -> InvalidOperationException("Bang") |> raise) state AfterType
         |> ignore) |> ignore
 
-    //[<Test>]
+    [<Test>]
     let FinishShouldLeaveRecordingAssembly() =
       let where = Assembly.GetExecutingAssembly().Location
       let path =
@@ -1772,7 +1772,7 @@ module AltCoverTests2 =
                   :? System.UnauthorizedAccessException | :? IOException -> ())
 
     // CommandLine.fs
-    //[<Test>]
+    [<Test>]
     let StrongNameKeyCanBeValidatedExceptOnNetCore() =
       let input = Path.Combine(AltCover.SolutionRoot.location, "Build/Infrastructure.snk")
       let (pair, ok) = CommandLine.ValidateStrongNameKey "key" input
@@ -1786,7 +1786,7 @@ module AltCoverTests2 =
         (CommandLine.ValidateStrongNameKey "key"
          <| Assembly.GetExecutingAssembly().Location, Is.EqualTo(StrongNameKeyData.Empty(), false))
 
-    //[<Test>]
+    [<Test>]
     let OutputCanBeExercised() =
       let sink = StringSink(ignore)
       Output.SetInfo sink
@@ -1822,7 +1822,7 @@ module AltCoverTests2 =
              else { Intro = String.Empty; Options = OptionSet(); Options2 = OptionSet() } :> obj
            invoke.Invoke(o, [| arg |]) |> ignore)
 
-    //[<Test>]
+    [<Test>]
     let NoThrowNoErrorLeavesAllOK() =
       try
         CommandLine.error <- []
@@ -1834,7 +1834,7 @@ module AltCoverTests2 =
         CommandLine.error <- []
         CommandLine.exceptions <- []
 
-    //[<Test>]
+    [<Test>]
     let NoThrowWithErrorIsSignalled() =
       try
         CommandLine.error <- []
@@ -1847,7 +1847,7 @@ module AltCoverTests2 =
         CommandLine.error <- []
         CommandLine.exceptions <- []
 
-    //[<Test>]
+    [<Test>]
     let ArgumentExceptionWrites() =
       let saved = (Output.Info, Output.Error)
       let err = System.Text.StringBuilder()
@@ -1916,7 +1916,7 @@ module AltCoverTests2 =
         Output.Error <- (snd saved)
         Visitor.outputDirectories.Clear()
 
-    //[<Test>]
+    [<Test>]
     let ArgumentExceptionWritesEx() =
       let saved = (Output.Info, Output.Error)
       let err = System.Text.StringBuilder()
@@ -1987,7 +1987,7 @@ module AltCoverTests2 =
         Output.Error <- (snd saved)
         Visitor.outputDirectories.Clear()
 
-    //[<Test>]
+    [<Test>]
     let IOExceptionWrites() =
       let saved = (Output.Info, Output.Error)
       let err = System.Text.StringBuilder()
@@ -2012,7 +2012,7 @@ module AltCoverTests2 =
         Output.Info <- (fst saved)
         Output.Error <- (snd saved)
 
-    //[<Test>]
+    [<Test>]
     let NotSupportedExceptionWrites() =
       let saved = (Output.Info, Output.Error)
       let err = System.Text.StringBuilder()
@@ -2033,7 +2033,7 @@ module AltCoverTests2 =
         Output.Info <- (fst saved)
         Output.Error <- (snd saved)
 
-    //[<Test>]
+    [<Test>]
     let SecurityExceptionWrites() =
       let saved = (Output.Info, Output.Error)
       let err = System.Text.StringBuilder()
