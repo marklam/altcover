@@ -1,4 +1,4 @@
-namespace Tests.Runner
+namespace Tests
 
 open System
 open System.Collections.Generic
@@ -17,15 +17,31 @@ open AltCover.Base
 open Mono.Options
 open NUnit.Framework
 open Swensen.Unquote
+#if NETCOREAPP2_1
+open Microsoft.VisualStudio.TestTools.UnitTesting
+#else
+[<AttributeUsage(AttributeTargets.Class)>]
+type TestClassAttribute() = class
+    inherit Attribute()
+end
+[<AttributeUsage(AttributeTargets.Method)>]
+type TestInitializeAttribute() = class
+    inherit Attribute()
+end
+[<AttributeUsage(AttributeTargets.Method)>]
+type TestMethodAttribute() = class
+    inherit Attribute()
+end
+#endif
 
-[<TestFixture>]
-module AltCoverTests =
-    [<SetUp>]
+[<TestFixture;TestClass>]
+module RunnerTests =
+    [<SetUp;TestInitialize>]
     let SetUp() =
       Runner.init()
 
     // Base.fs
-    [<Test>]
+    [<Test;TestMethod>]
     let SafeDisposalProtects() =
       let obj1 =
         { new System.IDisposable with
@@ -33,82 +49,82 @@ module AltCoverTests =
       Assist.SafeDispose obj1
       test <@ true @>
 
-    [<Test>]
+    [<Test;TestMethod>]
     let JunkUspidGivesNegativeIndex() =
       let key = " "
       let index = Counter.FindIndexFromUspid 0 key
       test <@ index < 0 @>
 
-    [<Test>]
+    [<Test;TestMethod>]
     let RealIdShouldIncrementCount() =
       let visits = new Dictionary<string, Dictionary<int, PointVisit>>()
       let key = " "
       let v1 = Counter.AddVisit visits key 23 Null
-      Assert.That(v1, Is.EqualTo 1)
-      Assert.That(visits.Count, Is.EqualTo 1)
-      Assert.That(visits.[key].Count, Is.EqualTo 1)
+      NUnit.Framework.Assert.That(v1, Is.EqualTo 1)
+      NUnit.Framework.Assert.That(visits.Count, Is.EqualTo 1)
+      NUnit.Framework.Assert.That(visits.[key].Count, Is.EqualTo 1)
       let x = visits.[key].[23]
-      Assert.That(x.Count, Is.EqualTo 1)
-      Assert.That(x.Tracks, Is.Empty)
+      NUnit.Framework.Assert.That(x.Count, Is.EqualTo 1)
+      NUnit.Framework.Assert.That(x.Tracks, Is.Empty)
 
-    [<Test>]
+    [<Test;TestMethod>]
     let RealIdShouldIncrementList() =
       let visits = new Dictionary<string, Dictionary<int, PointVisit>>()
       let key = " "
       let payload = Time DateTime.UtcNow.Ticks
       let v2 = Counter.AddVisit visits key 23 payload
-      Assert.That(v2, Is.EqualTo 1)
-      Assert.That(visits.Count, Is.EqualTo 1)
-      Assert.That(visits.[key].Count, Is.EqualTo 1)
+      NUnit.Framework.Assert.That(v2, Is.EqualTo 1)
+      NUnit.Framework.Assert.That(visits.Count, Is.EqualTo 1)
+      NUnit.Framework.Assert.That(visits.[key].Count, Is.EqualTo 1)
       let x = visits.[key].[23]
-      Assert.That(x.Count, Is.EqualTo 0)
-      Assert.That(x.Tracks, Is.EquivalentTo [ payload ])
+      NUnit.Framework.Assert.That(x.Count, Is.EqualTo 0)
+      NUnit.Framework.Assert.That(x.Tracks, Is.EquivalentTo [ payload ])
 
-    [<Test>]
+    [<Test;TestMethod>]
     let DistinctIdShouldBeDistinct() =
       let visits = new Dictionary<string, Dictionary<int, PointVisit>>()
       let key = " "
       let v3 = Counter.AddVisit visits key 23 Null
-      Assert.That(v3, Is.EqualTo 1)
+      NUnit.Framework.Assert.That(v3, Is.EqualTo 1)
       let v4 = Counter.AddVisit visits "key" 42 Null
-      Assert.That(visits.Count, Is.EqualTo 2)
-      Assert.That(v4, Is.EqualTo 1)
+      NUnit.Framework.Assert.That(visits.Count, Is.EqualTo 2)
+      NUnit.Framework.Assert.That(v4, Is.EqualTo 1)
 
-    [<Test>]
+    [<Test;TestMethod>]
     let DistinctLineShouldBeDistinct() =
       let visits = new Dictionary<string, Dictionary<int, PointVisit>>()
       let key = " "
       let v5 = Counter.AddVisit visits key 23 Null
-      Assert.That(v5, Is.EqualTo 1)
+      NUnit.Framework.Assert.That(v5, Is.EqualTo 1)
       let v6 = Counter.AddVisit visits key 42 Null
-      Assert.That(v6, Is.EqualTo 1)
-      Assert.That(visits.Count, Is.EqualTo 1)
-      Assert.That(visits.[key].Count, Is.EqualTo 2)
+      NUnit.Framework.Assert.That(v6, Is.EqualTo 1)
+      NUnit.Framework.Assert.That(visits.Count, Is.EqualTo 1)
+      NUnit.Framework.Assert.That(visits.[key].Count, Is.EqualTo 2)
 
-    [<Test>]
+    [<Test;TestMethod>]
     let RepeatVisitsShouldIncrementCount() =
       let visits = new Dictionary<string, Dictionary<int, PointVisit>>()
       let key = " "
       let v7 = Counter.AddVisit visits key 23 Null
-      Assert.That(v7, Is.EqualTo 1)
+      NUnit.Framework.Assert.That(v7, Is.EqualTo 1)
       let v8 = Counter.AddVisit visits key 23 Null
-      Assert.That(v8, Is.EqualTo 1)
+      NUnit.Framework.Assert.That(v8, Is.EqualTo 1)
       let x = visits.[key].[23]
-      Assert.That(x.Count, Is.EqualTo 2)
-      Assert.That(x.Tracks, Is.Empty)
+      NUnit.Framework.Assert.That(x.Count, Is.EqualTo 2)
+      NUnit.Framework.Assert.That(x.Tracks, Is.Empty)
 
-    [<Test>]
+    [<Test;TestMethod>]
     let RepeatVisitsShouldIncrementTotal() =
       let visits = new Dictionary<string, Dictionary<int, PointVisit>>()
       let key = " "
       let payload = Time DateTime.UtcNow.Ticks
       let v9 = Counter.AddVisit visits key 23 Null
-      Assert.That(v9, Is.EqualTo 1)
+      NUnit.Framework.Assert.That(v9, Is.EqualTo 1)
       let v10 = Counter.AddVisit visits key 23 payload
-      Assert.That(v10, Is.EqualTo 1)
+      NUnit.Framework.Assert.That(v10, Is.EqualTo 1)
       let x = visits.[key].[23]
-      Assert.That(x.Count, Is.EqualTo 1)
-      Assert.That(x.Tracks, Is.EquivalentTo [ payload ])
+      NUnit.Framework.Assert.That(x.Count, Is.EqualTo 1)
+      NUnit.Framework.Assert.That(x.Tracks, Is.EquivalentTo [ payload ])
 
     let resource =
       Assembly.GetExecutingAssembly().GetManifestResourceNames()
@@ -118,7 +134,7 @@ module AltCoverTests =
       |> Seq.find
            (fun n -> n.EndsWith("Sample1WithOpenCover.xml", StringComparison.Ordinal))
 
-    [<Test>]
+    [<Test;TestMethod>]
     let KnownModuleWithPayloadMakesExpectedChangeInOpenCover() =
       Counter.measureTime <- DateTime.ParseExact
                                ("2017-12-29T16:33:40.9564026+00:00", "o", null)
@@ -126,7 +142,7 @@ module AltCoverTests =
         Assembly.GetExecutingAssembly().GetManifestResourceStream(resource2)
       let size = int stream.Length
       let buffer = Array.create size 0uy
-      Assert.That(stream.Read(buffer, 0, size), Is.EqualTo size)
+      NUnit.Framework.Assert.That(stream.Read(buffer, 0, size), Is.EqualTo size)
       use worker = new MemoryStream()
       use worker2 = new MemoryStream()
       worker.Write(buffer, 0, size)
@@ -141,17 +157,17 @@ module AltCoverTests =
       worker2.Position <- 0L
       let after = XmlDocument()
       after.Load worker2
-      Assert.That
+      NUnit.Framework.Assert.That
         (after.SelectNodes("//SequencePoint")
          |> Seq.cast<XmlElement>
          |> Seq.map (fun x -> x.GetAttribute("vc")),
          Is.EquivalentTo [ "11"; "10"; "9"; "8"; "7"; "6"; "4"; "3"; "2"; "1" ])
-      Assert.That
+      NUnit.Framework.Assert.That
         (after.SelectNodes("//BranchPoint")
          |> Seq.cast<XmlElement>
          |> Seq.map (fun x -> x.GetAttribute("vc")), Is.EquivalentTo [ "2"; "2" ])
 
-    [<Test>]
+    [<Test;TestMethod>]
     let FlushLeavesExpectedTraces() =
       let saved = Console.Out
       let here = Directory.GetCurrentDirectory()
@@ -170,7 +186,7 @@ module AltCoverTests =
           Assembly.GetExecutingAssembly().GetManifestResourceStream(resource)
         let size = int stream.Length
         let buffer = Array.create size 0uy
-        Assert.That(stream.Read(buffer, 0, size), Is.EqualTo size)
+        NUnit.Framework.Assert.That(stream.Read(buffer, 0, size), Is.EqualTo size)
         do use worker = new FileStream(reportFile, FileMode.CreateNew)
            worker.Write(buffer, 0, size)
            ()
@@ -182,7 +198,7 @@ module AltCoverTests =
         use worker' = new FileStream(reportFile, FileMode.Open)
         let after = XmlDocument()
         after.Load worker'
-        Assert.That
+        NUnit.Framework.Assert.That
           (after.SelectNodes("//seqpnt")
            |> Seq.cast<XmlElement>
            |> Seq.map (fun x -> x.GetAttribute("visitcount")),
@@ -195,7 +211,7 @@ module AltCoverTests =
           Directory.Delete(unique)
         with :? IOException -> ()
 
-    [<Test>]
+    [<Test;TestMethod>]
     let FlushLeavesExpectedTracesWhenDiverted() =
       let saved = Console.Out
       let here = Directory.GetCurrentDirectory()
@@ -215,7 +231,7 @@ module AltCoverTests =
           Assembly.GetExecutingAssembly().GetManifestResourceStream(resource)
         let size = int stream.Length
         let buffer = Array.create size 0uy
-        Assert.That(stream.Read(buffer, 0, size), Is.EqualTo size)
+        NUnit.Framework.Assert.That(stream.Read(buffer, 0, size), Is.EqualTo size)
         do use worker = new FileStream(reportFile, FileMode.CreateNew)
            worker.Write(buffer, 0, size)
            ()
@@ -227,7 +243,7 @@ module AltCoverTests =
         use worker' = new FileStream(outputFile, FileMode.Open)
         let after = XmlDocument()
         after.Load worker'
-        Assert.That
+        NUnit.Framework.Assert.That
           (after.SelectNodes("//seqpnt")
            |> Seq.cast<XmlElement>
            |> Seq.map (fun x -> x.GetAttribute("visitcount")),
@@ -241,7 +257,7 @@ module AltCoverTests =
         with :? IOException -> ()
 
     // Runner.fs and CommandLine.fs
-    [<Test>]
+    [<Test;TestMethod>]
     let UsageIsAsExpected() =
       let options = Runner.DeclareOptions()
       let saved = Console.Error
@@ -280,12 +296,12 @@ module AltCoverTests =
                                as/instead of the OpenCover summary
   -?, --help, -h             Prints out the options.
 """
-        Assert.That
+        NUnit.Framework.Assert.That
           (result, Is.EqualTo(expected.Replace("\r\n", "\n")), "*" + result + "*")
       finally
         Console.SetError saved
 
-    [<Test>]
+    [<Test;TestMethod>]
     let ShouldLaunchWithExpectedOutput() =
       // Hack for running while instrumented
       let where = Assembly.GetExecutingAssembly().Location
@@ -329,8 +345,8 @@ module AltCoverTests =
         let r =
           CommandLine.Launch exe args
             (Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location))
-        Assert.That(r, Is.EqualTo 0)
-        Assert.That(stderr.ToString(), Is.Empty)
+        NUnit.Framework.Assert.That(r, Is.EqualTo 0)
+        NUnit.Framework.Assert.That(stderr.ToString(), Is.Empty)
         let result = stdout.ToString()
 
         let quote =
@@ -340,68 +356,68 @@ module AltCoverTests =
         let expected =
           "Command line : '" + quote + exe + quote + " " + args + "\'"
           + Environment.NewLine + "Where is my rocket pack? " + Environment.NewLine
-        Assert.That(result, Is.EqualTo(expected))
+        NUnit.Framework.Assert.That(result, Is.EqualTo(expected))
       finally
         Console.SetOut(fst saved)
         Console.SetError(snd saved)
 
-    [<Test>]
+    [<Test;TestMethod>]
     let ShouldHaveExpectedOptions() =
       let options = Runner.DeclareOptions()
-      Assert.That(options.Count, Is.EqualTo 12)
-      Assert.That
+      NUnit.Framework.Assert.That(options.Count, Is.EqualTo 12)
+      NUnit.Framework.Assert.That
         (options
          |> Seq.filter (fun x -> x.Prototype <> "<>")
          |> Seq.forall (fun x -> (String.IsNullOrWhiteSpace >> not) x.Description))
-      Assert.That(options
+      NUnit.Framework.Assert.That(options
                   |> Seq.filter (fun x -> x.Prototype = "<>")
                   |> Seq.length, Is.EqualTo 1)
 
-    [<Test>]
+    [<Test;TestMethod>]
     let ParsingJunkIsAnError() =
       let options = Runner.DeclareOptions()
       let parse = CommandLine.ParseCommandLine [| "/@thisIsNotAnOption" |] options
       match parse with
-      | Right _ -> Assert.Fail()
+      | Right _ -> NUnit.Framework.Assert.Fail()
       | Left(x, y) ->
-        Assert.That(x, Is.EqualTo "UsageError")
-        Assert.That(y, Is.SameAs options)
+        NUnit.Framework.Assert.That(x, Is.EqualTo "UsageError")
+        NUnit.Framework.Assert.That(y, Is.SameAs options)
 
-    [<Test>]
+    [<Test;TestMethod>]
     let ParsingJunkAfterSeparatorIsExpected() =
       let options = Runner.DeclareOptions()
       let input = [| "--"; "/@thisIsNotAnOption"; "this should be OK" |]
       let parse = CommandLine.ParseCommandLine input options
       match parse with
-      | Left _ -> Assert.Fail()
+      | Left _ -> NUnit.Framework.Assert.Fail()
       | Right(x, y) ->
-        Assert.That(x, Is.EquivalentTo(input |> Seq.skip 1))
-        Assert.That(y, Is.SameAs options)
+        NUnit.Framework.Assert.That(x, Is.EquivalentTo(input |> Seq.skip 1))
+        NUnit.Framework.Assert.That(y, Is.SameAs options)
 
-    [<Test>]
+    [<Test;TestMethod>]
     let ParsingHelpGivesHelp() =
       let options = Runner.DeclareOptions()
       let input = [| "--?" |]
       let parse = CommandLine.ParseCommandLine input options
       match parse with
-      | Left _ -> Assert.Fail()
-      | Right(x, y) -> Assert.That(y, Is.SameAs options)
+      | Left _ -> NUnit.Framework.Assert.Fail()
+      | Right(x, y) -> NUnit.Framework.Assert.That(y, Is.SameAs options)
       match CommandLine.ProcessHelpOption parse with
-      | Right _ -> Assert.Fail()
+      | Right _ -> NUnit.Framework.Assert.Fail()
       | Left(x, y) ->
-        Assert.That(x, Is.EqualTo "HelpText")
-        Assert.That(y, Is.SameAs options)
+        NUnit.Framework.Assert.That(x, Is.EqualTo "HelpText")
+        NUnit.Framework.Assert.That(y, Is.SameAs options)
       // a "not sticky" test
       lock Runner.executable (fun () ->
         Runner.executable := None
         match CommandLine.ParseCommandLine [| "/x"; "x" |] options
               |> CommandLine.ProcessHelpOption with
-        | Left _ -> Assert.Fail()
+        | Left _ -> NUnit.Framework.Assert.Fail()
         | Right(x, y) ->
-          Assert.That(y, Is.SameAs options)
-          Assert.That(x, Is.Empty))
+          NUnit.Framework.Assert.That(y, Is.SameAs options)
+          NUnit.Framework.Assert.That(x, Is.Empty))
 
-    [<Test>]
+    [<Test;TestMethod>]
     let ParsingErrorHelpGivesHelp() =
       let options = Runner.DeclareOptions()
 
@@ -411,26 +427,26 @@ module AltCoverTests =
 
       let parse = CommandLine.ParseCommandLine input options
       match parse with
-      | Right _ -> Assert.Fail()
+      | Right _ -> NUnit.Framework.Assert.Fail()
       | Left(x, y) ->
-        Assert.That(x, Is.EqualTo "UsageError")
-        Assert.That(y, Is.SameAs options)
+        NUnit.Framework.Assert.That(x, Is.EqualTo "UsageError")
+        NUnit.Framework.Assert.That(y, Is.SameAs options)
       match CommandLine.ProcessHelpOption parse with
-      | Right _ -> Assert.Fail()
+      | Right _ -> NUnit.Framework.Assert.Fail()
       | Left(x, y) ->
-        Assert.That(x, Is.EqualTo "UsageError")
-        Assert.That(y, Is.SameAs options)
+        NUnit.Framework.Assert.That(x, Is.EqualTo "UsageError")
+        NUnit.Framework.Assert.That(y, Is.SameAs options)
       // a "not sticky" test
       lock Runner.executable (fun () ->
         Runner.executable := None
         match CommandLine.ParseCommandLine [| "/x"; "x" |] options
               |> CommandLine.ProcessHelpOption with
-        | Left _ -> Assert.Fail()
+        | Left _ -> NUnit.Framework.Assert.Fail()
         | Right(x, y) ->
-          Assert.That(y, Is.SameAs options)
-          Assert.That(x, Is.Empty))
+          NUnit.Framework.Assert.That(y, Is.SameAs options)
+          NUnit.Framework.Assert.That(x, Is.Empty))
 
-    [<Test>]
+    [<Test;TestMethod>]
     let ParsingExeGivesExe() =
       lock Runner.executable (fun () ->
         try
@@ -440,17 +456,17 @@ module AltCoverTests =
           let input = [| "-x"; unique |]
           let parse = CommandLine.ParseCommandLine input options
           match parse with
-          | Left _ -> Assert.Fail()
+          | Left _ -> NUnit.Framework.Assert.Fail()
           | Right(x, y) ->
-            Assert.That(y, Is.SameAs options)
-            Assert.That(x, Is.Empty)
+            NUnit.Framework.Assert.That(y, Is.SameAs options)
+            NUnit.Framework.Assert.That(x, Is.Empty)
           match !Runner.executable with
-          | None -> Assert.Fail()
-          | Some x -> Assert.That(Path.GetFileName x, Is.EqualTo unique)
+          | None -> NUnit.Framework.Assert.Fail()
+          | Some x -> NUnit.Framework.Assert.That(Path.GetFileName x, Is.EqualTo unique)
         finally
           Runner.executable := None)
 
-    [<Test>]
+    [<Test;TestMethod>]
     let ParsingMultipleExeGivesFailure() =
       lock Runner.executable (fun () ->
         try
@@ -466,15 +482,15 @@ module AltCoverTests =
 
           let parse = CommandLine.ParseCommandLine input options
           match parse with
-          | Right _ -> Assert.Fail()
+          | Right _ -> NUnit.Framework.Assert.Fail()
           | Left(x, y) ->
-            Assert.That(y, Is.SameAs options)
-            Assert.That(x, Is.EqualTo "UsageError")
-            Assert.That(CommandLine.error |> Seq.head, Is.EqualTo "--executable : specify this only once")
+            NUnit.Framework.Assert.That(y, Is.SameAs options)
+            NUnit.Framework.Assert.That(x, Is.EqualTo "UsageError")
+            NUnit.Framework.Assert.That(CommandLine.error |> Seq.head, Is.EqualTo "--executable : specify this only once")
         finally
           Runner.executable := None)
 
-    [<Test>]
+    [<Test;TestMethod>]
     let ParsingNoExeGivesFailure() =
       lock Runner.executable (fun () ->
         try
@@ -484,14 +500,14 @@ module AltCoverTests =
           let input = [| "-x"; blank |]
           let parse = CommandLine.ParseCommandLine input options
           match parse with
-          | Right _ -> Assert.Fail()
+          | Right _ -> NUnit.Framework.Assert.Fail()
           | Left(x, y) ->
-            Assert.That(y, Is.SameAs options)
-            Assert.That(x, Is.EqualTo "UsageError")
+            NUnit.Framework.Assert.That(y, Is.SameAs options)
+            NUnit.Framework.Assert.That(x, Is.EqualTo "UsageError")
         finally
           Runner.executable := None)
 
-    [<Test>]
+    [<Test;TestMethod>]
     let ParsingWorkerGivesWorker() =
       try
         Runner.workingDirectory <- None
@@ -500,17 +516,17 @@ module AltCoverTests =
         let input = [| "-w"; unique |]
         let parse = CommandLine.ParseCommandLine input options
         match parse with
-        | Left _ -> Assert.Fail()
+        | Left _ -> NUnit.Framework.Assert.Fail()
         | Right(x, y) ->
-          Assert.That(y, Is.SameAs options)
-          Assert.That(x, Is.Empty)
+          NUnit.Framework.Assert.That(y, Is.SameAs options)
+          NUnit.Framework.Assert.That(x, Is.Empty)
         match Runner.workingDirectory with
-        | None -> Assert.Fail()
-        | Some x -> Assert.That(x, Is.EqualTo unique)
+        | None -> NUnit.Framework.Assert.Fail()
+        | Some x -> NUnit.Framework.Assert.That(x, Is.EqualTo unique)
       finally
         Runner.workingDirectory <- None
 
-    [<Test>]
+    [<Test;TestMethod>]
     let ParsingMultipleWorkerGivesFailure() =
       try
         Runner.workingDirectory <- None
@@ -524,15 +540,15 @@ module AltCoverTests =
 
         let parse = CommandLine.ParseCommandLine input options
         match parse with
-        | Right _ -> Assert.Fail()
+        | Right _ -> NUnit.Framework.Assert.Fail()
         | Left(x, y) ->
-          Assert.That(y, Is.SameAs options)
-          Assert.That(x, Is.EqualTo "UsageError")
-          Assert.That(CommandLine.error |> Seq.head, Is.EqualTo "--workingDirectory : specify this only once")
+          NUnit.Framework.Assert.That(y, Is.SameAs options)
+          NUnit.Framework.Assert.That(x, Is.EqualTo "UsageError")
+          NUnit.Framework.Assert.That(CommandLine.error |> Seq.head, Is.EqualTo "--workingDirectory : specify this only once")
       finally
         Runner.workingDirectory <- None
 
-    [<Test>]
+    [<Test;TestMethod>]
     let ParsingBadWorkerGivesFailure() =
       try
         Runner.workingDirectory <- None
@@ -541,14 +557,14 @@ module AltCoverTests =
         let input = [| "-w"; unique |]
         let parse = CommandLine.ParseCommandLine input options
         match parse with
-        | Right _ -> Assert.Fail()
+        | Right _ -> NUnit.Framework.Assert.Fail()
         | Left(x, y) ->
-          Assert.That(y, Is.SameAs options)
-          Assert.That(x, Is.EqualTo "UsageError")
+          NUnit.Framework.Assert.That(y, Is.SameAs options)
+          NUnit.Framework.Assert.That(x, Is.EqualTo "UsageError")
       finally
         Runner.workingDirectory <- None
 
-    [<Test>]
+    [<Test;TestMethod>]
     let ParsingNoWorkerGivesFailure() =
       try
         Runner.workingDirectory <- None
@@ -556,14 +572,14 @@ module AltCoverTests =
         let input = [| "-w" |]
         let parse = CommandLine.ParseCommandLine input options
         match parse with
-        | Right _ -> Assert.Fail()
+        | Right _ -> NUnit.Framework.Assert.Fail()
         | Left(x, y) ->
-          Assert.That(y, Is.SameAs options)
-          Assert.That(x, Is.EqualTo "UsageError")
+          NUnit.Framework.Assert.That(y, Is.SameAs options)
+          NUnit.Framework.Assert.That(x, Is.EqualTo "UsageError")
       finally
         Runner.workingDirectory <- None
 
-    [<Test>]
+    [<Test;TestMethod>]
     let ParsingRecorderGivesRecorder() =
       try
         Runner.recordingDirectory <- None
@@ -572,17 +588,17 @@ module AltCoverTests =
         let input = [| "-r"; unique |]
         let parse = CommandLine.ParseCommandLine input options
         match parse with
-        | Left _ -> Assert.Fail()
+        | Left _ -> NUnit.Framework.Assert.Fail()
         | Right(x, y) ->
-          Assert.That(y, Is.SameAs options)
-          Assert.That(x, Is.Empty)
+          NUnit.Framework.Assert.That(y, Is.SameAs options)
+          NUnit.Framework.Assert.That(x, Is.Empty)
         match Runner.recordingDirectory with
-        | None -> Assert.Fail()
-        | Some x -> Assert.That(x, Is.EqualTo unique)
+        | None -> NUnit.Framework.Assert.Fail()
+        | Some x -> NUnit.Framework.Assert.That(x, Is.EqualTo unique)
       finally
         Runner.recordingDirectory <- None
 
-    [<Test>]
+    [<Test;TestMethod>]
     let ParsingMultipleRecorderGivesFailure() =
       try
         Runner.recordingDirectory <- None
@@ -596,15 +612,15 @@ module AltCoverTests =
 
         let parse = CommandLine.ParseCommandLine input options
         match parse with
-        | Right _ -> Assert.Fail()
+        | Right _ -> NUnit.Framework.Assert.Fail()
         | Left(x, y) ->
-          Assert.That(y, Is.SameAs options)
-          Assert.That(x, Is.EqualTo "UsageError")
-          Assert.That(CommandLine.error |> Seq.head, Is.EqualTo "--recorderDirectory : specify this only once")
+          NUnit.Framework.Assert.That(y, Is.SameAs options)
+          NUnit.Framework.Assert.That(x, Is.EqualTo "UsageError")
+          NUnit.Framework.Assert.That(CommandLine.error |> Seq.head, Is.EqualTo "--recorderDirectory : specify this only once")
       finally
         Runner.recordingDirectory <- None
 
-    [<Test>]
+    [<Test;TestMethod>]
     let ParsingBadRecorderGivesFailure() =
       try
         Runner.recordingDirectory <- None
@@ -613,14 +629,14 @@ module AltCoverTests =
         let input = [| "-r"; unique |]
         let parse = CommandLine.ParseCommandLine input options
         match parse with
-        | Right _ -> Assert.Fail()
+        | Right _ -> NUnit.Framework.Assert.Fail()
         | Left(x, y) ->
-          Assert.That(y, Is.SameAs options)
-          Assert.That(x, Is.EqualTo "UsageError")
+          NUnit.Framework.Assert.That(y, Is.SameAs options)
+          NUnit.Framework.Assert.That(x, Is.EqualTo "UsageError")
       finally
         Runner.recordingDirectory <- None
 
-    [<Test>]
+    [<Test;TestMethod>]
     let ParsingNoRecorderGivesFailure() =
       try
         Runner.recordingDirectory <- None
@@ -628,14 +644,14 @@ module AltCoverTests =
         let input = [| "-r" |]
         let parse = CommandLine.ParseCommandLine input options
         match parse with
-        | Right _ -> Assert.Fail()
+        | Right _ -> NUnit.Framework.Assert.Fail()
         | Left(x, y) ->
-          Assert.That(y, Is.SameAs options)
-          Assert.That(x, Is.EqualTo "UsageError")
+          NUnit.Framework.Assert.That(y, Is.SameAs options)
+          NUnit.Framework.Assert.That(x, Is.EqualTo "UsageError")
       finally
         Runner.recordingDirectory <- None
 
-    [<Test>]
+    [<Test;TestMethod>]
     let ParsingCollectGivesCollect() =
       try
         Runner.collect := false
@@ -643,15 +659,15 @@ module AltCoverTests =
         let input = [| "--collect" |]
         let parse = CommandLine.ParseCommandLine input options
         match parse with
-        | Left _ -> Assert.Fail()
+        | Left _ -> NUnit.Framework.Assert.Fail()
         | Right(x, y) ->
-          Assert.That(y, Is.SameAs options)
-          Assert.That(x, Is.Empty)
-        Assert.That(!Runner.collect, Is.True)
+          NUnit.Framework.Assert.That(y, Is.SameAs options)
+          NUnit.Framework.Assert.That(x, Is.Empty)
+        NUnit.Framework.Assert.That(!Runner.collect, Is.True)
       finally
         Runner.collect := false
 
-    [<Test>]
+    [<Test;TestMethod>]
     let ParsingMultipleCollectGivesFailure() =
       try
         Runner.collect := false
@@ -659,15 +675,15 @@ module AltCoverTests =
         let input = [| "--collect"; "--collect" |]
         let parse = CommandLine.ParseCommandLine input options
         match parse with
-        | Right _ -> Assert.Fail()
+        | Right _ -> NUnit.Framework.Assert.Fail()
         | Left(x, y) ->
-          Assert.That(y, Is.SameAs options)
-          Assert.That(x, Is.EqualTo "UsageError")
-          Assert.That(CommandLine.error |> Seq.head, Is.EqualTo "--collect : specify this only once")
+          NUnit.Framework.Assert.That(y, Is.SameAs options)
+          NUnit.Framework.Assert.That(x, Is.EqualTo "UsageError")
+          NUnit.Framework.Assert.That(CommandLine.error |> Seq.head, Is.EqualTo "--collect : specify this only once")
       finally
         Runner.collect := false
 
-    [<Test>]
+    [<Test;TestMethod>]
     let ParsingLcovGivesLcov() =
       lock LCov.path (fun () ->
         try
@@ -678,19 +694,19 @@ module AltCoverTests =
           let input = [| "-l"; unique |]
           let parse = CommandLine.ParseCommandLine input options
           match parse with
-          | Left _ -> Assert.Fail()
+          | Left _ -> NUnit.Framework.Assert.Fail()
           | Right(x, y) ->
-            Assert.That(y, Is.SameAs options)
-            Assert.That(x, Is.Empty)
+            NUnit.Framework.Assert.That(y, Is.SameAs options)
+            NUnit.Framework.Assert.That(x, Is.Empty)
           match !LCov.path with
-          | None -> Assert.Fail()
-          | Some x -> Assert.That(Path.GetFileName x, Is.EqualTo unique)
-          Assert.That(Runner.Summaries.Length, Is.EqualTo 2)
+          | None -> NUnit.Framework.Assert.Fail()
+          | Some x -> NUnit.Framework.Assert.That(Path.GetFileName x, Is.EqualTo unique)
+          NUnit.Framework.Assert.That(Runner.Summaries.Length, Is.EqualTo 2)
         finally
           Runner.Summaries <- [ Runner.StandardSummary ]
           LCov.path := None)
 
-    [<Test>]
+    [<Test;TestMethod>]
     let ParsingMultipleLcovGivesFailure() =
       lock LCov.path (fun () ->
         try
@@ -707,16 +723,16 @@ module AltCoverTests =
 
           let parse = CommandLine.ParseCommandLine input options
           match parse with
-          | Right _ -> Assert.Fail()
+          | Right _ -> NUnit.Framework.Assert.Fail()
           | Left(x, y) ->
-            Assert.That(y, Is.SameAs options)
-            Assert.That(x, Is.EqualTo "UsageError")
-            Assert.That(CommandLine.error |> Seq.head, Is.EqualTo "--lcovReport : specify this only once")
+            NUnit.Framework.Assert.That(y, Is.SameAs options)
+            NUnit.Framework.Assert.That(x, Is.EqualTo "UsageError")
+            NUnit.Framework.Assert.That(CommandLine.error |> Seq.head, Is.EqualTo "--lcovReport : specify this only once")
         finally
           Runner.Summaries <- [ Runner.StandardSummary ]
           LCov.path := None)
 
-    [<Test>]
+    [<Test;TestMethod>]
     let ParsingNoLcovGivesFailure() =
       lock LCov.path (fun () ->
         try
@@ -727,15 +743,15 @@ module AltCoverTests =
           let input = [| "-l"; blank |]
           let parse = CommandLine.ParseCommandLine input options
           match parse with
-          | Right _ -> Assert.Fail()
+          | Right _ -> NUnit.Framework.Assert.Fail()
           | Left(x, y) ->
-            Assert.That(y, Is.SameAs options)
-            Assert.That(x, Is.EqualTo "UsageError")
+            NUnit.Framework.Assert.That(y, Is.SameAs options)
+            NUnit.Framework.Assert.That(x, Is.EqualTo "UsageError")
         finally
           Runner.Summaries <- [ Runner.StandardSummary ]
           LCov.path := None)
 
-    [<Test>]
+    [<Test;TestMethod>]
     let ParsingThresholdGivesThreshold() =
       try
         Runner.threshold <- None
@@ -743,17 +759,17 @@ module AltCoverTests =
         let input = [| "-t"; "57" |]
         let parse = CommandLine.ParseCommandLine input options
         match parse with
-        | Left _ -> Assert.Fail()
+        | Left _ -> NUnit.Framework.Assert.Fail()
         | Right(x, y) ->
-          Assert.That(y, Is.SameAs options)
-          Assert.That(x, Is.Empty)
+          NUnit.Framework.Assert.That(y, Is.SameAs options)
+          NUnit.Framework.Assert.That(x, Is.Empty)
         match Runner.threshold with
-        | None -> Assert.Fail()
-        | Some x -> Assert.That(x, Is.EqualTo 57)
+        | None -> NUnit.Framework.Assert.Fail()
+        | Some x -> NUnit.Framework.Assert.That(x, Is.EqualTo 57)
       finally
         Runner.threshold <- None
 
-    [<Test>]
+    [<Test;TestMethod>]
     let ParsingMultipleThresholdGivesFailure() =
       try
         Runner.threshold <- None
@@ -761,15 +777,15 @@ module AltCoverTests =
         let input = [| "-t"; "23"; "/t"; "42" |]
         let parse = CommandLine.ParseCommandLine input options
         match parse with
-        | Right _ -> Assert.Fail()
+        | Right _ -> NUnit.Framework.Assert.Fail()
         | Left(x, y) ->
-          Assert.That(y, Is.SameAs options)
-          Assert.That(x, Is.EqualTo "UsageError")
-          Assert.That(CommandLine.error |> Seq.head, Is.EqualTo "--threshold : specify this only once")
+          NUnit.Framework.Assert.That(y, Is.SameAs options)
+          NUnit.Framework.Assert.That(x, Is.EqualTo "UsageError")
+          NUnit.Framework.Assert.That(CommandLine.error |> Seq.head, Is.EqualTo "--threshold : specify this only once")
       finally
         Runner.threshold <- None
 
-    [<Test>]
+    [<Test;TestMethod>]
     let ParsingBadThresholdGivesFailure() =
       try
         Runner.threshold <- None
@@ -777,14 +793,14 @@ module AltCoverTests =
         let input = [| "-t"; "-111" |]
         let parse = CommandLine.ParseCommandLine input options
         match parse with
-        | Right _ -> Assert.Fail()
+        | Right _ -> NUnit.Framework.Assert.Fail()
         | Left(x, y) ->
-          Assert.That(y, Is.SameAs options)
-          Assert.That(x, Is.EqualTo "UsageError")
+          NUnit.Framework.Assert.That(y, Is.SameAs options)
+          NUnit.Framework.Assert.That(x, Is.EqualTo "UsageError")
       finally
         Runner.threshold <- None
 
-    [<Test>]
+    [<Test;TestMethod>]
     let ParsingEmptyThresholdGivesFailure() =
       try
         Runner.threshold <- None
@@ -792,14 +808,14 @@ module AltCoverTests =
         let input = [| "-t"; "  " |]
         let parse = CommandLine.ParseCommandLine input options
         match parse with
-        | Right _ -> Assert.Fail()
+        | Right _ -> NUnit.Framework.Assert.Fail()
         | Left(x, y) ->
-          Assert.That(y, Is.SameAs options)
-          Assert.That(x, Is.EqualTo "UsageError")
+          NUnit.Framework.Assert.That(y, Is.SameAs options)
+          NUnit.Framework.Assert.That(x, Is.EqualTo "UsageError")
       finally
         Runner.threshold <- None
 
-    [<Test>]
+    [<Test;TestMethod>]
     let ParsingNoThresholdGivesFailure() =
       try
         Runner.threshold <- None
@@ -807,14 +823,14 @@ module AltCoverTests =
         let input = [| "-t" |]
         let parse = CommandLine.ParseCommandLine input options
         match parse with
-        | Right _ -> Assert.Fail()
+        | Right _ -> NUnit.Framework.Assert.Fail()
         | Left(x, y) ->
-          Assert.That(y, Is.SameAs options)
-          Assert.That(x, Is.EqualTo "UsageError")
+          NUnit.Framework.Assert.That(y, Is.SameAs options)
+          NUnit.Framework.Assert.That(x, Is.EqualTo "UsageError")
       finally
         Runner.threshold <- None
 
-    [<Test>]
+    [<Test;TestMethod>]
     let ParsingCoberturaGivesCobertura() =
       lock Cobertura.path (fun () ->
         try
@@ -825,19 +841,19 @@ module AltCoverTests =
           let input = [| "-c"; unique |]
           let parse = CommandLine.ParseCommandLine input options
           match parse with
-          | Left _ -> Assert.Fail()
+          | Left _ -> NUnit.Framework.Assert.Fail()
           | Right(x, y) ->
-            Assert.That(y, Is.SameAs options)
-            Assert.That(x, Is.Empty)
+            NUnit.Framework.Assert.That(y, Is.SameAs options)
+            NUnit.Framework.Assert.That(x, Is.Empty)
           match !Cobertura.path with
-          | None -> Assert.Fail()
-          | Some x -> Assert.That(Path.GetFileName x, Is.EqualTo unique)
-          Assert.That(Runner.Summaries.Length, Is.EqualTo 2)
+          | None -> NUnit.Framework.Assert.Fail()
+          | Some x -> NUnit.Framework.Assert.That(Path.GetFileName x, Is.EqualTo unique)
+          NUnit.Framework.Assert.That(Runner.Summaries.Length, Is.EqualTo 2)
         finally
           Runner.Summaries <- [ Runner.StandardSummary ]
           Cobertura.path := None)
 
-    [<Test>]
+    [<Test;TestMethod>]
     let ParsingMultipleCoberturaGivesFailure() =
       lock Cobertura.path (fun () ->
         try
@@ -854,16 +870,16 @@ module AltCoverTests =
 
           let parse = CommandLine.ParseCommandLine input options
           match parse with
-          | Right _ -> Assert.Fail()
+          | Right _ -> NUnit.Framework.Assert.Fail()
           | Left(x, y) ->
-            Assert.That(y, Is.SameAs options)
-            Assert.That(x, Is.EqualTo "UsageError")
-            Assert.That(CommandLine.error |> Seq.head, Is.EqualTo "--cobertura : specify this only once")
+            NUnit.Framework.Assert.That(y, Is.SameAs options)
+            NUnit.Framework.Assert.That(x, Is.EqualTo "UsageError")
+            NUnit.Framework.Assert.That(CommandLine.error |> Seq.head, Is.EqualTo "--cobertura : specify this only once")
         finally
           Runner.Summaries <- [ Runner.StandardSummary ]
           Cobertura.path := None)
 
-    [<Test>]
+    [<Test;TestMethod>]
     let ParsingNoCoberturaGivesFailure() =
       lock Cobertura.path (fun () ->
         try
@@ -874,15 +890,15 @@ module AltCoverTests =
           let input = [| "-c"; blank |]
           let parse = CommandLine.ParseCommandLine input options
           match parse with
-          | Right _ -> Assert.Fail()
+          | Right _ -> NUnit.Framework.Assert.Fail()
           | Left(x, y) ->
-            Assert.That(y, Is.SameAs options)
-            Assert.That(x, Is.EqualTo "UsageError")
+            NUnit.Framework.Assert.That(y, Is.SameAs options)
+            NUnit.Framework.Assert.That(x, Is.EqualTo "UsageError")
         finally
           Runner.Summaries <- [ Runner.StandardSummary ]
           Cobertura.path := None)
 
-    [<Test>]
+    [<Test;TestMethod>]
     let ParsingOutputGivesOutput() =
       try
         Runner.output <- None
@@ -891,17 +907,17 @@ module AltCoverTests =
         let input = [| "-o"; unique |]
         let parse = CommandLine.ParseCommandLine input options
         match parse with
-        | Left _ -> Assert.Fail()
+        | Left _ -> NUnit.Framework.Assert.Fail()
         | Right(x, y) ->
-          Assert.That(y, Is.SameAs options)
-          Assert.That(x, Is.Empty)
+          NUnit.Framework.Assert.That(y, Is.SameAs options)
+          NUnit.Framework.Assert.That(x, Is.Empty)
         match Runner.output with
-        | None -> Assert.Fail()
-        | Some x -> Assert.That(Path.GetFileName x, Is.EqualTo unique)
+        | None -> NUnit.Framework.Assert.Fail()
+        | Some x -> NUnit.Framework.Assert.That(Path.GetFileName x, Is.EqualTo unique)
       finally
         Runner.output <- None
 
-    [<Test>]
+    [<Test;TestMethod>]
     let ParsingMultipleOutputGivesFailure() =
       try
         Runner.output <- None
@@ -917,15 +933,15 @@ module AltCoverTests =
 
         let parse = CommandLine.ParseCommandLine input options
         match parse with
-        | Right _ -> Assert.Fail()
+        | Right _ -> NUnit.Framework.Assert.Fail()
         | Left(x, y) ->
-          Assert.That(y, Is.SameAs options)
-          Assert.That(x, Is.EqualTo "UsageError")
-          Assert.That(CommandLine.error |> Seq.head, Is.EqualTo "--outputFile : specify this only once")
+          NUnit.Framework.Assert.That(y, Is.SameAs options)
+          NUnit.Framework.Assert.That(x, Is.EqualTo "UsageError")
+          NUnit.Framework.Assert.That(CommandLine.error |> Seq.head, Is.EqualTo "--outputFile : specify this only once")
       finally
         Runner.output <- None
 
-    [<Test>]
+    [<Test;TestMethod>]
     let ParsingNoOutputGivesFailure() =
       try
         Runner.output <- None
@@ -934,14 +950,14 @@ module AltCoverTests =
         let input = [| "-o"; blank |]
         let parse = CommandLine.ParseCommandLine input options
         match parse with
-        | Right _ -> Assert.Fail()
+        | Right _ -> NUnit.Framework.Assert.Fail()
         | Left(x, y) ->
-          Assert.That(y, Is.SameAs options)
-          Assert.That(x, Is.EqualTo "UsageError")
+          NUnit.Framework.Assert.That(y, Is.SameAs options)
+          NUnit.Framework.Assert.That(x, Is.EqualTo "UsageError")
       finally
         Runner.output <- None
 
-    [<Test>]
+    [<Test;TestMethod>]
     let ParsingDropGivesDrop() =
       try
         CommandLine.dropReturnCode := false
@@ -949,15 +965,15 @@ module AltCoverTests =
         let input = [| "--dropReturnCode" |]
         let parse = CommandLine.ParseCommandLine input options
         match parse with
-        | Left _ -> Assert.Fail()
+        | Left _ -> NUnit.Framework.Assert.Fail()
         | Right(x, y) ->
-          Assert.That(y, Is.SameAs options)
-          Assert.That(x, Is.Empty)
-        Assert.That(!CommandLine.dropReturnCode, Is.True)
+          NUnit.Framework.Assert.That(y, Is.SameAs options)
+          NUnit.Framework.Assert.That(x, Is.Empty)
+        NUnit.Framework.Assert.That(!CommandLine.dropReturnCode, Is.True)
       finally
         CommandLine.dropReturnCode := false
 
-    [<Test>]
+    [<Test;TestMethod>]
     let ParsingMultipleDropGivesFailure() =
       try
         CommandLine.dropReturnCode := false
@@ -965,15 +981,15 @@ module AltCoverTests =
         let input = [| "--dropReturnCode"; "--dropReturnCode" |]
         let parse = CommandLine.ParseCommandLine input options
         match parse with
-        | Right _ -> Assert.Fail()
+        | Right _ -> NUnit.Framework.Assert.Fail()
         | Left(x, y) ->
-          Assert.That(y, Is.SameAs options)
-          Assert.That(x, Is.EqualTo "UsageError")
-          Assert.That(CommandLine.error |> Seq.head, Is.EqualTo "--dropReturnCode : specify this only once")
+          NUnit.Framework.Assert.That(y, Is.SameAs options)
+          NUnit.Framework.Assert.That(x, Is.EqualTo "UsageError")
+          NUnit.Framework.Assert.That(CommandLine.error |> Seq.head, Is.EqualTo "--dropReturnCode : specify this only once")
       finally
         CommandLine.dropReturnCode := false
 
-    [<Test>]
+    [<Test;TestMethod>]
     let ParsingTCString() =
        [
         (String.Empty, Default)
@@ -992,11 +1008,11 @@ module AltCoverTests =
         ("R", R)
         ("true", Default)
        ]
-       |> List.iter (fun (x,y) -> Assert.That (TeamCityFormat.Factory x,
+       |> List.iter (fun (x,y) -> NUnit.Framework.Assert.That (TeamCityFormat.Factory x,
                                                Is.EqualTo y,
                                                x))
 
-    [<Test>]
+    [<Test;TestMethod>]
     let ParsingTCGivesTC() =
       [
         (String.Empty, B)
@@ -1020,15 +1036,15 @@ module AltCoverTests =
           let input = [| "--teamcity" + a |]
           let parse = CommandLine.ParseCommandLine input options
           match parse with
-          | Left _ -> Assert.Fail()
+          | Left _ -> NUnit.Framework.Assert.Fail()
           | Right(x, y) ->
-            Assert.That(y, Is.SameAs options)
-            Assert.That(x, Is.Empty)
+            NUnit.Framework.Assert.That(y, Is.SameAs options)
+            NUnit.Framework.Assert.That(x, Is.Empty)
           match Runner.SummaryFormat with
-          | x when v = x -> Assert.Pass()
-          | _ -> Assert.Fail(sprintf "%A %A => %A" a v Runner.SummaryFormat) ))
+          | x when v = x -> NUnit.Framework.Assert.Pass()
+          | _ -> NUnit.Framework.Assert.Fail(sprintf "%A %A => %A" a v Runner.SummaryFormat) ))
 
-    [<Test>]
+    [<Test;TestMethod>]
     let ParsingMultipleTCGivesFailure() =
       lock Runner.SummaryFormat (fun () ->
         Runner.SummaryFormat <- Default
@@ -1036,13 +1052,13 @@ module AltCoverTests =
         let input = [| "--teamcity"; "--teamcity" |]
         let parse = CommandLine.ParseCommandLine input options
         match parse with
-        | Right _ -> Assert.Fail()
+        | Right _ -> NUnit.Framework.Assert.Fail()
         | Left(x, y) ->
-          Assert.That(y, Is.SameAs options)
-          Assert.That(x, Is.EqualTo "UsageError")
-          Assert.That(CommandLine.error |> Seq.head, Is.EqualTo "--teamcity : specify this only once"))
+          NUnit.Framework.Assert.That(y, Is.SameAs options)
+          NUnit.Framework.Assert.That(x, Is.EqualTo "UsageError")
+          NUnit.Framework.Assert.That(CommandLine.error |> Seq.head, Is.EqualTo "--teamcity : specify this only once"))
 
-    [<Test>]
+    [<Test;TestMethod>]
     let ParsingBadTCGivesFailure() =
       lock Runner.SummaryFormat (fun () ->
         Runner.SummaryFormat <- Default
@@ -1051,12 +1067,12 @@ module AltCoverTests =
         let input = [| "--teamcity:junk" |]
         let parse = CommandLine.ParseCommandLine input options
         match parse with
-        | Right _ -> Assert.Fail()
+        | Right _ -> NUnit.Framework.Assert.Fail()
         | Left(x, y) ->
-          Assert.That(y, Is.SameAs options)
-          Assert.That(x, Is.EqualTo "UsageError"))
+          NUnit.Framework.Assert.That(y, Is.SameAs options)
+          NUnit.Framework.Assert.That(x, Is.EqualTo "UsageError"))
 
-    [<Test>]
+    [<Test;TestMethod>]
     let ShouldRequireExe() =
       lock Runner.executable (fun () ->
         try
@@ -1064,14 +1080,14 @@ module AltCoverTests =
           let options = Runner.DeclareOptions()
           let parse = Runner.RequireExe(Right([], options))
           match parse with
-          | Right _ -> Assert.Fail()
+          | Right _ -> NUnit.Framework.Assert.Fail()
           | Left(x, y) ->
-            Assert.That(y, Is.SameAs options)
-            Assert.That(x, Is.EqualTo "UsageError")
+            NUnit.Framework.Assert.That(y, Is.SameAs options)
+            NUnit.Framework.Assert.That(x, Is.EqualTo "UsageError")
         finally
           Runner.executable := None)
 
-    [<Test>]
+    [<Test;TestMethod>]
     let ShouldAcceptExe() =
       lock Runner.executable (fun () ->
         try
@@ -1080,14 +1096,14 @@ module AltCoverTests =
           let parse = Runner.RequireExe(Right([ "b" ], options))
           match parse with
           | Right(x :: y, z) ->
-            Assert.That(z, Is.SameAs options)
-            Assert.That(x, Is.EqualTo "xxx")
-            Assert.That(y, Is.EquivalentTo [ "b" ])
-          | _ -> Assert.Fail()
+            NUnit.Framework.Assert.That(z, Is.SameAs options)
+            NUnit.Framework.Assert.That(x, Is.EqualTo "xxx")
+            NUnit.Framework.Assert.That(y, Is.EquivalentTo [ "b" ])
+          | _ -> NUnit.Framework.Assert.Fail()
         finally
           Runner.executable := None)
 
-    [<Test>]
+    [<Test;TestMethod>]
     let ShouldRequireCollectIfNotExe() =
       lock Runner.executable (fun () ->
         try
@@ -1096,13 +1112,13 @@ module AltCoverTests =
           let options = Runner.DeclareOptions()
           let parse = Runner.RequireExe(Right([ "a"; "b" ], options))
           match parse with
-          | Right([], z) -> Assert.That(z, Is.SameAs options)
-          | _ -> Assert.Fail()
+          | Right([], z) -> NUnit.Framework.Assert.That(z, Is.SameAs options)
+          | _ -> NUnit.Framework.Assert.Fail()
         finally
           Runner.collect := false
           Runner.executable := None)
 
-    [<Test>]
+    [<Test;TestMethod>]
     let ShouldRejectExeIfCollect() =
       lock Runner.executable (fun () ->
         try
@@ -1111,15 +1127,15 @@ module AltCoverTests =
           let options = Runner.DeclareOptions()
           let parse = Runner.RequireExe(Right([ "b" ], options))
           match parse with
-          | Right _ -> Assert.Fail()
+          | Right _ -> NUnit.Framework.Assert.Fail()
           | Left(x, y) ->
-            Assert.That(y, Is.SameAs options)
-            Assert.That(x, Is.EqualTo "UsageError")
+            NUnit.Framework.Assert.That(y, Is.SameAs options)
+            NUnit.Framework.Assert.That(x, Is.EqualTo "UsageError")
         finally
           Runner.collect := false
           Runner.executable := None)
 
-    [<Test>]
+    [<Test;TestMethod>]
     let ShouldRequireWorker() =
       try
         Runner.workingDirectory <- None
@@ -1128,13 +1144,13 @@ module AltCoverTests =
         let parse = Runner.RequireWorker input
         match parse with
         | Right _ ->
-          Assert.That(parse, Is.SameAs input)
-          Assert.That(Option.isSome Runner.workingDirectory)
-        | _ -> Assert.Fail()
+          NUnit.Framework.Assert.That(parse, Is.SameAs input)
+          NUnit.Framework.Assert.That(Option.isSome Runner.workingDirectory)
+        | _ -> NUnit.Framework.Assert.Fail()
       finally
         Runner.workingDirectory <- None
 
-    [<Test>]
+    [<Test;TestMethod>]
     let ShouldAcceptWorker() =
       try
         Runner.workingDirectory <- Some "ShouldAcceptWorker"
@@ -1143,13 +1159,13 @@ module AltCoverTests =
         let parse = Runner.RequireWorker input
         match parse with
         | Right _ ->
-          Assert.That(parse, Is.SameAs input)
-          Assert.That(Runner.workingDirectory, Is.EqualTo(Some "ShouldAcceptWorker"))
-        | _ -> Assert.Fail()
+          NUnit.Framework.Assert.That(parse, Is.SameAs input)
+          NUnit.Framework.Assert.That(Runner.workingDirectory, Is.EqualTo(Some "ShouldAcceptWorker"))
+        | _ -> NUnit.Framework.Assert.Fail()
       finally
         Runner.workingDirectory <- None
 
-    [<Test>]
+    [<Test;TestMethod>]
     let ShouldRequireRecorder() =
       try
         Runner.recordingDirectory <- None
@@ -1157,14 +1173,14 @@ module AltCoverTests =
         let input = (Right([], options))
         let parse = Runner.RequireRecorder input
         match parse with
-        | Right _ -> Assert.Fail()
+        | Right _ -> NUnit.Framework.Assert.Fail()
         | Left(x, y) ->
-          Assert.That(y, Is.SameAs options)
-          Assert.That(x, Is.EqualTo "UsageError")
+          NUnit.Framework.Assert.That(y, Is.SameAs options)
+          NUnit.Framework.Assert.That(x, Is.EqualTo "UsageError")
       finally
         Runner.recordingDirectory <- None
 
-    [<Test>]
+    [<Test;TestMethod>]
     let ShouldRequireRecorderDll() =
       try
         let where = Assembly.GetExecutingAssembly().Location
@@ -1181,14 +1197,14 @@ module AltCoverTests =
         let input = (Right([], options))
         let parse = Runner.RequireRecorder input
         match parse with
-        | Right _ -> Assert.Fail()
+        | Right _ -> NUnit.Framework.Assert.Fail()
         | Left(x, y) ->
-          Assert.That(y, Is.SameAs options)
-          Assert.That(x, Is.EqualTo "UsageError")
+          NUnit.Framework.Assert.That(y, Is.SameAs options)
+          NUnit.Framework.Assert.That(x, Is.EqualTo "UsageError")
       finally
         Runner.recordingDirectory <- None
 
-    [<Test>]
+    [<Test;TestMethod>]
     let ShouldAcceptRecorder() =
       try
         let here = (Assembly.GetExecutingAssembly().Location |> Path.GetDirectoryName)
@@ -1208,12 +1224,12 @@ module AltCoverTests =
         let input = (Right([], options))
         let parse = Runner.RequireRecorder input
         match parse with
-        | Right _ -> Assert.That(parse, Is.SameAs input)
-        | _ -> Assert.Fail()
+        | Right _ -> NUnit.Framework.Assert.That(parse, Is.SameAs input)
+        | _ -> NUnit.Framework.Assert.Fail()
       finally
         Runner.recordingDirectory <- None
 
-    [<Test>]
+    [<Test;TestMethod>]
     let ShouldHandleReturnCodes() =
       // Hack for running while instrumented
       let where = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location)
@@ -1234,19 +1250,19 @@ module AltCoverTests =
 #endif
 
       let r = CommandLine.ProcessTrailingArguments args <| DirectoryInfo(where)
-      Assert.That(r, Is.EqualTo 0)
+      NUnit.Framework.Assert.That(r, Is.EqualTo 0)
 
       let r2 = CommandLine.ProcessTrailingArguments (args @ [ "1"; "2" ]) <| DirectoryInfo(where)
-      Assert.That(r2, Is.EqualTo 2)
+      NUnit.Framework.Assert.That(r2, Is.EqualTo 2)
 
       try
         CommandLine.dropReturnCode := true
         let r0 = CommandLine.ProcessTrailingArguments (args @ [ "1"; "2" ]) <| DirectoryInfo(where)
-        Assert.That(r0, Is.EqualTo 0)
+        NUnit.Framework.Assert.That(r0, Is.EqualTo 0)
       finally
         CommandLine.dropReturnCode := false
 
-    [<Test>]
+    [<Test;TestMethod>]
     let ShouldProcessTrailingArguments() =
       // Hack for running while instrumented
       let where = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location)
@@ -1291,8 +1307,8 @@ module AltCoverTests =
           else baseArgs
 
         let r = CommandLine.ProcessTrailingArguments args <| DirectoryInfo(where)
-        Assert.That(r, Is.EqualTo 0)
-        Assert.That(stderr.ToString(), Is.Empty)
+        NUnit.Framework.Assert.That(r, Is.EqualTo 0)
+        NUnit.Framework.Assert.That(stderr.ToString(), Is.Empty)
         stdout.Flush()
         let result = stdout.ToString()
 
@@ -1304,18 +1320,18 @@ module AltCoverTests =
           "Command line : '" + quote + args.Head + quote + " "
           + String.Join(" ", args.Tail) + "'" + Environment.NewLine
           + "Where is my rocket pack? " + u1 + "*" + u2 + Environment.NewLine
-        Assert.That(result, Is.EqualTo expected)
+        NUnit.Framework.Assert.That(result, Is.EqualTo expected)
       finally
         Console.SetOut(fst saved)
         Console.SetError(snd saved)
 
-    [<Test>]
+    [<Test;TestMethod>]
     let ShouldNoOp() =
       let where = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location)
       let r = CommandLine.ProcessTrailingArguments [] <| DirectoryInfo(where)
-      Assert.That(r, Is.EqualTo 0)
+      NUnit.Framework.Assert.That(r, Is.EqualTo 0)
 
-    [<Test>]
+    [<Test;TestMethod>]
     let ErrorResponseIsAsExpected() =
       let saved = Console.Error
       try
@@ -1326,7 +1342,7 @@ module AltCoverTests =
           typeof<TeamCityFormat>.Assembly.GetType("AltCover.AltCover")
             .GetMethod("Main", BindingFlags.NonPublic ||| BindingFlags.Static)
         let returnCode = main.Invoke(null, [| [| "RuNN"; "-r"; unique |] |])
-        Assert.That(returnCode, Is.EqualTo 255)
+        NUnit.Framework.Assert.That(returnCode, Is.EqualTo 255)
         let result = stderr.ToString().Replace("\r\n", "\n")
         let expected = "\"RuNN\" \"-r\" \"" + unique + "\"\n"
                        + "--recorderDirectory : Directory " + unique + " not found\n" + """Error - usage is:
@@ -1442,14 +1458,14 @@ or
                                as/instead of the OpenCover summary
   -?, --help, -h             Prints out the options.
 """
-        Assert.That
+        NUnit.Framework.Assert.That
           (result.Replace("\r\n", "\n"), Is.EqualTo(expected.Replace("\r\n", "\n")))
       finally
         Console.SetError saved
 
     let synchronized = Object()
 
-    [<Test>]
+    [<Test;TestMethod>]
     let ShouldGetStringConstants() =
       let where = Assembly.GetExecutingAssembly().Location |> Path.GetDirectoryName
       let save = Runner.RecorderName
@@ -1458,21 +1474,21 @@ or
           Runner.recordingDirectory <- Some where
           Runner.RecorderName <- "AltCover.Recorder.dll"
           let instance = Runner.RecorderInstance() |> snd
-          Assert.That
+          NUnit.Framework.Assert.That
             (instance.FullName, Is.EqualTo "AltCover.Recorder.Instance",
              "should be the instance")
           let token =
             (Runner.GetMethod instance "get_Token") |> Runner.GetFirstOperandAsString
-          Assert.That(token, Is.EqualTo "AltCover", "should be plain token")
+          NUnit.Framework.Assert.That(token, Is.EqualTo "AltCover", "should be plain token")
           let report =
             (Runner.GetMethod instance "get_ReportFile") |> Runner.GetFirstOperandAsString
-          Assert.That
+          NUnit.Framework.Assert.That
             (report, Is.EqualTo "Coverage.Default.xml", "should be default coverage file")
         finally
           Runner.recordingDirectory <- None
           Runner.RecorderName <- save)
 
-    [<Test>]
+    [<Test;TestMethod>]
     let ShouldProcessPayload() =
       // Hack for running while instrumented
       let where = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location)
@@ -1518,8 +1534,8 @@ or
           else baseArgs
 
         let r = Runner.GetPayload args
-        Assert.That(r, Is.EqualTo 0)
-        Assert.That(stderr.ToString(), Is.Empty)
+        NUnit.Framework.Assert.That(r, Is.EqualTo 0)
+        NUnit.Framework.Assert.That(stderr.ToString(), Is.Empty)
         stdout.Flush()
         let result = stdout.ToString()
 
@@ -1531,13 +1547,13 @@ or
           "Command line : '" + quote + args.Head + quote + " "
           + String.Join(" ", args.Tail) + "'" + Environment.NewLine
           + "Where is my rocket pack? " + u1 + "*" + u2 + Environment.NewLine
-        Assert.That(result, Is.EqualTo expected)
+        NUnit.Framework.Assert.That(result, Is.EqualTo expected)
       finally
         Console.SetOut(fst saved)
         Console.SetError(snd saved)
         Runner.workingDirectory <- None
 
-    [<Test>]
+    [<Test;TestMethod>]
     let WriteLeavesExpectedTraces() =
       let saved = Console.Out
       let here = Directory.GetCurrentDirectory()
@@ -1555,7 +1571,7 @@ or
           Assembly.GetExecutingAssembly().GetManifestResourceStream(resource)
         let size = int stream.Length
         let buffer = Array.create size 0uy
-        Assert.That(stream.Read(buffer, 0, size), Is.EqualTo size)
+        NUnit.Framework.Assert.That(stream.Read(buffer, 0, size), Is.EqualTo size)
         do use worker = new FileStream(reportFile, FileMode.CreateNew)
            worker.Write(buffer, 0, size)
            ()
@@ -1576,7 +1592,7 @@ or
         use worker' = new FileStream(reportFile, FileMode.Open)
         let after = XmlDocument()
         after.Load worker'
-        Assert.That
+        NUnit.Framework.Assert.That
           (after.SelectNodes("//seqpnt")
            |> Seq.cast<XmlElement>
            |> Seq.map (fun x -> x.GetAttribute("visitcount")),
@@ -1589,7 +1605,7 @@ or
           Directory.Delete(unique)
         with :? IOException -> ()
 
-    [<Test>]
+    [<Test;TestMethod>]
     let NullPayloadShouldReportNothing() =
       let counts = Dictionary<string, Dictionary<int, PointVisit>>()
       let where = Assembly.GetExecutingAssembly().Location |> Path.GetDirectoryName
@@ -1597,11 +1613,11 @@ or
       do use s = File.Create(unique + ".0.acv")
          s.Close()
       let r = Runner.GetMonitor counts unique List.length []
-      Assert.That(r, Is.EqualTo 0)
-      Assert.That(File.Exists(unique + ".acv"))
-      Assert.That(counts, Is.Empty)
+      NUnit.Framework.Assert.That(r, Is.EqualTo 0)
+      NUnit.Framework.Assert.That(File.Exists(unique + ".acv"))
+      NUnit.Framework.Assert.That(counts, Is.Empty)
 
-    [<Test>]
+    [<Test;TestMethod>]
     let ActivePayloadShouldReportAsExpected() =
       let counts = Dictionary<string, Dictionary<int, PointVisit>>()
       let where = Assembly.GetExecutingAssembly().Location |> Path.GetDirectoryName
@@ -1619,8 +1635,8 @@ or
                formatter.Write 0uy
                x)
           |> List.length) [ "a"; "b"; String.Empty; "c" ]
-      Assert.That(r, Is.EqualTo 4)
-      Assert.That(File.Exists(unique + ".acv"))
+      NUnit.Framework.Assert.That(r, Is.EqualTo 4)
+      NUnit.Framework.Assert.That(File.Exists(unique + ".acv"))
       let expected = Dictionary<string, Dictionary<int, PointVisit>>()
       let a = Dictionary<int, PointVisit>()
       a.Add(0, PointVisit.Init 1L [])
@@ -1632,20 +1648,20 @@ or
       expected.Add ("b", b)
       expected.Add ("c", c)
 
-      Assert.That (counts.Count, Is.EqualTo 3)
-      Assert.That (counts.["a"].Count, Is.EqualTo 1)
-      Assert.That (counts.["b"].Count, Is.EqualTo 1)
-      Assert.That (counts.["c"].Count, Is.EqualTo 1)
-      Assert.That (counts.["a"].[0].Count, Is.EqualTo 1)
-      Assert.That (counts.["a"].[0].Tracks, Is.Empty)
-      Assert.That (counts.["b"].[1].Count, Is.EqualTo 1)
-      Assert.That (counts.["b"].[1].Tracks, Is.Empty)
-      Assert.That (counts.["c"].[3].Count, Is.EqualTo 1)
-      Assert.That (counts.["c"].[3].Tracks, Is.Empty)
+      NUnit.Framework.Assert.That (counts.Count, Is.EqualTo 3)
+      NUnit.Framework.Assert.That (counts.["a"].Count, Is.EqualTo 1)
+      NUnit.Framework.Assert.That (counts.["b"].Count, Is.EqualTo 1)
+      NUnit.Framework.Assert.That (counts.["c"].Count, Is.EqualTo 1)
+      NUnit.Framework.Assert.That (counts.["a"].[0].Count, Is.EqualTo 1)
+      NUnit.Framework.Assert.That (counts.["a"].[0].Tracks, Is.Empty)
+      NUnit.Framework.Assert.That (counts.["b"].[1].Count, Is.EqualTo 1)
+      NUnit.Framework.Assert.That (counts.["b"].[1].Tracks, Is.Empty)
+      NUnit.Framework.Assert.That (counts.["c"].[3].Count, Is.EqualTo 1)
+      NUnit.Framework.Assert.That (counts.["c"].[3].Tracks, Is.Empty)
 
       if File.Exists(unique + ".acv") then File.Delete(unique + ".acv")
 
-    [<Test>]
+    [<Test;TestMethod>]
     let CollectShouldReportAsExpected() =
       try
         Runner.collect := true
@@ -1666,15 +1682,15 @@ or
                  formatter.Write 0uy
                  x)
             |> List.length) [ "a"; "b"; String.Empty; "c" ]
-        Assert.That(r, Is.EqualTo 0)
-        Assert.That(File.Exists(unique + ".acv") |> not)
+        NUnit.Framework.Assert.That(r, Is.EqualTo 0)
+        NUnit.Framework.Assert.That(File.Exists(unique + ".acv") |> not)
         let doc = Runner.LoadReport(unique + ".acv")
-        Assert.That(doc.Nodes(), Is.Empty)
-        Assert.That(counts, Is.Empty)
+        NUnit.Framework.Assert.That(doc.Nodes(), Is.Empty)
+        NUnit.Framework.Assert.That(counts, Is.Empty)
       finally
         Runner.collect := false
 
-    [<Test>]
+    [<Test;TestMethod>]
     let JunkPayloadShouldReportAsExpected() =
       let counts = Dictionary<string, Dictionary<int, PointVisit>>()
       let where = Assembly.GetExecutingAssembly().Location |> Path.GetDirectoryName
@@ -1690,11 +1706,11 @@ or
                formatter.Serialize(sink, (x, i, Base.Null, DateTime.UtcNow))
                x)
           |> List.length) [ "a"; "b"; String.Empty; "c" ]
-      Assert.That(r, Is.EqualTo 4)
-      Assert.That(File.Exists(unique + ".acv"))
-      Assert.That(counts, Is.EquivalentTo [])
+      NUnit.Framework.Assert.That(r, Is.EqualTo 4)
+      NUnit.Framework.Assert.That(File.Exists(unique + ".acv"))
+      NUnit.Framework.Assert.That(counts, Is.EquivalentTo [])
 
-    [<Test>]
+    [<Test;TestMethod>]
     let TrackingPayloadShouldReportAsExpected() =
       let counts = Dictionary<string, Dictionary<int, PointVisit>>()
       let where = Assembly.GetExecutingAssembly().Location |> Path.GetDirectoryName
@@ -1759,7 +1775,7 @@ or
                                                                                       formatter.Write(Base.Tag.Both |> byte)
                                                                                       formatter.Write(b.Time)
                                                                                       formatter.Write(b.Call)
-                                                                                    | _ -> tx |> (sprintf "%A") |> Assert.Fail)
+                                                                                    | _ -> tx |> (sprintf "%A") |> NUnit.Framework.Assert.Fail)
                                                              formatter.Write(Base.Tag.Null |> byte)))
                  formatter.Write String.Empty
                x)
@@ -1786,8 +1802,8 @@ or
       expected.Add ("e", e)
       expected.Add ("Extra", f)
 
-      Assert.That(r, Is.EqualTo 7)
-      Assert.That(File.Exists(unique + ".acv"))
+      NUnit.Framework.Assert.That(r, Is.EqualTo 7)
+      NUnit.Framework.Assert.That(File.Exists(unique + ".acv"))
 
       let result = Dictionary<string, Dictionary<int, int64 * Base.Track list>>()
       counts.Keys
@@ -1799,9 +1815,9 @@ or
                                 inner.Add(k2, (v.Count, v.Tracks |> Seq.toList))
                             ))
 
-      Assert.That(result, Is.EquivalentTo expected)
+      NUnit.Framework.Assert.That(result, Is.EquivalentTo expected)
 
-    [<Test>]
+    [<Test;TestMethod>]
     let PointProcessShouldCaptureTimes() =
       let x = XmlDocument()
       x.LoadXml("<root />")
@@ -1815,12 +1831,12 @@ or
           Base.Time 42L
           Base.Time 5L ]
       Runner.PointProcess root hits
-      Assert.That
+      NUnit.Framework.Assert.That
         (x.DocumentElement.OuterXml,
          Is.EqualTo
            """<root><Times><Time time="5" vc="2" /><Time time="23" vc="1" /><Time time="42" vc="1" /></Times><TrackedMethodRefs><TrackedMethodRef uid="17" vc="1" /><TrackedMethodRef uid="42" vc="1" /></TrackedMethodRefs></root>""")
 
-    [<Test>]
+    [<Test;TestMethod>]
     let PostprocessShouldRestoreKnownOpenCoverState() =
       Counter.measureTime <- DateTime.ParseExact
                                ("2017-12-29T16:33:40.9564026+00:00", "o", null)
@@ -1849,11 +1865,11 @@ or
       |> Seq.iter (fun el -> el.SetAttribute("bev", "0"))
       let empty = Dictionary<string, Dictionary<int, PointVisit>>()
       Runner.PostProcess empty Base.ReportFormat.OpenCover after
-      Assert.That
+      NUnit.Framework.Assert.That
         (after.OuterXml.Replace("uspid=\"100663298", "uspid=\"13"), Is.EqualTo before,
          after.OuterXml)
 
-    [<Test>]
+    [<Test;TestMethod>]
     let PostprocessShouldRestoreKnownOpenCoverStateFromMono() =
       Counter.measureTime <- DateTime.ParseExact
                                ("2017-12-29T16:33:40.9564026+00:00", "o", null)
@@ -1893,11 +1909,11 @@ or
       visit.Add(100663297, PointVisit.Init 1L []) // should fill in the expected non-zero value
       visit.Add(100663298, PointVisit.Init 23L []) // should be ignored
       Runner.PostProcess visits Base.ReportFormat.OpenCover after
-      Assert.That
+      NUnit.Framework.Assert.That
         (after.OuterXml.Replace("uspid=\"100663298", "uspid=\"13"), Is.EqualTo before,
          after.OuterXml)
 
-    [<Test>]
+    [<Test;TestMethod>]
     let PostprocessShouldRestoreDegenerateOpenCoverState() =
       Counter.measureTime <- DateTime.ParseExact
                                ("2017-12-29T16:33:40.9564026+00:00", "o", null)
@@ -1962,9 +1978,9 @@ or
            then el.SetAttribute("crapScore", "0"))
       let empty = Dictionary<string, Dictionary<int, PointVisit>>()
       Runner.PostProcess empty Base.ReportFormat.OpenCover after
-      Assert.That(after.OuterXml, Is.EqualTo before, after.OuterXml)
+      NUnit.Framework.Assert.That(after.OuterXml, Is.EqualTo before, after.OuterXml)
 
-    [<Test>]
+    [<Test;TestMethod>]
     let PostprocessShouldRestoreBranchOnlyOpenCoverState() =
       Counter.measureTime <- DateTime.ParseExact
                                ("2017-12-29T16:33:40.9564026+00:00", "o", null)
@@ -2027,18 +2043,18 @@ or
            then el.SetAttribute("crapScore", "0"))
       let empty = Dictionary<string, Dictionary<int, PointVisit>>()
       Runner.PostProcess empty Base.ReportFormat.OpenCover after
-      Assert.That(after.OuterXml, Is.EqualTo before, after.OuterXml)
+      NUnit.Framework.Assert.That(after.OuterXml, Is.EqualTo before, after.OuterXml)
 
-    [<Test>]
+    [<Test;TestMethod>]
     let JunkTokenShouldDefaultZero() =
       let visits = Dictionary<int, PointVisit>()
       let key = " "
       let result = Runner.LookUpVisitsByToken key visits
       match (result.Count, result.Tracks |> Seq.toList) with
       | (0L, []) -> ()
-      | _ -> Assert.Fail(sprintf "%A" result)
+      | _ -> NUnit.Framework.Assert.Fail(sprintf "%A" result)
 
-    [<Test>]
+    [<Test;TestMethod>]
     let EmptyNCoverGeneratesExpectedSummary() =
       let report = XDocument()
       let builder = System.Text.StringBuilder()
@@ -2049,18 +2065,18 @@ or
           let task = Collect()
           Output.Info <- (fun s -> builder.Append(s).Append("|") |> ignore)
           let r = Runner.StandardSummary report Base.ReportFormat.NCover 0
-          Assert.That(r, Is.EqualTo 0)
+          NUnit.Framework.Assert.That(r, Is.EqualTo 0)
           let expected = "Visited Classes 0 of 0 (n/a)|Visited Methods 0 of 0 (n/a)|Visited Points 0 of 0 (n/a)|"
-          Assert.That
+          NUnit.Framework.Assert.That
             (builder.ToString(),
              Is.EqualTo expected
                )
           let collected = task.Summary.Replace("\r",String.Empty).Replace("\n", "|")
-          Assert.That(collected, Is.EqualTo expected))
+          NUnit.Framework.Assert.That(collected, Is.EqualTo expected))
       finally
         Output.Info <- ignore
 
-    [<Test>]
+    [<Test;TestMethod>]
     let EmptyNCoverGeneratesExpectedTCSummary() =
       let report = XDocument()
       let builder = System.Text.StringBuilder()
@@ -2071,20 +2087,20 @@ or
           let task = Collect()
           Output.Info <- (fun s -> builder.Append(s).Append("|") |> ignore)
           let r = Runner.StandardSummary report Base.ReportFormat.NCover 0
-          Assert.That(r, Is.EqualTo 0)
+          NUnit.Framework.Assert.That(r, Is.EqualTo 0)
           let expected = "##teamcity[buildStatisticValue key='CodeCoverageAbsCTotal' value='0']|##teamcity[buildStatisticValue key='CodeCoverageAbsCCovered' value='0']|##teamcity[buildStatisticValue key='CodeCoverageAbsMTotal' value='0']|##teamcity[buildStatisticValue key='CodeCoverageAbsMCovered' value='0']|##teamcity[buildStatisticValue key='CodeCoverageAbsSTotal' value='0']|##teamcity[buildStatisticValue key='CodeCoverageAbsSCovered' value='0']|"
           let result = builder.ToString()
-          Assert.That
+          NUnit.Framework.Assert.That
             (result,
              Is.EqualTo expected,
              result
                )
           let collected = task.Summary.Replace("\r",String.Empty).Replace("\n", "|")
-          Assert.That(collected, Is.EqualTo expected, collected))
+          NUnit.Framework.Assert.That(collected, Is.EqualTo expected, collected))
       finally
         Output.Info <- ignore
 
-    [<Test>]
+    [<Test;TestMethod>]
     let EmptyNCoverGeneratesExpectedSummaries() =
       let report = XDocument()
       let builder = System.Text.StringBuilder()
@@ -2095,20 +2111,20 @@ or
           let task = Collect()
           Output.Info <- (fun s -> builder.Append(s).Append("|") |> ignore)
           let r = Runner.StandardSummary report Base.ReportFormat.NCover 0
-          Assert.That(r, Is.EqualTo 0)
+          NUnit.Framework.Assert.That(r, Is.EqualTo 0)
           let expected = "Visited Classes 0 of 0 (n/a)|Visited Methods 0 of 0 (n/a)|Visited Points 0 of 0 (n/a)|##teamcity[buildStatisticValue key='CodeCoverageAbsCTotal' value='0']|##teamcity[buildStatisticValue key='CodeCoverageAbsCCovered' value='0']|##teamcity[buildStatisticValue key='CodeCoverageAbsMTotal' value='0']|##teamcity[buildStatisticValue key='CodeCoverageAbsMCovered' value='0']|##teamcity[buildStatisticValue key='CodeCoverageAbsSTotal' value='0']|##teamcity[buildStatisticValue key='CodeCoverageAbsSCovered' value='0']|"
           let result = builder.ToString()
-          Assert.That
+          NUnit.Framework.Assert.That
             (result,
              Is.EqualTo expected,
              result
                )
           let collected = task.Summary.Replace("\r",String.Empty).Replace("\n", "|")
-          Assert.That(collected, Is.EqualTo expected, collected))
+          NUnit.Framework.Assert.That(collected, Is.EqualTo expected, collected))
       finally
         Output.Info <- ignore
 
-    [<Test>]
+    [<Test;TestMethod>]
     let NCoverShouldGeneratePlausibleSummary() =
       let resource =
         Assembly.GetExecutingAssembly().GetManifestResourceNames()
@@ -2127,8 +2143,8 @@ or
             finally
               Runner.threshold <- None
           // 80% coverage > threshold so expect return code coming in
-          Assert.That(r, Is.EqualTo 42)
-          Assert.That
+          NUnit.Framework.Assert.That(r, Is.EqualTo 42)
+          NUnit.Framework.Assert.That
             (builder.ToString(),
              Is.EqualTo
                ("Visited Classes 1 of 1 (100)|Visited Methods 1 of 1 (100)|Visited Points 8 of 10 (80)|" +
@@ -2137,7 +2153,7 @@ or
       finally
         Output.Info <- ignore
 
-    [<Test>]
+    [<Test;TestMethod>]
     let EmptyOpenCoverGeneratesExpectedSummary() =
       let report = XDocument.Load(new System.IO.StringReader("""<CoverageSession>
   <Summary numSequencePoints="0" visitedSequencePoints="0" numBranchPoints="0" visitedBranchPoints="0" sequenceCoverage="0" branchCoverage="0" maxCyclomaticComplexity="0" minCyclomaticComplexity="1" visitedClasses="0" numClasses="0" visitedMethods="0" numMethods="0" />
@@ -2148,8 +2164,8 @@ or
           Runner.SummaryFormat <- Default
           Output.Info <- (fun s -> builder.Append(s).Append("|") |> ignore)
           let r = Runner.StandardSummary report Base.ReportFormat.OpenCover 0
-          Assert.That(r, Is.EqualTo 0)
-          Assert.That
+          NUnit.Framework.Assert.That(r, Is.EqualTo 0)
+          NUnit.Framework.Assert.That
             (builder.ToString(),
              Is.EqualTo
                ("Visited Classes 0 of 0 (n/a)|Visited Methods 0 of 0 (n/a)|"
@@ -2159,7 +2175,7 @@ or
       finally
         Output.Info <- ignore
 
-    [<Test>]
+    [<Test;TestMethod>]
     let EmptyOpenCoverGeneratesExpectedTCSummary() =
       let report = XDocument.Load(new System.IO.StringReader("""<CoverageSession>
   <Summary numSequencePoints="0" visitedSequencePoints="0" numBranchPoints="0" visitedBranchPoints="0" sequenceCoverage="0" branchCoverage="0" maxCyclomaticComplexity="0" minCyclomaticComplexity="1" visitedClasses="0" numClasses="0" visitedMethods="0" numMethods="0" />
@@ -2170,8 +2186,8 @@ or
           Runner.SummaryFormat <- B
           Output.Info <- (fun s -> builder.Append(s).Append("|") |> ignore)
           let r = Runner.StandardSummary report Base.ReportFormat.OpenCover 0
-          Assert.That(r, Is.EqualTo 0)
-          Assert.That
+          NUnit.Framework.Assert.That(r, Is.EqualTo 0)
+          NUnit.Framework.Assert.That
             (builder.ToString(),
              Is.EqualTo
                ("##teamcity[buildStatisticValue key='CodeCoverageAbsCTotal' value='0']|" +
@@ -2185,7 +2201,7 @@ or
       finally
         Output.Info <- ignore
 
-    [<Test>]
+    [<Test;TestMethod>]
     let EmptyOpenCoverGeneratesExpectedSummaries() =
       let report = XDocument.Load(new System.IO.StringReader("""<CoverageSession>
   <Summary numSequencePoints="0" visitedSequencePoints="0" numBranchPoints="0" visitedBranchPoints="0" sequenceCoverage="0" branchCoverage="0" maxCyclomaticComplexity="0" minCyclomaticComplexity="1" visitedClasses="0" numClasses="0" visitedMethods="0" numMethods="0" />
@@ -2196,8 +2212,8 @@ or
           Runner.SummaryFormat <- RPlus
           Output.Info <- (fun s -> builder.Append(s).Append("|") |> ignore)
           let r = Runner.StandardSummary report Base.ReportFormat.OpenCover 0
-          Assert.That(r, Is.EqualTo 0)
-          Assert.That
+          NUnit.Framework.Assert.That(r, Is.EqualTo 0)
+          NUnit.Framework.Assert.That
             (builder.ToString(),
              Is.EqualTo
                ("Visited Classes 0 of 0 (n/a)|Visited Methods 0 of 0 (n/a)|"
@@ -2215,7 +2231,7 @@ or
       finally
         Output.Info <- ignore
 
-    [<Test>]
+    [<Test;TestMethod>]
     let OpenCoverShouldGeneratePlausibleSummary() =
       let resource =
         Assembly.GetExecutingAssembly().GetManifestResourceNames()
@@ -2235,8 +2251,8 @@ or
             finally
               Runner.threshold <- None
           // 70% coverage < threshold so expect shortfall
-          Assert.That(r, Is.EqualTo 5)
-          Assert.That
+          NUnit.Framework.Assert.That(r, Is.EqualTo 5)
+          NUnit.Framework.Assert.That
             (builder.ToString(),
              Is.EqualTo
                ("Visited Classes 1 of 1 (100)|Visited Methods 1 of 1 (100)|"
@@ -2249,7 +2265,7 @@ or
       finally
         Output.Info <- ignore
 
-    [<Test>]
+    [<Test;TestMethod>]
     let OpenCoverShouldGeneratePlausibleLcov() =
       let resource =
         Assembly.GetExecutingAssembly().GetManifestResourceNames()
@@ -2268,7 +2284,7 @@ or
       |> ignore
       try
         let r = LCov.Summary baseline Base.ReportFormat.OpenCover 0
-        Assert.That(r, Is.EqualTo 0)
+        NUnit.Framework.Assert.That(r, Is.EqualTo 0)
         let result = File.ReadAllText unique
         let resource2 =
           Assembly.GetExecutingAssembly().GetManifestResourceNames()
@@ -2276,12 +2292,12 @@ or
         use stream2 = Assembly.GetExecutingAssembly().GetManifestResourceStream(resource2)
         use reader = new StreamReader(stream2)
         let expected = reader.ReadToEnd().Replace("\r", String.Empty).Replace("\\", "/")
-        Assert.That
+        NUnit.Framework.Assert.That
           (result.Replace("\r", String.Empty).Replace("\\", "/"), Is.EqualTo expected)
       finally
         LCov.path := None
 
-    [<Test>]
+    [<Test;TestMethod>]
     let NCoverShouldGeneratePlausibleLcov() =
       let resource =
         Assembly.GetExecutingAssembly().GetManifestResourceNames()
@@ -2299,7 +2315,7 @@ or
       |> ignore
       try
         let r = LCov.Summary baseline Base.ReportFormat.NCover 0
-        Assert.That(r, Is.EqualTo 0)
+        NUnit.Framework.Assert.That(r, Is.EqualTo 0)
         let result = File.ReadAllText unique
         let resource2 =
           Assembly.GetExecutingAssembly().GetManifestResourceNames()
@@ -2307,12 +2323,12 @@ or
         use stream2 = Assembly.GetExecutingAssembly().GetManifestResourceStream(resource2)
         use reader = new StreamReader(stream2)
         let expected = reader.ReadToEnd().Replace("\r", String.Empty).Replace("\\", "/")
-        Assert.That
+        NUnit.Framework.Assert.That
           (result.Replace("\r", String.Empty).Replace("\\", "/"), Is.EqualTo expected)
       finally
         LCov.path := None
 
-    [<Test>]
+    [<Test;TestMethod>]
     let NCoverShouldGeneratePlausibleLcovWithMissingFullName() =
       let resource =
         Assembly.GetExecutingAssembly().GetManifestResourceNames()
@@ -2335,7 +2351,7 @@ or
       |> ignore
       try
         let r = LCov.Summary baseline Base.ReportFormat.NCover 0
-        Assert.That(r, Is.EqualTo 0)
+        NUnit.Framework.Assert.That(r, Is.EqualTo 0)
         let result = File.ReadAllText unique
         let resource2 =
           Assembly.GetExecutingAssembly().GetManifestResourceNames()
@@ -2343,12 +2359,12 @@ or
         use stream2 = Assembly.GetExecutingAssembly().GetManifestResourceStream(resource2)
         use reader = new StreamReader(stream2)
         let expected = reader.ReadToEnd().Replace("\r", String.Empty).Replace("\\", "/")
-        Assert.That
+        NUnit.Framework.Assert.That
           (result.Replace("\r", String.Empty).Replace("\\", "/"), Is.EqualTo expected)
       finally
         LCov.path := None
 
-    [<Test>]
+    [<Test;TestMethod>]
     let MultiSortDoesItsThing() =
       let load f =
         use r = new System.IO.StringReader(f)
@@ -2379,7 +2395,7 @@ or
               |> Seq.toList))
         |> Seq.toList
 
-      Assert.That
+      NUnit.Framework.Assert.That
         (result,
          Is.EquivalentTo
            [ ("a",
@@ -2417,7 +2433,7 @@ or
         xmlDocument.Schemas <- schema
         xmlDocument.Validate(null)
 
-    [<Test>]
+    [<Test;TestMethod>]
     let NCoverShouldGeneratePlausibleCobertura() =
       let resource =
         Assembly.GetExecutingAssembly().GetManifestResourceNames()
@@ -2435,7 +2451,7 @@ or
       |> ignore
       try
         let r = Cobertura.Summary baseline Base.ReportFormat.NCover 0
-        Assert.That(r, Is.EqualTo 0)
+        NUnit.Framework.Assert.That(r, Is.EqualTo 0)
         let result =
           Regex.Replace(File.ReadAllText unique, """timestamp=\"\d*\">""",
                         """timestamp="xx">""").Replace("\\", "/")
@@ -2449,12 +2465,12 @@ or
                 .Replace("""version="3.0.0.0""",
                          "version=\""
                          + typeof<TeamCityFormat>.Assembly.GetName().Version.ToString())
-        Assert.That(result.Replace("\r", String.Empty), Is.EqualTo expected, result)
+        NUnit.Framework.Assert.That(result.Replace("\r", String.Empty), Is.EqualTo expected, result)
         Validate result
       finally
         Cobertura.path := None
 
-    [<Test>]
+    [<Test;TestMethod>]
     let NCoverShouldGeneratePlausibleCoberturaWithMissingFullName() =
       let resource =
         Assembly.GetExecutingAssembly().GetManifestResourceNames()
@@ -2477,7 +2493,7 @@ or
       |> ignore
       try
         let r = Cobertura.Summary baseline Base.ReportFormat.NCover 0
-        Assert.That(r, Is.EqualTo 0)
+        NUnit.Framework.Assert.That(r, Is.EqualTo 0)
         let result =
           Regex.Replace(File.ReadAllText unique, """timestamp=\"\d*\">""",
                         """timestamp="xx">""").Replace("\\", "/")
@@ -2492,12 +2508,12 @@ or
                 .Replace("""version="3.5.0.0""",
                          "version=\""
                          + typeof<TeamCityFormat>.Assembly.GetName().Version.ToString())
-        Assert.That(result.Replace("\r", String.Empty), Is.EqualTo expected, result)
+        NUnit.Framework.Assert.That(result.Replace("\r", String.Empty), Is.EqualTo expected, result)
         Validate result
       finally
         Cobertura.path := None
 
-    [<Test>]
+    [<Test;TestMethod>]
     let OpenCoverShouldGeneratePlausibleCobertura() =
       let resource =
         Assembly.GetExecutingAssembly().GetManifestResourceNames()
@@ -2516,7 +2532,7 @@ or
       |> ignore
       try
         let r = Cobertura.Summary baseline Base.ReportFormat.OpenCover 0
-        Assert.That(r, Is.EqualTo 0)
+        NUnit.Framework.Assert.That(r, Is.EqualTo 0)
         let result =
           Regex.Replace
             (File.ReadAllText unique, """timestamp=\"\d*\">""", """timestamp="xx">""")
@@ -2531,14 +2547,14 @@ or
                 .Replace("""version="3.0.0.0""",
                          "version=\""
                          + typeof<TeamCityFormat>.Assembly.GetName().Version.ToString())
-        Assert.That
+        NUnit.Framework.Assert.That
           (result.Replace("\r", String.Empty).Replace("\\", "/"), Is.EqualTo expected,
            result)
         Validate result
       finally
         Cobertura.path := None
 
-    [<Test>]
+    [<Test;TestMethod>]
     let ThresholdViolationShouldBeReported() =
       let saveErr = Output.Error
       let saveSummaries = Runner.Summaries
@@ -2549,8 +2565,8 @@ or
         Output.Error <- (fun s -> builder.Append(s).Append("|") |> ignore)
         Runner.threshold <- Some 42
         let delta = Runner.DoSummaries (XDocument()) Base.ReportFormat.NCover 0
-        Assert.That(delta, Is.EqualTo 23)
-        Assert.That
+        NUnit.Framework.Assert.That(delta, Is.EqualTo 23)
+        NUnit.Framework.Assert.That
           (builder.ToString(),
            Is.EqualTo "Coverage percentage achieved is 23% below the threshold of 42%.|")
       finally
@@ -2558,7 +2574,7 @@ or
         Runner.Summaries <- saveSummaries
         Runner.threshold <- saved
 
-    [<Test>]
+    [<Test;TestMethod>]
     let TryGetValueHandlesNull() =
       let dict : Dictionary<int, int> = null
-      Assert.That(Runner.TryGetValue dict 0 |> fst, Is.False)
+      NUnit.Framework.Assert.That(Runner.TryGetValue dict 0 |> fst, Is.False)

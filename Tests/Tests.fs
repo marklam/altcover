@@ -15,6 +15,9 @@ open Mono.Cecil.Cil
 open Mono.Cecil.Rocks
 open N
 open NUnit.Framework
+#if NETCOREAPP2_1
+open Microsoft.VisualStudio.TestTools.UnitTesting
+#endif
 
 type ProxyObject() =
   inherit MarshalByRefObject()
@@ -37,7 +40,7 @@ type ProxyObject() =
       let methodinfo = t.GetMethod(methodName)
       methodinfo.Invoke(this.Object, args)
 
-[<TestFixture>]
+[<TestFixture;TestClass>]
 module AltCoverTests =
 #if NETCOREAPP2_0
     let sample1 = "Sample1.dll"
@@ -70,20 +73,20 @@ module AltCoverTests =
       | _ -> String.Empty
 
     // Augment.fs
-    [<Test>]
+    [<Test;TestMethod>]
     let AugmentNullableDetectNulls() =
       let input = [ "string"; null; "another string" ]
       let nulls = input |> Seq.map (Option.nullable >> Option.isNone)
-      Assert.That(nulls, Is.EquivalentTo([ false; true; false ]))
+      NUnit.Framework.Assert.That(nulls, Is.EquivalentTo([ false; true; false ]))
 
-    [<Test>]
+    [<Test;TestMethod>]
     let AugmentGetOrElseFillsInNone() =
       let input = [ "string"; null; "another string" ]
       let strings = input |> Seq.map (Option.nullable >> (Option.getOrElse "fallback"))
-      Assert.That(strings, Is.EquivalentTo([ "string"; "fallback"; "another string" ]))
+      NUnit.Framework.Assert.That(strings, Is.EquivalentTo([ "string"; "fallback"; "another string" ]))
 
     // ProgramDatabase.fs
-    [<Test>]
+    [<Test;TestMethod>]
     let ShouldGetPdbFromImage() =
       let where = Assembly.GetExecutingAssembly().Location
       let pdb = Path.ChangeExtension(where, ".pdb")
@@ -168,24 +171,24 @@ module AltCoverTests =
           |> Seq.filter (fun x -> (snd x).FullName.EndsWith("PublicKeyToken=c02b1a9f5b7cade8", StringComparison.OrdinalIgnoreCase))
 #endif
           |> Seq.toList
-        Assert.That(files, Is.Not.Empty)
+        NUnit.Framework.Assert.That(files, Is.Not.Empty)
         files
         |> Seq.iter
              (fun x ->
              let pdb = AltCover.ProgramDatabase.GetPdbFromImage(snd x)
              match pdb with
-             | None -> Assert.Fail("No .pdb for " + (fst x))
+             | None -> NUnit.Framework.Assert.Fail("No .pdb for " + (fst x))
              | Some name ->
                let probe = Path.ChangeExtension((fst x), ".pdb")
                let file = FileInfo(probe)
                let filename = file.Name.Replace("\\", "/")
-               Assert.That
+               NUnit.Framework.Assert.That
                  ("/" + name.Replace("\\", "/"), Does.EndWith("/" + filename),
                   (fst x) + " -> " + name))
 #if MONO
 // Mono doesn't embed
 #else
-    [<Test>]
+    [<Test;TestMethod>]
     let ShouldGetEmbeddedPdbFromImage() =
       let where = Assembly.GetExecutingAssembly().Location
       let here = where |> Path.GetDirectoryName
@@ -197,14 +200,14 @@ module AltCoverTests =
       let image = Mono.Cecil.AssemblyDefinition.ReadAssembly target
       let pdb = AltCover.ProgramDatabase.GetPdbFromImage image
       match pdb with
-      | None -> Assert.Fail("No .pdb for " + target)
+      | None -> NUnit.Framework.Assert.Fail("No .pdb for " + target)
       | Some name ->
-        Assert.That
+        NUnit.Framework.Assert.That
           (name, Is.EqualTo "Sample8.pdb",
           target + " -> " + name)
 #endif
 
-    [<Test>]
+    [<Test;TestMethod>]
     let ShouldGetNoMdbFromMonoImage() =
       // Hack for running while instrumented
       let where = Assembly.GetExecutingAssembly().Location
@@ -226,16 +229,16 @@ module AltCoverTests =
         |> Seq.map (fun x -> (x, Mono.Cecil.AssemblyDefinition.ReadAssembly x))
         |> Seq.toList
 
-      Assert.That(files, Is.Not.Empty)
+      NUnit.Framework.Assert.That(files, Is.Not.Empty)
       files
       |> Seq.iter (fun x ->
            let probe = (fst x) + ".mdb"
            let pdb = AltCover.ProgramDatabase.GetPdbFromImage(snd x)
            match pdb with
-           | None -> Assert.That(File.Exists probe, probe + " not found")
-           | Some name -> Assert.Fail("Suddenly, an .mdb for " + (fst x)))
+           | None -> NUnit.Framework.Assert.That(File.Exists probe, probe + " not found")
+           | Some name -> NUnit.Framework.Assert.Fail("Suddenly, an .mdb for " + (fst x)))
 
-    [<Test>]
+    [<Test;TestMethod>]
     let ShouldGetPdbWithFallback() =
       // Hack for running while instrumented
       let where = Assembly.GetExecutingAssembly().Location
@@ -256,18 +259,18 @@ module AltCoverTests =
            let pdb = AltCover.ProgramDatabase.GetPdbWithFallback(def)
            match pdb with
            | None ->
-             Assert.That
+             NUnit.Framework.Assert.That
                (File.Exists(Path.ChangeExtension(x, ".pdb")), Is.Not.True,
                 "No .pdb for " + x)
            | Some name ->
              let probe = Path.ChangeExtension(x, ".pdb")
              let file = FileInfo(probe)
              let filename = file.Name.Replace("\\", "/")
-             Assert.That
+             NUnit.Framework.Assert.That
                ("/" + name.Replace("\\", "/"), Does.EndWith("/" + filename),
                 x + " -> " + name))
 
-    [<Test>]
+    [<Test;TestMethod>]
     let ShouldGetForeignPdbWithFallback() =
       // Hack for running while instrumented
       let where = Assembly.GetExecutingAssembly().Location
@@ -290,11 +293,11 @@ module AltCoverTests =
              let pdb = AltCover.ProgramDatabase.GetPdbWithFallback(def)
              let normalized = Path.Combine(Path.GetDirectoryName p, Path.GetFileName p)
              match pdb with
-             | None -> Assert.Fail("Not found " + p)
-             | Some name -> Assert.That(name, Is.EqualTo normalized)
+             | None -> NUnit.Framework.Assert.Fail("Not found " + p)
+             | Some name -> NUnit.Framework.Assert.That(name, Is.EqualTo normalized)
            with :? BadImageFormatException -> ())
 
-    [<Test>]
+    [<Test;TestMethod>]
     let ShouldGetForeignPdbWithFallbackWhenNotColocated() =
       try
         // Hack for running while instrumented
@@ -328,16 +331,16 @@ module AltCoverTests =
                let pdb = AltCover.ProgramDatabase.GetPdbWithFallback(def)
                let normalized = Path.Combine(Path.GetDirectoryName p, Path.GetFileName p)
                match pdb with
-               | None -> Assert.Fail("Not found " + p)
+               | None -> NUnit.Framework.Assert.Fail("Not found " + p)
                | Some name ->
-                 Assert.That(name, Is.EqualTo normalized)
+                 NUnit.Framework.Assert.That(name, Is.EqualTo normalized)
                  AltCover.ProgramDatabase.ReadSymbols def
-                 Assert.That(def.MainModule.HasSymbols, def.MainModule.FileName)
+                 NUnit.Framework.Assert.That(def.MainModule.HasSymbols, def.MainModule.FileName)
              with :? BadImageFormatException -> ())
       finally
         ProgramDatabase.SymbolFolders.Clear()
 
-    [<Test>]
+    [<Test;TestMethod>]
     let ShouldGetMdbWithFallback() =
       // Hack for running while instrumented
       let where = Assembly.GetExecutingAssembly().Location
@@ -361,16 +364,16 @@ module AltCoverTests =
            let def = Mono.Cecil.AssemblyDefinition.ReadAssembly x
            let mdb = AltCover.ProgramDatabase.GetPdbWithFallback(def)
            match mdb with
-           | None -> Assert.That(File.Exists(x + ".mdb"), Is.Not.True, "No .mdb for " + x)
+           | None -> NUnit.Framework.Assert.That(File.Exists(x + ".mdb"), Is.Not.True, "No .mdb for " + x)
            | Some name ->
              let probe = x + ".mdb"
              let file = FileInfo(probe)
              let filename = file.Name.Replace("\\", "/")
-             Assert.That
+             NUnit.Framework.Assert.That
                (name.Replace("\\", "/") + ".mdb", Does.EndWith("/" + filename),
                 x + " -> " + name))
 
-    [<Test>]
+    [<Test;TestMethod>]
     let ShouldGetSymbolsFromPdb() =
       let where = Assembly.GetExecutingAssembly().Location
       let pdb = Path.ChangeExtension(where, ".pdb")
@@ -405,9 +408,9 @@ module AltCoverTests =
                ("PublicKeyToken=c02b1a9f5b7cade8", StringComparison.OrdinalIgnoreCase))
         |> Seq.iter (fun def ->
              AltCover.ProgramDatabase.ReadSymbols def
-             Assert.That(def.MainModule.HasSymbols, def.MainModule.FileName))
+             NUnit.Framework.Assert.That(def.MainModule.HasSymbols, def.MainModule.FileName))
 
-    [<Test>]
+    [<Test;TestMethod>]
     let ShouldGetSymbolsFromEmbeddedPdb() =
       let where = Assembly.GetExecutingAssembly().Location
       let here = where |> Path.GetDirectoryName
@@ -418,9 +421,9 @@ module AltCoverTests =
 #endif
       let image = Mono.Cecil.AssemblyDefinition.ReadAssembly target
       AltCover.ProgramDatabase.ReadSymbols image
-      Assert.That(image.MainModule.HasSymbols, image.MainModule.FileName)
+      NUnit.Framework.Assert.That(image.MainModule.HasSymbols, image.MainModule.FileName)
 
-    [<Test>]
+    [<Test;TestMethod>]
     let ShouldNotGetSymbolsWhenNoPdb() =
       // Hack for running while instrumented
       let where = Assembly.GetExecutingAssembly().Location
@@ -441,9 +444,9 @@ module AltCoverTests =
                 ("PublicKeyToken=c02b1a9f5b7cade8", StringComparison.OrdinalIgnoreCase))
       |> Seq.iter (fun def ->
            AltCover.ProgramDatabase.ReadSymbols def
-           Assert.That(not def.MainModule.HasSymbols, def.MainModule.FileName))
+           NUnit.Framework.Assert.That(not def.MainModule.HasSymbols, def.MainModule.FileName))
 
-    [<Test>]
+    [<Test;TestMethod>]
     let ShouldGetSymbolsFromMdb() =
       let where = Assembly.GetExecutingAssembly().Location
       let pdb = Path.ChangeExtension(where, ".pdb")
@@ -466,107 +469,107 @@ module AltCoverTests =
       |> Seq.iter (fun x ->
            let def = Mono.Cecil.AssemblyDefinition.ReadAssembly x
            AltCover.ProgramDatabase.ReadSymbols def
-           Assert.That(def.MainModule.HasSymbols, def.MainModule.FileName))
+           NUnit.Framework.Assert.That(def.MainModule.HasSymbols, def.MainModule.FileName))
 
     // Filter.fs
-    [<Test>]
+    [<Test;TestMethod>]
     let NoneOfTheAboveMatchesNoType() =
-      Assert.That(Match () (FF(FilterScope.Type, Regex "23", Exclude)), Is.False)
-      Assert.That(Match () (FF(FilterScope.Type, Regex "23", Include)), Is.False)
+      NUnit.Framework.Assert.That(Match () (FF(FilterScope.Type, Regex "23", Exclude)), Is.False)
+      NUnit.Framework.Assert.That(Match () (FF(FilterScope.Type, Regex "23", Include)), Is.False)
 
-    [<Test>]
+    [<Test;TestMethod>]
     let NoneOfTheAboveMatchesNoAttribute() =
-      Assert.That(Match () (FF(FilterScope.Attribute, Regex "23", Exclude)), Is.False)
-      Assert.That(Match () (FF(FilterScope.Attribute,Regex "23", Include)), Is.False)
+      NUnit.Framework.Assert.That(Match () (FF(FilterScope.Attribute, Regex "23", Exclude)), Is.False)
+      NUnit.Framework.Assert.That(Match () (FF(FilterScope.Attribute,Regex "23", Include)), Is.False)
 
-    [<Test>]
+    [<Test;TestMethod>]
     let NoneOfTheAboveMatchesNoAssembly() =
-      Assert.That(Match () (FF(FilterScope.Assembly, Regex "23", Exclude)), Is.False)
-      Assert.That(Match () (FF(FilterScope.Assembly, Regex "23", Include)), Is.False)
+      NUnit.Framework.Assert.That(Match () (FF(FilterScope.Assembly, Regex "23", Exclude)), Is.False)
+      NUnit.Framework.Assert.That(Match () (FF(FilterScope.Assembly, Regex "23", Include)), Is.False)
 
-    [<Test>]
+    [<Test;TestMethod>]
     let NoneOfTheAboveMatchesNoModule() =
-      Assert.That(Match () (FF(FilterScope.Module, Regex "23", Exclude)), Is.False)
-      Assert.That(Match () (FF(FilterScope.Module, Regex "23", Include)), Is.False)
+      NUnit.Framework.Assert.That(Match () (FF(FilterScope.Module, Regex "23", Exclude)), Is.False)
+      NUnit.Framework.Assert.That(Match () (FF(FilterScope.Module, Regex "23", Include)), Is.False)
 
-    [<Test>]
+    [<Test;TestMethod>]
     let NoneOfTheAboveMatchesNoFile() =
-      Assert.That(Match () (FF(FilterScope.File, Regex "23", Exclude)), Is.False)
-      Assert.That(Match () (FF(FilterScope.File, Regex "23", Include)), Is.False)
+      NUnit.Framework.Assert.That(Match () (FF(FilterScope.File, Regex "23", Exclude)), Is.False)
+      NUnit.Framework.Assert.That(Match () (FF(FilterScope.File, Regex "23", Include)), Is.False)
 
-    [<Test>]
+    [<Test;TestMethod>]
     let NoneOfTheAboveMatchesNoPath() =
-      Assert.That(Match () (FF(FilterScope.Path, Regex "23", Exclude)), Is.False)
-      Assert.That(Match () (FF(FilterScope.Path, Regex "23", Include)), Is.False)
+      NUnit.Framework.Assert.That(Match () (FF(FilterScope.Path, Regex "23", Exclude)), Is.False)
+      NUnit.Framework.Assert.That(Match () (FF(FilterScope.Path, Regex "23", Include)), Is.False)
 
-    [<Test>]
+    [<Test;TestMethod>]
     let NoneOfTheAboveMatchesNoMethod() =
-      Assert.That(Match () (FF(FilterScope.Method, Regex "23", Exclude)), Is.False)
-      Assert.That(Match () (FF(FilterScope.Method, Regex "23", Include)), Is.False)
+      NUnit.Framework.Assert.That(Match () (FF(FilterScope.Method, Regex "23", Exclude)), Is.False)
+      NUnit.Framework.Assert.That(Match () (FF(FilterScope.Method, Regex "23", Include)), Is.False)
 
-    [<Test>]
+    [<Test;TestMethod>]
     let FileDoesNotMatchNonFileClass() =
-      Assert.That
+      NUnit.Framework.Assert.That
         (Match (Assembly.GetExecutingAssembly().Location) (FF(FilterScope.Type, Regex "23", Exclude)),
          Is.False)
 
-    [<Test>]
+    [<Test;TestMethod>]
     let FileDoesMatchFileClass() =
-      Assert.That
+      NUnit.Framework.Assert.That
         (Match (Assembly.GetExecutingAssembly().Location) (FF(FilterScope.File, Regex "Cove", Exclude)),
          Is.True)
-      Assert.That
+      NUnit.Framework.Assert.That
         (Match (Assembly.GetExecutingAssembly().Location) (FF(FilterScope.File, Regex "Cove", Include)),
          Is.False)
 
-    [<Test>]
+    [<Test;TestMethod>]
     let PathDoesNotMatchNonPathClass() =
-      Assert.That
+      NUnit.Framework.Assert.That
         (Match (Assembly.GetExecutingAssembly().Location) (FF(FilterScope.Type, Regex "23", Exclude)),
          Is.False)
 
-    [<Test>]
+    [<Test;TestMethod>]
     let PathDoesMatchPathClass() =
       let x = String [| '\\'; Path.DirectorySeparatorChar |]
-      Assert.That
+      NUnit.Framework.Assert.That
         (Match (Assembly.GetExecutingAssembly().Location)
            (FF(FilterScope.Path, Regex(x + "_Binaries" + x), Exclude)), Is.True)
-      Assert.That
+      NUnit.Framework.Assert.That
         (Match (Assembly.GetExecutingAssembly().Location)
            (FF(FilterScope.Path, Regex(x + "_Binaries" + x), Include)), Is.False)
 
-    [<Test>]
+    [<Test;TestMethod>]
     let AssemblyDoesNotMatchNonAssemblyClass() =
       let def =
         Mono.Cecil.AssemblyDefinition.ReadAssembly
           (Assembly.GetExecutingAssembly().Location)
-      Assert.That(Match def (FF(FilterScope.Type, Regex "23", Exclude)), Is.False)
-      Assert.That(Match def (FF(FilterScope.Type, Regex "23", Include)), Is.False)
+      NUnit.Framework.Assert.That(Match def (FF(FilterScope.Type, Regex "23", Exclude)), Is.False)
+      NUnit.Framework.Assert.That(Match def (FF(FilterScope.Type, Regex "23", Include)), Is.False)
 
-    [<Test>]
+    [<Test;TestMethod>]
     let AssemblyDoesMatchAssemblyClass() =
       let def =
         Mono.Cecil.AssemblyDefinition.ReadAssembly
           (Assembly.GetExecutingAssembly().Location)
-      Assert.That(Match def (FF(FilterScope.Assembly, Regex "Cove", Exclude)), Is.True)
-      Assert.That(Match def (FF(FilterScope.Assembly, Regex "Cove", Include)), Is.False)
+      NUnit.Framework.Assert.That(Match def (FF(FilterScope.Assembly, Regex "Cove", Exclude)), Is.True)
+      NUnit.Framework.Assert.That(Match def (FF(FilterScope.Assembly, Regex "Cove", Include)), Is.False)
 
-    [<Test>]
+    [<Test;TestMethod>]
     let ModuleDoesNotMatchNonModuleClass() =
       let def =
         Mono.Cecil.AssemblyDefinition.ReadAssembly
           (Assembly.GetExecutingAssembly().Location)
-      Assert.That(Match def.MainModule (FF(FilterScope.Type, Regex "23", Exclude)), Is.False)
+      NUnit.Framework.Assert.That(Match def.MainModule (FF(FilterScope.Type, Regex "23", Exclude)), Is.False)
 
-    [<Test>]
+    [<Test;TestMethod>]
     let ModuleDoesMatchModuleClass() =
       let def =
         Mono.Cecil.AssemblyDefinition.ReadAssembly
           (Assembly.GetExecutingAssembly().Location)
-      Assert.That(Match def.MainModule (FF(FilterScope.Module, Regex "Cove", Exclude)), Is.True)
-      Assert.That(Match def.MainModule (FF(FilterScope.Module, Regex "Cove", Include)), Is.False)
+      NUnit.Framework.Assert.That(Match def.MainModule (FF(FilterScope.Module, Regex "Cove", Exclude)), Is.True)
+      NUnit.Framework.Assert.That(Match def.MainModule (FF(FilterScope.Module, Regex "Cove", Include)), Is.False)
 
-    [<Test>]
+    [<Test;TestMethod>]
     let TypeDoesNotMatchNonTypeClass() =
       let def =
         Mono.Cecil.AssemblyDefinition.ReadAssembly
@@ -574,9 +577,9 @@ module AltCoverTests =
       def.MainModule.Types
       |> Seq.iter
            (fun t ->
-           Assert.That(Match t (FF(FilterScope.File, Regex "23", Exclude)), Is.False, t.FullName))
+           NUnit.Framework.Assert.That(Match t (FF(FilterScope.File, Regex "23", Exclude)), Is.False, t.FullName))
 
-    [<Test>]
+    [<Test;TestMethod>]
     let TypeDoesMatchTypeClass() =
       let def =
         Mono.Cecil.AssemblyDefinition.ReadAssembly
@@ -585,10 +588,10 @@ module AltCoverTests =
       |> Seq.filter (fun t -> t.IsPublic && t.Name.Contains("AltCover")) // exclude the many compiler generted chaff classes
       |> Seq.iter
            (fun t ->
-           Assert.That(Match t (FF(FilterScope.Type, Regex "Cove", Exclude)), Is.True, t.FullName)
-           Assert.That(Match t (FF(FilterScope.Type, Regex "Cove", Include)), Is.False, t.FullName))
+           NUnit.Framework.Assert.That(Match t (FF(FilterScope.Type, Regex "Cove", Exclude)), Is.True, t.FullName)
+           NUnit.Framework.Assert.That(Match t (FF(FilterScope.Type, Regex "Cove", Include)), Is.False, t.FullName))
 
-    [<Test>]
+    [<Test;TestMethod>]
     let MethodDoesNotMatchNonMethodClass() =
       let def =
         Mono.Cecil.AssemblyDefinition.ReadAssembly
@@ -596,27 +599,27 @@ module AltCoverTests =
       def.MainModule.Types
       |> Seq.filter (fun t -> t.IsPublic)
       |> Seq.collect (fun t -> t.Methods)
-      |> Seq.iter (fun m -> Assert.That(Match m (FF(FilterScope.Type, Regex "23", Exclude)), Is.False))
+      |> Seq.iter (fun m -> NUnit.Framework.Assert.That(Match m (FF(FilterScope.Type, Regex "23", Exclude)), Is.False))
 
-    [<Test>]
+    [<Test;TestMethod>]
     let MethodDoesMatchMethodClass() =
       let def =
         Mono.Cecil.AssemblyDefinition.ReadAssembly
           (Assembly.GetExecutingAssembly().Location)
-      Assert.That(def.MainModule.Types
+      NUnit.Framework.Assert.That(def.MainModule.Types
                   |> Seq.filter (fun t -> t.IsPublic) // exclude the many compiler generted chaff classes
                   |> Seq.collect (fun t -> t.Methods)
                   |> Seq.filter (fun m -> m.IsPublic && (not m.IsConstructor))
                   |> Seq.filter (fun m -> Match m (FF(FilterScope.Method, Regex "Augment", Exclude)))
                   |> Seq.length, Is.EqualTo(2))
-      Assert.That(def.MainModule.Types
+      NUnit.Framework.Assert.That(def.MainModule.Types
                   |> Seq.filter (fun t -> t.IsPublic) // exclude the many compiler generted chaff classes
                   |> Seq.collect (fun t -> t.Methods)
                   |> Seq.filter (fun m -> m.IsPublic && (not m.IsConstructor))
                   |> Seq.filter (fun m -> Match m (FF(FilterScope.Method, Regex "Augment", Include)) |> not)
                   |> Seq.length, Is.EqualTo(2))
 
-    [<Test>]
+    [<Test;TestMethod>]
     let AttributeDoesNotMatchNonAttributeClass() =
       let def =
         Mono.Cecil.AssemblyDefinition.ReadAssembly
@@ -624,11 +627,11 @@ module AltCoverTests =
       def.MainModule.Types
       |> Seq.iter
            (fun t ->
-           Assert.That
+           NUnit.Framework.Assert.That
              (Match t.CustomAttributes (FF(FilterScope.File, Regex "23", Exclude)), Is.False,
               t.FullName))
 
-    [<Test>]
+    [<Test;TestMethod>]
     let AttributeDoesMatchAttributeClass() =
       let def =
         Mono.Cecil.AssemblyDefinition.ReadAssembly
@@ -638,10 +641,10 @@ module AltCoverTests =
                                          && (not (t.FullName.Contains("Coverlet.Core.Instrumentation")))) // exclude the many compiler generted chaff classes
       |> Seq.iter
            (fun t ->
-           Assert.That(Match t (FF(FilterScope.Attribute, Regex "Fix", Exclude)), Is.True, t.FullName)
-           Assert.That(Match t (FF(FilterScope.Attribute, Regex "Fix", Include)), Is.False, t.FullName))
+           NUnit.Framework.Assert.That(Match t (FF(FilterScope.Attribute, Regex "Fix", Exclude)), Is.True, t.FullName)
+           NUnit.Framework.Assert.That(Match t (FF(FilterScope.Attribute, Regex "Fix", Include)), Is.False, t.FullName))
 
-    [<Test>]
+    [<Test;TestMethod>]
     let CanExcludeCSharpPropertiesByAttribute() =
       let location = typeof<Sample11.Class1>.Assembly.Location
       let sourceAssembly = AssemblyDefinition.ReadAssembly(location)
@@ -662,9 +665,9 @@ module AltCoverTests =
         |> Seq.toList
 
       let expected = [ ".ctor" ]
-      Assert.That(pass, Is.EquivalentTo(expected), sprintf "Got sequence %A" pass)
+      NUnit.Framework.Assert.That(pass, Is.EquivalentTo(expected), sprintf "Got sequence %A" pass)
 
-    [<Test>]
+    [<Test;TestMethod>]
     let Sample3Class1IsCSharpAutoproperty() =
       let sample3 =
         Path.Combine
@@ -674,9 +677,9 @@ module AltCoverTests =
       |> Seq.filter (fun t -> t.Name = "Class1")
       |> Seq.collect (fun t -> t.Methods)
       |> Seq.filter (fun m -> m.IsGetter || m.IsSetter)
-      |> Seq.iter (IsCSharpAutoProperty >> Assert.That)
+      |> Seq.iter (IsCSharpAutoProperty >> NUnit.Framework.Assert.That)
 
-    [<Test>]
+    [<Test;TestMethod>]
     let Sample3Class2IsNotCSharpAutoproperty() =
       let sample3 =
         Path.Combine
@@ -686,9 +689,9 @@ module AltCoverTests =
       |> Seq.filter (fun t -> t.Name = "Class2")
       |> Seq.collect (fun t -> t.Methods)
       |> Seq.filter (fun m -> m.IsGetter || m.IsSetter)
-      |> Seq.iter (fun m -> Assert.That(IsCSharpAutoProperty m, Is.False))
+      |> Seq.iter (fun m -> NUnit.Framework.Assert.That(IsCSharpAutoProperty m, Is.False))
 
-    [<Test>]
+    [<Test;TestMethod>]
     let CanIdentifyExcludedFSharpMethods() =
       let tracer = DU.returnFoo 23
       let location = tracer.GetType().Assembly.Location
@@ -718,7 +721,7 @@ module AltCoverTests =
         |> Seq.map (fun t -> t.FullName)
         |> Seq.toList
 
-      Assert.That
+      NUnit.Framework.Assert.That
         (indirect3 |> Seq.isEmpty, sprintf "Third order types found %A" indirect3)
       let pass =
         Seq.concat [ direct; indirect; indirect2 ]
@@ -735,9 +738,9 @@ module AltCoverTests =
 #endif
           "makeThing"
           "returnBar"; "returnFoo"; "testMakeThing"; "testMakeUnion" ]
-      Assert.That(pass, Is.EquivalentTo(expected), sprintf "Got sequence %A" pass)
+      NUnit.Framework.Assert.That(pass, Is.EquivalentTo(expected), sprintf "Got sequence %A" pass)
 
-    [<Test>]
+    [<Test;TestMethod>]
     let CanIdentifyExcludedCSharpAutoProperties() =
       let location = typeof<Sample3.Class1>.Assembly.Location
       let sourceAssembly = AssemblyDefinition.ReadAssembly(location)
@@ -755,9 +758,9 @@ module AltCoverTests =
         |> Seq.toList
 
       let expected = [ ".ctor" ]
-      Assert.That(pass, Is.EquivalentTo(expected), sprintf "Got sequence %A" pass)
+      NUnit.Framework.Assert.That(pass, Is.EquivalentTo(expected), sprintf "Got sequence %A" pass)
 
-    [<Test>]
+    [<Test;TestMethod>]
     let CanIdentifyIncludedCSharpProperties() =
       let location = typeof<Sample3.Class1>.Assembly.Location
       let sourceAssembly = AssemblyDefinition.ReadAssembly(location)
@@ -775,18 +778,18 @@ module AltCoverTests =
         |> Seq.toList
 
       let expected = [ ".ctor"; "get_Property"; "set_Property" ]
-      Assert.That(pass, Is.EquivalentTo(expected), sprintf "Got sequence %A" pass)
+      NUnit.Framework.Assert.That(pass, Is.EquivalentTo(expected), sprintf "Got sequence %A" pass)
 
     // Visitor.fs
-    [<Test>]
+    [<Test;TestMethod>]
     let FixEnding() =
       let a = Visitor.EnsureEndsWith "a" "banana"
-      Assert.That (a, Is.EqualTo "banana")
+      NUnit.Framework.Assert.That (a, Is.EqualTo "banana")
 
       let s = Visitor.EnsureEndsWith "s" "banana"
-      Assert.That (s, Is.EqualTo "bananas")
+      NUnit.Framework.Assert.That (s, Is.EqualTo "bananas")
 
-    [<Test>]
+    [<Test;TestMethod>]
     let DetectLocalSource() =
 
       let toolPackages =
@@ -821,19 +824,19 @@ module AltCoverTests =
                                                       (toolPackages.Item "nuget.commandline") +
                                                       "/tools")
       let exe = Path.Combine(nuget, "NuGet.exe")
-      Assert.That(File.Exists exe, Is.True, "NuGet.exe not found")
+      NUnit.Framework.Assert.That(File.Exists exe, Is.True, "NuGet.exe not found")
       let pdb = Path.Combine(nuget, "NuGet.pdb")
-      Assert.That(File.Exists pdb, Is.True, "NuGet.pdb not found")
+      NUnit.Framework.Assert.That(File.Exists pdb, Is.True, "NuGet.pdb not found")
 
       let fdll = Path.Combine(fscore, "FSharp.Core.dll")
-      Assert.That(File.Exists fdll, Is.True, "FSharp.Core.dll not found")
+      NUnit.Framework.Assert.That(File.Exists fdll, Is.True, "FSharp.Core.dll not found")
       //let pdb2 = Path.Combine(fscore, "FSharp.Core.pdb")
-      //Assert.That(File.Exists pdb2, Is.True, "FSharp.Core.pdb not found")
+      //NUnit.Framework.Assert.That(File.Exists pdb2, Is.True, "FSharp.Core.pdb not found")
 
       let dll = Path.Combine(mono, "Mono.Cecil.dll")
-      Assert.That(File.Exists dll, Is.True, "Mono.Cecil.dll not found")
+      NUnit.Framework.Assert.That(File.Exists dll, Is.True, "Mono.Cecil.dll not found")
       let pdb3 = Path.Combine(mono, "Mono.Cecil.pdb")
-      Assert.That(File.Exists pdb3, Is.True, "Mono.Cecil.pdb not found")
+      NUnit.Framework.Assert.That(File.Exists pdb3, Is.True, "Mono.Cecil.pdb not found")
 
       let a = AssemblyDefinition.ReadAssembly exe
       ProgramDatabase.ReadSymbols a
@@ -844,25 +847,25 @@ module AltCoverTests =
       let f = AssemblyDefinition.ReadAssembly fdll
       ProgramDatabase.ReadSymbols f
 
-      Assert.That (Visitor.localFilter a, Is.False, "Assembly non-local")
-      Assert.That (Visitor.localFilter a.MainModule, Is.False, "MainModule non-local")
-      Assert.That (Visitor.localFilter m, Is.False, "dll Assembly non-local")
-      Assert.That (Visitor.localFilter m.MainModule, Is.False, "dll MainModule non-local")
-      Assert.That (Visitor.localFilter f, Is.False, "f# Assembly non-local")
-      Assert.That (Visitor.localFilter f.MainModule, Is.False, "f# MainModule non-local")
+      NUnit.Framework.Assert.That (Visitor.localFilter a, Is.False, "Assembly non-local")
+      NUnit.Framework.Assert.That (Visitor.localFilter a.MainModule, Is.False, "MainModule non-local")
+      NUnit.Framework.Assert.That (Visitor.localFilter m, Is.False, "dll Assembly non-local")
+      NUnit.Framework.Assert.That (Visitor.localFilter m.MainModule, Is.False, "dll MainModule non-local")
+      NUnit.Framework.Assert.That (Visitor.localFilter f, Is.False, "f# Assembly non-local")
+      NUnit.Framework.Assert.That (Visitor.localFilter f.MainModule, Is.False, "f# MainModule non-local")
       try
         Visitor.local := true
-        Assert.That (Visitor.localFilter a, Is.True, "Assembly local")
-        Assert.That (Visitor.localFilter a.MainModule, Is.False, "MainModule local")
-        Assert.That (Visitor.localFilter m, Is.True, "dll Assembly local")
-        Assert.That (Visitor.localFilter m.MainModule, Is.False, "dll MainModule local")
-        Assert.That (Visitor.localFilter f, Is.True, "f# Assembly local")
-        Assert.That (Visitor.localFilter f.MainModule, Is.False, "f# MainModule local")
+        NUnit.Framework.Assert.That (Visitor.localFilter a, Is.True, "Assembly local")
+        NUnit.Framework.Assert.That (Visitor.localFilter a.MainModule, Is.False, "MainModule local")
+        NUnit.Framework.Assert.That (Visitor.localFilter m, Is.True, "dll Assembly local")
+        NUnit.Framework.Assert.That (Visitor.localFilter m.MainModule, Is.False, "dll MainModule local")
+        NUnit.Framework.Assert.That (Visitor.localFilter f, Is.True, "f# Assembly local")
+        NUnit.Framework.Assert.That (Visitor.localFilter f.MainModule, Is.False, "f# MainModule local")
 
       finally
         Visitor.local := false
 
-    [<Test>]
+    [<Test;TestMethod>]
     let LocateMatchShouldChooseLongerWildCardPath() =
       let dict = System.Collections.Generic.Dictionary<string, string>()
       let file = Assembly.GetExecutingAssembly().Location
@@ -873,30 +876,30 @@ module AltCoverTests =
       dict.Add(pp1, pp1)
       dict.Add(pp2, pp2)
       let find = Visitor.FindClosestMatch file dict
-      Assert.That(find, Is.EqualTo (Some (pp1, String.Empty)))
+      NUnit.Framework.Assert.That(find, Is.EqualTo (Some (pp1, String.Empty)))
 
-    [<Test>]
+    [<Test;TestMethod>]
     let ReleaseBuildTernaryTest() =
       let nop = Instruction.Create(OpCodes.Nop)
       let ret = Instruction.Create(OpCodes.Ret)
       let seq = SequencePoint(nop, Document(null))
 
       // transparent
-      Assert.That(Visitor.fakeSequencePoint Genuine seq nop, Is.SameAs seq)
-      Assert.That(Visitor.fakeSequencePoint FakeAfterReturn seq nop, Is.SameAs seq)
+      NUnit.Framework.Assert.That(Visitor.fakeSequencePoint Genuine seq nop, Is.SameAs seq)
+      NUnit.Framework.Assert.That(Visitor.fakeSequencePoint FakeAfterReturn seq nop, Is.SameAs seq)
 
-      Assert.That(Visitor.fakeSequencePoint Genuine null null, Is.Null)
-      Assert.That(Visitor.fakeSequencePoint FakeAfterReturn null null, Is.Null)
+      NUnit.Framework.Assert.That(Visitor.fakeSequencePoint Genuine null null, Is.Null)
+      NUnit.Framework.Assert.That(Visitor.fakeSequencePoint FakeAfterReturn null null, Is.Null)
 
-      Assert.That(Visitor.fakeSequencePoint Genuine null nop, Is.Null)
-      Assert.That(Visitor.fakeSequencePoint FakeAfterReturn null nop, Is.Null)
+      NUnit.Framework.Assert.That(Visitor.fakeSequencePoint Genuine null nop, Is.Null)
+      NUnit.Framework.Assert.That(Visitor.fakeSequencePoint FakeAfterReturn null nop, Is.Null)
 
-      Assert.That(Visitor.fakeSequencePoint Genuine null ret, Is.Null)
+      NUnit.Framework.Assert.That(Visitor.fakeSequencePoint Genuine null ret, Is.Null)
 
       // One fake-out
-      Assert.That(Visitor.fakeSequencePoint FakeAfterReturn null ret, Is.Not.Null)
+      NUnit.Framework.Assert.That(Visitor.fakeSequencePoint FakeAfterReturn null ret, Is.Not.Null)
 
-    [<Test>]
+    [<Test;TestMethod>]
     let ReleaseBuildTernaryTestInContext() =
       let res =
         Assembly.GetExecutingAssembly().GetManifestResourceNames()
@@ -927,26 +930,26 @@ module AltCoverTests =
         Visitor.NameFilters.Clear()
         let deeper =
           Visitor.Deeper <| Node.Method(method, Inspect.Instrument, None) |> Seq.toList
-        Assert.That(deeper.Length, Is.EqualTo 3)
+        NUnit.Framework.Assert.That(deeper.Length, Is.EqualTo 3)
         deeper
         |> List.skip 1
         |> List.iteri (fun i node ->
              match node with
-             | (BranchPoint b) -> Assert.That(b.Uid, Is.EqualTo i, "branch point number")
-             | _ -> Assert.Fail("branch point expected"))
+             | (BranchPoint b) -> NUnit.Framework.Assert.That(b.Uid, Is.EqualTo i, "branch point number")
+             | _ -> NUnit.Framework.Assert.Fail("branch point expected"))
         deeper
         |> List.take 1
         |> List.iteri (fun i node ->
              match node with
              | (MethodPoint(_, _, n, b)) ->
-               Assert.That(n, Is.EqualTo i, "point number")
-               Assert.That(b, Is.True, "flag " + i.ToString())
-             | _ -> Assert.Fail("sequence point expected"))
+               NUnit.Framework.Assert.That(n, Is.EqualTo i, "point number")
+               NUnit.Framework.Assert.That(b, Is.True, "flag " + i.ToString())
+             | _ -> NUnit.Framework.Assert.Fail("sequence point expected"))
       finally
         Visitor.NameFilters.Clear()
         Visitor.reportFormat <- None
 
-    [<Test>]
+    [<Test;TestMethod>]
     let ReleaseBuildTernaryTestInContextWithCoalescence() =
       let res =
         Assembly.GetExecutingAssembly().GetManifestResourceNames()
@@ -978,27 +981,27 @@ module AltCoverTests =
         Visitor.NameFilters.Clear()
         let deeper =
           Visitor.Deeper <| Node.Method(method, Inspect.Instrument, None) |> Seq.toList
-        Assert.That(deeper.Length, Is.EqualTo 3)
+        NUnit.Framework.Assert.That(deeper.Length, Is.EqualTo 3)
         deeper
         |> List.skip 1
         |> List.iteri (fun i node ->
              match node with
-             | (BranchPoint b) -> Assert.That(b.Uid, Is.EqualTo i, "branch point number")
-             | _ -> Assert.Fail("branch point expected"))
+             | (BranchPoint b) -> NUnit.Framework.Assert.That(b.Uid, Is.EqualTo i, "branch point number")
+             | _ -> NUnit.Framework.Assert.Fail("branch point expected"))
         deeper
         |> List.take 1
         |> List.iteri (fun i node ->
              match node with
              | (MethodPoint(_, _, n, b)) ->
-               Assert.That(n, Is.EqualTo i, "point number")
-               Assert.That(b, Is.True, "flag " + i.ToString())
-             | _ -> Assert.Fail("sequence point expected"))
+               NUnit.Framework.Assert.That(n, Is.EqualTo i, "point number")
+               NUnit.Framework.Assert.That(b, Is.True, "flag " + i.ToString())
+             | _ -> NUnit.Framework.Assert.Fail("sequence point expected"))
       finally
         Visitor.coalesceBranches := false
         Visitor.NameFilters.Clear()
         Visitor.reportFormat <- None
 
-    [<Test>]
+    [<Test;TestMethod>]
     let CSharpNestedMethods() =
       let sample3 =
         Path.Combine
@@ -1097,33 +1100,33 @@ module AltCoverTests =
                     ]
 
       // methods |> Seq.iter (fun x -> printfn "%A" x.FullName)
-      // Assert.That (result, Is.EquivalentTo expected)
+      // NUnit.Framework.Assert.That (result, Is.EquivalentTo expected)
       let toName (m:MethodDefinition) = m.Name
       let toFullName (m:MethodDefinition) = m.FullName
       methods
       |> List.map Some
       |> List.zip (containing |> Seq.toList)
       |> List.iteri // Issue #43
-           (fun i (x, y) -> Assert.That(y, x |> Option.map toName |> Is.Not.EqualTo, sprintf "%A %A %d" (x |> Option.map toFullName) y i))
+           (fun i (x, y) -> NUnit.Framework.Assert.That(y, x |> Option.map toName |> Is.Not.EqualTo, sprintf "%A %A %d" (x |> Option.map toFullName) y i))
 
       result
       |> Seq.toList
       |> List.zip expected
       |> List.iteri
-           (fun i (x, y) -> Assert.That(y |> Option.map toName, x |> Is.EqualTo, sprintf "%A %A %d" x (y |> Option.map toFullName) i))
+           (fun i (x, y) -> NUnit.Framework.Assert.That(y |> Option.map toName, x |> Is.EqualTo, sprintf "%A %A %d" x (y |> Option.map toFullName) i))
       // Disambiguation checks
       let g3 = methods.[10]
-      Assert.That(methods
+      NUnit.Framework.Assert.That(methods
                   |> Seq.map Visitor.ContainingMethod
                   |> Seq.choose id
                   |> Seq.filter (fun m -> m.Name = "G3"), Is.EquivalentTo [ g3; g3; g3 ])
       let g1 = methods.[6]
-      Assert.That(methods
+      NUnit.Framework.Assert.That(methods
                   |> Seq.map Visitor.ContainingMethod
                   |> Seq.choose id
                   |> Seq.filter (fun m -> m.Name = "G1"), Is.EquivalentTo [ g1; g1 ])
 
-    [<Test>]
+    [<Test;TestMethod>]
     let FSharpNestedMethods() =
       let sample3 =
         Path.Combine
@@ -1190,14 +1193,14 @@ module AltCoverTests =
       ]
 
       //methods |> Seq.iter (fun x -> printfn "%A" x.FullName)
-      //Assert.That (result, Is.EquivalentTo expected)
+      //NUnit.Framework.Assert.That (result, Is.EquivalentTo expected)
       result
       |> List.zip expected
       |> List.iteri
            (fun i (x, y) ->
-           Assert.That(y, Is.EqualTo x, sprintf "%A %A %d %s" x y i methods.[i].FullName))
+           NUnit.Framework.Assert.That(y, Is.EqualTo x, sprintf "%A %A %d %s" x y i methods.[i].FullName))
 
-    [<Test>]
+    [<Test;TestMethod>]
     let ValidateSeqPntFixUp() = // HACK HACK HACK
       let location = typeof<Sample3.Class1>.Assembly.Location
       let sourceAssembly = AssemblyDefinition.ReadAssembly(location)
@@ -1216,12 +1219,12 @@ module AltCoverTests =
       before.GetType().GetProperty("EndLine").SetValue(before, -1)
       before.GetType().GetProperty("EndColumn").SetValue(before, -1)
       let after = SeqPnt.Build(before)
-      Assert.That(after.EndLine, Is.EqualTo before.StartLine)
-      Assert.That(after.EndColumn, Is.EqualTo(before.StartColumn + 1))
+      NUnit.Framework.Assert.That(after.EndLine, Is.EqualTo before.StartLine)
+      NUnit.Framework.Assert.That(after.EndColumn, Is.EqualTo(before.StartColumn + 1))
 
-    [<Test>]
+    [<Test;TestMethod>]
     let EmptyArrayHasExpectedHash() =
-      Assert.That
+      NUnit.Framework.Assert.That
         ((KeyStore.TokenOfArray [||]),
          Is.EquivalentTo [| 9uy; 7uy; 216uy; 175uy; 144uy; 24uy; 96uy; 149uy |])
 
@@ -1232,41 +1235,41 @@ module AltCoverTests =
       stream.CopyTo(buffer)
       StrongNameKeyData.Make(buffer.ToArray())
 
-    [<Test>]
+    [<Test;TestMethod>]
     let KeyHasExpectedToken() =
       let token = KeyStore.TokenOfKey <| ProvideKeyPair()
       let token' =
         String.Join(String.Empty, token |> List.map (fun x -> x.ToString("x2")))
-      Assert.That(token', Is.EqualTo( "c02b1a9f5b7cade8"))
+      NUnit.Framework.Assert.That(token', Is.EqualTo( "c02b1a9f5b7cade8"))
 
-    [<Test>]
+    [<Test;TestMethod>]
     let TokenGeneratesExpectedULong() =
       let token = [| 1uy; 0uy; 0uy; 0uy; 0uy; 0uy; 0uy; 0uy |]
-      Assert.That(KeyStore.TokenAsULong token, Is.EqualTo(1UL))
+      NUnit.Framework.Assert.That(KeyStore.TokenAsULong token, Is.EqualTo(1UL))
 
-    [<Test>]
+    [<Test;TestMethod>]
     let KeyHasExpectedIndex() =
       let token = KeyStore.KeyToIndex <| ProvideKeyPair()
-      Assert.That(token, Is.EqualTo(
+      NUnit.Framework.Assert.That(token, Is.EqualTo(
                                     0xe8ad7c5b9f1a2bc0UL
                   ), sprintf "%x" token)
 
-    [<Test>]
+    [<Test;TestMethod>]
     let EmptyArrayHasExpectedIndex() =
-      Assert.That((KeyStore.ArrayToIndex [||]), Is.EqualTo(0x95601890afd80709UL))
+      NUnit.Framework.Assert.That((KeyStore.ArrayToIndex [||]), Is.EqualTo(0x95601890afd80709UL))
 
-    [<Test>]
+    [<Test;TestMethod>]
     let KeyHasExpectedRecord() =
       let pair = ProvideKeyPair()
 #if NETCOREAPP2_0
 #else
       let computed = pair.PublicKey
       let definitive = StrongNameKeyPair(pair.Blob |> List.toArray).PublicKey
-      Assert.That(computed, Is.EquivalentTo definitive)
+      NUnit.Framework.Assert.That(computed, Is.EquivalentTo definitive)
 #endif
 
       let token = KeyStore.KeyToRecord <| pair
-      Assert.That
+      NUnit.Framework.Assert.That
         (token,
          Is.EqualTo
            ({ Pair = pair
@@ -1274,17 +1277,17 @@ module AltCoverTests =
                                             0xe8ad7c5b9f1a2bc0UL
                                            ) |> Array.toList }))
 
-    [<Test>]
+    [<Test;TestMethod>]
     let KeyHasExpectedPlaceInIndex() =
       try
-        Assert.That(Visitor.keys.Keys.Count, Is.EqualTo(0))
+        NUnit.Framework.Assert.That(Visitor.keys.Keys.Count, Is.EqualTo(0))
         let pair = ProvideKeyPair()
         Visitor.Add(pair)
         let key =
                    0xe8ad7c5b9f1a2bc0UL
 
-        Assert.That(Visitor.keys.ContainsKey(key))
-        Assert.That(Visitor.keys.[key],
+        NUnit.Framework.Assert.That(Visitor.keys.ContainsKey(key))
+        NUnit.Framework.Assert.That(Visitor.keys.[key],
                     Is.EqualTo({ Pair = pair
                                  Token = BitConverter.GetBytes(key) |> Array.toList }))
       finally
@@ -1295,33 +1298,33 @@ module AltCoverTests =
       |> Visitor.IsIncluded
       |> Visitor.IsInstrumented
 
-    [<Test>]
+    [<Test;TestMethod>]
     let EmptyFiltersPassAll() =
       Visitor.NameFilters.Clear()
-      Assert.That(Visitor.NameFilters.Count, Is.EqualTo(0))
-      Assert.That(IsIncluded typeof<ProxyObject>)
+      NUnit.Framework.Assert.That(Visitor.NameFilters.Count, Is.EqualTo(0))
+      NUnit.Framework.Assert.That(IsIncluded typeof<ProxyObject>)
 
-    [<Test>]
+    [<Test;TestMethod>]
     let NonEmptyFiltersCatchAnExpectedValue() =
       try
-        Assert.That(Visitor.NameFilters.Count, Is.EqualTo(0))
+        NUnit.Framework.Assert.That(Visitor.NameFilters.Count, Is.EqualTo(0))
         Visitor.NameFilters.AddRange([ FF(FilterScope.File, Regex "Cove", Exclude)
                                        FF(FilterScope.Method, Regex "Augment", Exclude) ])
-        Assert.That(IsIncluded(Assembly.GetExecutingAssembly().Location), Is.False)
+        NUnit.Framework.Assert.That(IsIncluded(Assembly.GetExecutingAssembly().Location), Is.False)
       finally
         Visitor.NameFilters.Clear()
 
-    [<Test>]
+    [<Test;TestMethod>]
     let NonEmptyFiltersPassAnExpectedValue() =
       try
-        Assert.That(Visitor.NameFilters.Count, Is.EqualTo(0))
+        NUnit.Framework.Assert.That(Visitor.NameFilters.Count, Is.EqualTo(0))
         Visitor.NameFilters.AddRange([ FF(FilterScope.File, Regex "System", Exclude)
                                        FF(FilterScope.Method, Regex "Augment", Exclude) ])
-        Assert.That(IsIncluded(Assembly.GetExecutingAssembly().Location))
+        NUnit.Framework.Assert.That(IsIncluded(Assembly.GetExecutingAssembly().Location))
       finally
         Visitor.NameFilters.Clear()
 
-    [<Test>]
+    [<Test;TestMethod>]
     let AfterProcessingYieldsAnExpectedValue() =
       let def =
         Mono.Cecil.AssemblyDefinition.ReadAssembly
@@ -1352,9 +1355,9 @@ module AltCoverTests =
           []
           []
           [] ]
-      Assert.That(outputs, Is.EquivalentTo(expected))
+      NUnit.Framework.Assert.That(outputs, Is.EquivalentTo(expected))
 
-    [<Test>]
+    [<Test;TestMethod>]
     let Sample3Class1PropertyIsNotSignificant() =
       let sample3 =
         Path.Combine
@@ -1364,9 +1367,9 @@ module AltCoverTests =
       |> Seq.filter (fun t -> t.Name = "Class1")
       |> Seq.collect (fun t -> t.Methods)
       |> Seq.filter (fun m -> m.IsGetter || m.IsSetter)
-      |> Seq.iter (fun m -> Assert.That(Visitor.significant m, Is.False))
+      |> Seq.iter (fun m -> NUnit.Framework.Assert.That(Visitor.significant m, Is.False))
 
-    [<Test>]
+    [<Test;TestMethod>]
     let Sample3Class2IPropertyIsSignificant() =
       let sample3 =
         Path.Combine
@@ -1376,9 +1379,9 @@ module AltCoverTests =
       |> Seq.filter (fun t -> t.Name = "Class2")
       |> Seq.collect (fun t -> t.Methods)
       |> Seq.filter (fun m -> m.IsGetter || m.IsSetter)
-      |> Seq.iter (Visitor.significant >> Assert.That)
+      |> Seq.iter (Visitor.significant >> NUnit.Framework.Assert.That)
 
-    [<Test>]
+    [<Test;TestMethod>]
     let TerminalCasesGoNoDeeper() =
       let def =
         Mono.Cecil.AssemblyDefinition.ReadAssembly
@@ -1399,9 +1402,9 @@ module AltCoverTests =
           []
           []
           [] ]
-      Assert.That(outputs, Is.EquivalentTo(expected))
+      NUnit.Framework.Assert.That(outputs, Is.EquivalentTo(expected))
 
-    [<Test>]
+    [<Test;TestMethod>]
     let MethodPointsAreDeeperThanMethods() =
       let where = Assembly.GetExecutingAssembly().Location
       let path =
@@ -1423,26 +1426,26 @@ module AltCoverTests =
             >> Visitor.NameFilters.Add)
         let deeper =
           Visitor.Deeper <| Node.Method(method, Inspect.Instrument, None) |> Seq.toList
-        Assert.That(deeper.Length, Is.EqualTo 12)
+        NUnit.Framework.Assert.That(deeper.Length, Is.EqualTo 12)
         deeper
         |> List.skip 10
         |> List.iteri (fun i node ->
              match node with
-             | (BranchPoint b) -> Assert.That(b.Uid, Is.EqualTo i, "branch point number")
-             | _ -> Assert.Fail())
+             | (BranchPoint b) -> NUnit.Framework.Assert.That(b.Uid, Is.EqualTo i, "branch point number")
+             | _ -> NUnit.Framework.Assert.Fail())
         deeper
         |> List.take 10
         |> List.iteri (fun i node ->
              match node with
              | (MethodPoint(_, _, n, b)) ->
-               Assert.That(n, Is.EqualTo i, "point number")
-               Assert.That(b, Is.False, "flag")
-             | _ -> Assert.Fail())
+               NUnit.Framework.Assert.That(n, Is.EqualTo i, "point number")
+               NUnit.Framework.Assert.That(b, Is.False, "flag")
+             | _ -> NUnit.Framework.Assert.Fail())
       finally
         Visitor.NameFilters.Clear()
         Visitor.reportFormat <- None
 
-    [<Test>]
+    [<Test;TestMethod>]
     let BranchPointsAreComputedForSwitch() =
       let where = Assembly.GetExecutingAssembly().Location
       let path =
@@ -1474,15 +1477,15 @@ module AltCoverTests =
                                    | BranchPoint b -> b.Representative = Reporting.Representative
                                    | _ -> true)
         //reported |> List.skip 21 |> Seq.iter (printfn "reported = %A")
-        Assert.That(reported.Length, Is.EqualTo 29)
+        NUnit.Framework.Assert.That(reported.Length, Is.EqualTo 29)
         let branches =
           reported
           |> List.skip 21
           |> List.mapi (fun i node ->
                match node with
-               | (BranchPoint b) -> Assert.That(b.Uid, Is.EqualTo i, "branch point number")
+               | (BranchPoint b) -> NUnit.Framework.Assert.That(b.Uid, Is.EqualTo i, "branch point number")
                                     Some b
-               | _ -> Assert.Fail("branch point expected")
+               | _ -> NUnit.Framework.Assert.Fail("branch point expected")
                       None)
           |> List.choose id
         deeper
@@ -1490,11 +1493,11 @@ module AltCoverTests =
         |> List.iteri (fun i node ->
              match node with
              | (MethodPoint(_, _, n, b)) ->
-               Assert.That(n, Is.EqualTo i, "point number")
-               Assert.That(b, Is.True, "flag " + i.ToString())
-             | _ -> Assert.Fail("sequence point expected"))
+               NUnit.Framework.Assert.That(n, Is.EqualTo i, "point number")
+               NUnit.Framework.Assert.That(b, Is.True, "flag " + i.ToString())
+             | _ -> NUnit.Framework.Assert.Fail("sequence point expected"))
 
-        Assert.That (
+        NUnit.Framework.Assert.That (
           branches
           |> List.map (fun b -> b.Path),
           Is.EquivalentTo [ 0; 1; 0; 1; 2; 3; 0; 1]
@@ -1504,7 +1507,7 @@ module AltCoverTests =
         Visitor.NameFilters.Clear()
         Visitor.reportFormat <- None
 
-    [<Test>]
+    [<Test;TestMethod>]
     let BranchPointsAreComputedForMatch() =
       let where = Assembly.GetExecutingAssembly().Location
       let path =
@@ -1532,27 +1535,27 @@ module AltCoverTests =
           |> List.filter (fun n -> match n with
                                    | BranchPoint b -> b.Representative = Reporting.Representative
                                    | _ -> true)
-        Assert.That(reported.Length, Is.EqualTo 14)
+        NUnit.Framework.Assert.That(reported.Length, Is.EqualTo 14)
         reported
         |> List.skip 9
         |> List.iteri (fun i node ->
              match node with
-             | (BranchPoint b) -> Assert.That(b.Uid, Is.EqualTo i, "branch point number")
-             | _ -> Assert.Fail("branch point expected"))
+             | (BranchPoint b) -> NUnit.Framework.Assert.That(b.Uid, Is.EqualTo i, "branch point number")
+             | _ -> NUnit.Framework.Assert.Fail("branch point expected"))
         deeper
         |> List.take 9
         |> List.iteri (fun i node ->
              match node with
              | (MethodPoint(_, _, n, b)) ->
-               Assert.That(n, Is.EqualTo i, "point number")
-               Assert.That(b, Is.True, "flag " + i.ToString())
-             | _ -> Assert.Fail("sequence point expected"))
+               NUnit.Framework.Assert.That(n, Is.EqualTo i, "point number")
+               NUnit.Framework.Assert.That(b, Is.True, "flag " + i.ToString())
+             | _ -> NUnit.Framework.Assert.Fail("sequence point expected"))
       finally
         Visitor.coalesceBranches := false
         Visitor.NameFilters.Clear()
         Visitor.reportFormat <- None
 
-    [<Test>]
+    [<Test;TestMethod>]
     let MethodsAreDeeperThanTypes() =
       let where = Assembly.GetExecutingAssembly().Location
       let path =
@@ -1585,13 +1588,13 @@ module AltCoverTests =
                              (Visitor.Deeper >> Seq.toList) node
                              [ Node.AfterMethod(m, flag, None) ] ])
           |> List.concat
-        Assert.That(deeper.Length, Is.EqualTo 17)
-        Assert.That(deeper |> Seq.map string, Is.EquivalentTo(expected |> Seq.map string))
+        NUnit.Framework.Assert.That(deeper.Length, Is.EqualTo 17)
+        NUnit.Framework.Assert.That(deeper |> Seq.map string, Is.EquivalentTo(expected |> Seq.map string))
       finally
         Visitor.NameFilters.Clear()
         Visitor.reportFormat <- None
 
-    [<Test>]
+    [<Test;TestMethod>]
     let TypesAreDeeperThanModules() =
       let where = Assembly.GetExecutingAssembly().Location
       let path =
@@ -1621,12 +1624,12 @@ module AltCoverTests =
                              (Visitor.Deeper >> Seq.toList) node
                              [ Node.AfterType ] ])
           |> List.concat
-        Assert.That(deeper.Length, Is.EqualTo 18)
-        Assert.That(deeper |> Seq.map string, Is.EquivalentTo(expected |> Seq.map string))
+        NUnit.Framework.Assert.That(deeper.Length, Is.EqualTo 18)
+        NUnit.Framework.Assert.That(deeper |> Seq.map string, Is.EquivalentTo(expected |> Seq.map string))
       finally
         Visitor.NameFilters.Clear()
 
-    [<Test>]
+    [<Test;TestMethod>]
     let ModulesAreDeeperThanAssemblies() =
       let where = Assembly.GetExecutingAssembly().Location
       let path =
@@ -1644,10 +1647,10 @@ module AltCoverTests =
                            (Visitor.Deeper >> Seq.toList) node
                            [ AfterModule ] ])
         |> List.concat
-      Assert.That(deeper.Length, Is.EqualTo 21)
-      Assert.That(deeper |> Seq.map string, Is.EquivalentTo(expected |> Seq.map string))
+      NUnit.Framework.Assert.That(deeper.Length, Is.EqualTo 21)
+      NUnit.Framework.Assert.That(deeper |> Seq.map string, Is.EquivalentTo(expected |> Seq.map string))
 
-    [<Test>]
+    [<Test;TestMethod>]
     let AssembliesAreDeeperThanPaths() =
       let where = Assembly.GetExecutingAssembly().Location
       let path =
@@ -1659,7 +1662,7 @@ module AltCoverTests =
         match Seq.head deeper with
         | Node.Assembly(def', Inspect.Instrument, []) -> def'
         | _ ->
-          Assert.Fail()
+          NUnit.Framework.Assert.Fail()
           null
 
       let assembly = Node.Assembly(def, Inspect.Instrument, [])
@@ -1668,16 +1671,16 @@ module AltCoverTests =
         List.concat [ [ assembly ]
                       (Visitor.Deeper >> Seq.toList) assembly
                       [ AfterAssembly (def, []) ] ]
-      Assert.That(deeper.Length, Is.EqualTo 23)
-      Assert.That(deeper |> Seq.map string, Is.EquivalentTo(expected |> Seq.map string))
+      NUnit.Framework.Assert.That(deeper.Length, Is.EqualTo 23)
+      NUnit.Framework.Assert.That(deeper |> Seq.map string, Is.EquivalentTo(expected |> Seq.map string))
 
-    [<Test>]
+    [<Test;TestMethod>]
     let FilteredAssembliesDoNotHaveSequencePoints() =
       let where = Assembly.GetExecutingAssembly().Location
       let path =
         Path.Combine(Path.GetDirectoryName(where) + Hack(), sample1)
       try
-        Assert.That(Visitor.ReportFormat(), Is.EqualTo Base.ReportFormat.NCover)
+        NUnit.Framework.Assert.That(Visitor.ReportFormat(), Is.EqualTo Base.ReportFormat.NCover)
         "Sample"
         |> (Regex
             >> FilterRegex.Exclude
@@ -1690,7 +1693,7 @@ module AltCoverTests =
           match Seq.head deeper with
           | Node.Assembly(def', Inspect.Ignore, []) -> def'
           | _ ->
-            Assert.Fail()
+            NUnit.Framework.Assert.Fail()
             null
 
         let assembly = Node.Assembly(def, Inspect.Ignore, [])
@@ -1699,12 +1702,12 @@ module AltCoverTests =
           List.concat [ [ assembly ]
                         (Visitor.Deeper >> Seq.toList) assembly
                         [ AfterAssembly (def, []) ] ]
-        Assert.That(deeper.Length, Is.EqualTo 4)
-        Assert.That(deeper, Is.EquivalentTo expected)
+        NUnit.Framework.Assert.That(deeper.Length, Is.EqualTo 4)
+        NUnit.Framework.Assert.That(deeper, Is.EquivalentTo expected)
       finally
         Visitor.NameFilters.Clear()
 
-    [<Test>]
+    [<Test;TestMethod>]
     let TestFixPointInvoke() =
       let mutable called = 0
 
@@ -1715,11 +1718,11 @@ module AltCoverTests =
 
       let input = stateful (Start [])
       let fix = Visitor.invoke (Start []) input
-      Assert.That(called, Is.EqualTo 1)
-      Assert.That(fix, Is.Not.Null)
-      Assert.That(fix.GetType(), Is.EqualTo(input.GetType()))
+      NUnit.Framework.Assert.That(called, Is.EqualTo 1)
+      NUnit.Framework.Assert.That(fix, Is.Not.Null)
+      NUnit.Framework.Assert.That(fix.GetType(), Is.EqualTo(input.GetType()))
 
-    [<Test>]
+    [<Test;TestMethod>]
     let TestFixPointApply() =
       let mutable called = 0
 
@@ -1733,12 +1736,12 @@ module AltCoverTests =
           stateful (Start []) ]
 
       let fix = Visitor.apply list (Start []) |> Seq.toList
-      Assert.That(called, Is.EqualTo 2)
-      Assert.That(Seq.length fix, Is.EqualTo 2)
-      Assert.That(fix.[0].GetType(), Is.EqualTo(list.[0].GetType()))
-      Assert.That(fix.[1].GetType(), Is.EqualTo(list.[1].GetType()))
+      NUnit.Framework.Assert.That(called, Is.EqualTo 2)
+      NUnit.Framework.Assert.That(Seq.length fix, Is.EqualTo 2)
+      NUnit.Framework.Assert.That(fix.[0].GetType(), Is.EqualTo(list.[0].GetType()))
+      NUnit.Framework.Assert.That(fix.[1].GetType(), Is.EqualTo(list.[1].GetType()))
 
-    [<Test>]
+    [<Test;TestMethod>]
     let PathsAreDeeperThanAVisit() =
       let where = Assembly.GetExecutingAssembly().Location
       let path =
@@ -1759,7 +1762,7 @@ module AltCoverTests =
         match accumulator.[1] with
         | Node.Assembly(def', Inspect.Instrument, ux) -> def'
         | _ ->
-          Assert.Fail()
+          NUnit.Framework.Assert.Fail()
           null
 
       let assembly = Node.Assembly(def, Inspect.Instrument, ux)
@@ -1770,10 +1773,10 @@ module AltCoverTests =
                       (Visitor.Deeper >> Seq.toList) assembly
                       [ AfterAssembly (def, ux)
                         Finish ] ]
-      Assert.That
+      NUnit.Framework.Assert.That
         (accumulator |> Seq.map string, Is.EquivalentTo(expected |> Seq.map string))
 
-    [<Test>]
+    [<Test;TestMethod>]
     let TrackingDetectsTests() =
       let where = Assembly.GetExecutingAssembly().Location
       let path =
@@ -1790,14 +1793,14 @@ module AltCoverTests =
           |> Seq.map (Visitor.Track)
           |> Seq.choose id
           |> Seq.toList
-        Assert.That(tracks,
+        NUnit.Framework.Assert.That(tracks,
                     Is.EquivalentTo [ (1, "[Test")
                                       (2, "[Test") ])
       finally
         Visitor.TrackingNames.Clear()
         Visitor.Visit [] [] // cheat reset
 
-    [<Test>]
+    [<Test;TestMethod>]
     let TrackingDetectsExpectedTests() =
       let where = Assembly.GetExecutingAssembly().Location
       let path =
@@ -1817,12 +1820,12 @@ module AltCoverTests =
                |> Option.isSome)
           |> Seq.map (fun m -> m.Name)
           |> Seq.toList
-        Assert.That(tracks, Is.EquivalentTo [ "testMakeUnion"; "testMakeThing" ])
+        NUnit.Framework.Assert.That(tracks, Is.EquivalentTo [ "testMakeUnion"; "testMakeThing" ])
       finally
         Visitor.TrackingNames.Clear()
         Visitor.Visit [] [] // cheat reset
 
-    [<Test>]
+    [<Test;TestMethod>]
     let TrackingDetectsTestsByFullType() =
       let where = Assembly.GetExecutingAssembly().Location
       let path =
@@ -1840,14 +1843,14 @@ module AltCoverTests =
           |> Seq.map (Visitor.Track)
           |> Seq.choose id
           |> Seq.toList
-        Assert.That(tracks,
+        NUnit.Framework.Assert.That(tracks,
                     Is.EquivalentTo [ (1, "[NUnit.Framework.TestAttribute]")
                                       (2, "[NUnit.Framework.TestAttribute]") ])
       finally
         Visitor.TrackingNames.Clear()
         Visitor.Visit [] [] // cheat reset
 
-    [<Test>]
+    [<Test;TestMethod>]
     let TrackingDetectsMethods() =
       let where = Assembly.GetExecutingAssembly().Location
       let path =
@@ -1865,7 +1868,7 @@ module AltCoverTests =
           |> Seq.map (Visitor.Track)
           |> Seq.choose id
           |> Seq.toList
-        Assert.That(tracks,
+        NUnit.Framework.Assert.That(tracks,
                     Is.EquivalentTo [ (1, "returnFoo")
                                       (2, "N.DU.MyUnion.as_bar") ])
       finally
@@ -1873,29 +1876,29 @@ module AltCoverTests =
         Visitor.Visit [] [] // cheat reset
 
     // Naming.fs
-    [<Test>]
+    [<Test;TestMethod>]
     let NamingDetectNulls() =
       let input = [ "string"; null; "another string" ]
       let nulls = input |> Seq.map Naming.isNotNull
-      Assert.That(nulls, Is.EquivalentTo([ true; false; true ]))
+      NUnit.Framework.Assert.That(nulls, Is.EquivalentTo([ true; false; true ]))
 
-    [<Test>]
+    [<Test;TestMethod>]
     let NamingDetectEmpties() =
       let input = [ "string"; null; "another string"; "             " ]
       let nulls = input |> Seq.map Naming.emptyIfIsNullOrWhiteSpace
-      Assert.That
+      NUnit.Framework.Assert.That
         (nulls,
          Is.EquivalentTo([ "string"; String.Empty; "another string"; String.Empty ]))
 
-    [<Test>]
+    [<Test;TestMethod>]
     let NamingSuffixDetectEmpties() =
       let input = [ "string"; null; "another string"; "             " ]
       let nulls = input |> Seq.map (fun n -> Naming.suffixIfNotIsNullOrWhiteSpace n "*")
-      Assert.That
+      NUnit.Framework.Assert.That
         (nulls,
          Is.EquivalentTo([ "string*"; String.Empty; "another string*"; String.Empty ]))
 
-    [<Test>]
+    [<Test;TestMethod>]
     let TypeNamesAreExtracted() =
       let where = Assembly.GetExecutingAssembly().Location
       let path =
@@ -1908,9 +1911,9 @@ module AltCoverTests =
         |> Seq.toList
 
       let expected = [ "<Module>"; "Class1"; "Class2"; "Class3"; "Class4" ]
-      Assert.That(names, Is.EquivalentTo expected)
+      NUnit.Framework.Assert.That(names, Is.EquivalentTo expected)
 
-    [<Test>]
+    [<Test;TestMethod>]
     let FullTypeNamesAreExtracted() =
       let where = Assembly.GetExecutingAssembly().Location
       let path =
@@ -1925,9 +1928,9 @@ module AltCoverTests =
       let expected =
         [ "<Module>"; "Sample3.Class1"; "Sample3.Class2"; "Sample3.Class3";
           "Sample3.Class3+Class4" ]
-      Assert.That(names, Is.EquivalentTo expected)
+      NUnit.Framework.Assert.That(names, Is.EquivalentTo expected)
 
-    [<Test>]
+    [<Test;TestMethod>]
     let TypeRefNamesAreExtracted() =
       let where = Assembly.GetExecutingAssembly().Location
       let path =
@@ -1943,9 +1946,9 @@ module AltCoverTests =
         |> Seq.toList
 
       let expected = [ "<Module>"; "Class1"; "Class2"; "Class3"; "Class4" ]
-      Assert.That(names, Is.EquivalentTo expected)
+      NUnit.Framework.Assert.That(names, Is.EquivalentTo expected)
 
-    [<Test>]
+    [<Test;TestMethod>]
     let FullTypeRefNamesAreExtracted() =
       let where = Assembly.GetExecutingAssembly().Location
       let path =
@@ -1966,9 +1969,9 @@ module AltCoverTests =
       let expected =
         [ "<Module>"; "Sample3.Class1"; "Sample3.Class2"; "Sample3.Class3";
           "Sample3.Class3+Class4" ]
-      Assert.That(names, Is.EquivalentTo expected)
+      NUnit.Framework.Assert.That(names, Is.EquivalentTo expected)
 
-    [<Test>]
+    [<Test;TestMethod>]
     let MethodNamesAreExtracted() =
       let where = Assembly.GetExecutingAssembly().Location
       let path =
@@ -1988,9 +1991,9 @@ module AltCoverTests =
           "get_Timer"; "set_Timer"; "get_Token"; "set_Token";
           "get_CoverageFormat"; "set_CoverageFormat";
           "get_Sample"; "set_Sample"; "ToList"; "#ctor" ]
-      Assert.That(names, Is.EquivalentTo expected)
+      NUnit.Framework.Assert.That(names, Is.EquivalentTo expected)
 
-    [<Test>]
+    [<Test;TestMethod>]
     let FullMethodNamesAreExtracted() =
       let where = Assembly.GetExecutingAssembly().Location
       let path =
@@ -2030,7 +2033,7 @@ module AltCoverTests =
           "System.Void Sample3.Class3+Class4.set_Sample(System.Int32)";
           "System.Collections.Generic.List`1 Sample3.Class3+Class4.ToList<T>(T)";
           "System.Void Sample3.Class3+Class4.#ctor()" ]
-      Assert.That(names, Is.EquivalentTo expected)
+      NUnit.Framework.Assert.That(names, Is.EquivalentTo expected)
 
     // Report.fs
     let TTBaseline = "<?xml version=\"1.0\" encoding=\"utf-8\"?>
@@ -2055,21 +2058,21 @@ module AltCoverTests =
     let rec private RecursiveValidate result expected depth zero =
       let rcount = result |> Seq.length
       let ecount = expected |> Seq.length
-      Assert.That(rcount, Is.EqualTo(ecount), "Mismatch at depth " + depth.ToString())
+      NUnit.Framework.Assert.That(rcount, Is.EqualTo(ecount), "Mismatch at depth " + depth.ToString())
       Seq.zip result expected
       |> Seq.iter (fun (r : XElement, e : XElement) ->
-           Assert.That(r.Name, Is.EqualTo(e.Name), "Expected name " + e.Name.ToString())
+           NUnit.Framework.Assert.That(r.Name, Is.EqualTo(e.Name), "Expected name " + e.Name.ToString())
            let ra = r.Attributes()
            let ea = e.Attributes()
            Seq.zip ra ea
            |> Seq.iter
                 (fun (a1 : XAttribute, a2 : XAttribute) ->
-                Assert.That(a1.Name, Is.EqualTo(a2.Name))
+                NUnit.Framework.Assert.That(a1.Name, Is.EqualTo(a2.Name))
                 match a1.Name.ToString() with
                 | "profilerVersion" | "driverVersion" | "moduleId" | "metadataToken" | "startTime" | "measureTime" ->
                   ()
                 | "document" ->
-                  Assert.That
+                  NUnit.Framework.Assert.That
                     (a1.Value.Replace("\\", "/"),
                      Does.EndWith(a2.Value.Replace("\\", "/")),
                      a1.Name.ToString() + " : " + r.ToString() + " -> document")
@@ -2077,15 +2080,15 @@ module AltCoverTests =
                   let expected =
                     if zero then "0"
                     else a2.Value
-                  Assert.That
+                  NUnit.Framework.Assert.That
                     (a1.Value, Is.EqualTo(expected), r.ToString() + " -> visitcount")
                 | _ ->
-                  Assert.That
+                  NUnit.Framework.Assert.That
                     (a1.Value, Is.EqualTo(a2.Value),
                      r.ToString() + " -> " + a1.Name.ToString()))
            RecursiveValidate (r.Elements()) (e.Elements()) (depth + 1) zero)
 
-    [<Test>]
+    [<Test;TestMethod>]
     let ShouldGenerateExpectedXmlReportFromDotNet() =
       let visitor, document = Report.ReportGenerator()
       // Hack for running while instrumented
@@ -2112,7 +2115,7 @@ module AltCoverTests =
       finally
         Visitor.NameFilters.Clear()
 
-    [<Test>]
+    [<Test;TestMethod>]
     let ShouldGenerateExpectedXmlReportWithSourceLink() =
       let visitor, document = Report.ReportGenerator()
       // Hack for running while instrumented
@@ -2122,7 +2125,7 @@ module AltCoverTests =
       try
         Visitor.sourcelink := true
         Visitor.Visit [ visitor ] (Visitor.ToSeq (path, []))
-        Assert.That(Visitor.SourceLinkDocuments |> Option.isSome, "Documents should be present")
+        NUnit.Framework.Assert.That(Visitor.SourceLinkDocuments |> Option.isSome, "Documents should be present")
         let map = Visitor.SourceLinkDocuments |> Option.get
         let url = map.Values |> Seq.find (fun f -> f.EndsWith ("*", StringComparison.Ordinal))
 
@@ -2136,7 +2139,7 @@ module AltCoverTests =
                          url.Replace("*", "Sample14/Sample14/Program.cs")
                          url.Replace("*", "Sample5/Class1.cs")
                        ]
-        Assert.That (files, Is.EquivalentTo expected)
+        NUnit.Framework.Assert.That (files, Is.EquivalentTo expected)
 
         let untracked = document.Descendants(XName.Get "seqpnt")
                         |> Seq.map (fun s -> s.Attribute(XName.Get "document").Value)
@@ -2149,13 +2152,13 @@ module AltCoverTests =
                           "Class2.cs"
                           "Sample14.SourceLink.Class3.cs"
                         ]
-        Assert.That (untracked, Is.EquivalentTo expected2)
+        NUnit.Framework.Assert.That (untracked, Is.EquivalentTo expected2)
 
       finally
         Visitor.NameFilters.Clear()
         Visitor.sourcelink := false
 
-    [<Test>]
+    [<Test;TestMethod>]
     let ShouldGenerateExpectedXmlReportFromDotNetWithPathFilter() =
       let visitor, document = Report.ReportGenerator()
       // Hack for running while instrumented
@@ -2183,7 +2186,7 @@ module AltCoverTests =
       finally
         Visitor.NameFilters.Clear()
 
-    [<Test>]
+    [<Test;TestMethod>]
     let ShouldGenerateExpectedXmlReportFromDotNetWhenExcluded() =
       let visitor, document = Report.ReportGenerator()
       // Hack for running while instrumented
@@ -2213,7 +2216,7 @@ module AltCoverTests =
       finally
         Visitor.NameFilters.Clear()
 
-    [<Test>]
+    [<Test;TestMethod>]
     let ShouldGenerateExpectedXmlReportFromDotNetWhenExcludedEvenIfTracked() =
       let visitor, document = Report.ReportGenerator()
       // Hack for running while instrumented
@@ -2246,7 +2249,7 @@ module AltCoverTests =
         Visitor.TrackingNames.Clear()
 
     // Gendarme.fs (except where I need to compare with the original, which are the weakname tests)
-    [<Test>]
+    [<Test;TestMethod>]
     let ShouldDetectTernary() =
       let where = Assembly.GetExecutingAssembly().Location
       let path0 =
@@ -2277,13 +2280,13 @@ module AltCoverTests =
              state + (Gendarme.``detect ternary pattern`` <| Some i.Previous.OpCode.Code))
              0
 
-      Assert.That(ternary, Is.EqualTo 1)
-      Assert.That(Gendarme.``detect ternary pattern`` None, Is.EqualTo 0)
-      Assert.That(Gendarme.CyclomaticComplexity target, Is.EqualTo 3)
-      Assert.That
+      NUnit.Framework.Assert.That(ternary, Is.EqualTo 1)
+      NUnit.Framework.Assert.That(Gendarme.``detect ternary pattern`` None, Is.EqualTo 0)
+      NUnit.Framework.Assert.That(Gendarme.CyclomaticComplexity target, Is.EqualTo 3)
+      NUnit.Framework.Assert.That
         (Gendarme.SwitchCyclomaticComplexity target.Body.Instructions, Is.EqualTo 3)
 
-    [<Test>]
+    [<Test;TestMethod>]
     let ShouldDetectSwitchNesting() =
       let where = Assembly.GetExecutingAssembly().Location
       let path0 =
@@ -2304,25 +2307,25 @@ module AltCoverTests =
         def.MainModule.GetType("Sample3.Class3").GetMethods()
         |> Seq.filter (fun m -> m.Name = "GetOperandType")
         |> Seq.head
-      Assert.That
+      NUnit.Framework.Assert.That
         (Gendarme.SwitchCyclomaticComplexity target.Body.Instructions, Is.EqualTo 24)
 
     // OpenCover.fs
-    [<Test>]
+    [<Test;TestMethod>]
     let SafeMultiplyIsSafe() =
-      Assert.That(OpenCover.SafeMultiply 1 0, Is.EqualTo 1)
-      Assert.That(OpenCover.SafeMultiply 2 3, Is.EqualTo 6)
-      Assert.That(OpenCover.SafeMultiply 65536 65536, Is.EqualTo Int32.MaxValue)
+      NUnit.Framework.Assert.That(OpenCover.SafeMultiply 1 0, Is.EqualTo 1)
+      NUnit.Framework.Assert.That(OpenCover.SafeMultiply 2 3, Is.EqualTo 6)
+      NUnit.Framework.Assert.That(OpenCover.SafeMultiply 65536 65536, Is.EqualTo Int32.MaxValue)
 
-    [<Test>]
+    [<Test;TestMethod>]
     let EmptyMethodHasComplexity1() =
       let m =
         MethodDefinition
           ("dummy", MethodAttributes.Abstract,
            TypeDefinition("System", "Void", TypeAttributes.Public))
-      Assert.That(Gendarme.CyclomaticComplexity m, Is.EqualTo 1)
+      NUnit.Framework.Assert.That(Gendarme.CyclomaticComplexity m, Is.EqualTo 1)
 
-    [<Test>]
+    [<Test;TestMethod>]
     let BranchChainsSerialize() =
       let where = Assembly.GetExecutingAssembly().Location
       let path = Path.Combine(Path.GetDirectoryName(where), "Sample2.dll")
@@ -2350,17 +2353,17 @@ module AltCoverTests =
           |> Seq.toList
         // The only overt branching in this function are the 4 match cases
         // Internal IL conditional branching is a compiler thing from inlining "string"
-        Assert.That(branches |> Seq.length, Is.EqualTo 4)
+        NUnit.Framework.Assert.That(branches |> Seq.length, Is.EqualTo 4)
         let branch = branches |> Seq.head
-        Assert.That(branch.Target.Length, Is.EqualTo 2)
+        NUnit.Framework.Assert.That(branch.Target.Length, Is.EqualTo 2)
         let xbranch = XElement(XName.Get "test")
         OpenCover.setChain xbranch (branch.Target.Tail|> List.map (fun i -> i.Offset))
-        Assert.That(xbranch.ToString(), Is.EqualTo """<test offsetchain="29" />""")
+        NUnit.Framework.Assert.That(xbranch.ToString(), Is.EqualTo """<test offsetchain="29" />""")
       finally
         Visitor.NameFilters.Clear()
         Visitor.reportFormat <- None
 
-    [<Test>]
+    [<Test;TestMethod>]
     let BranchChainsTerminate() =
       let where = Assembly.GetExecutingAssembly().Location
       let path = Path.Combine(Path.GetDirectoryName(where), "Sample2.dll")
@@ -2373,7 +2376,7 @@ module AltCoverTests =
 
       let fin = method.Body.Instructions |> Seq.last
       let list = Visitor.getJumpChain fin fin
-      Assert.That(list, Is.EquivalentTo [ fin ])
+      NUnit.Framework.Assert.That(list, Is.EquivalentTo [ fin ])
 
     let rec private RecursiveValidateOpenCover result expected' depth zero
                   expectSkipped =
@@ -2390,25 +2393,25 @@ module AltCoverTests =
         |> Seq.toList
 
       let ecount = expected |> Seq.length
-      Assert.That
+      NUnit.Framework.Assert.That
         (rcount, Is.EqualTo(ecount),
          "Mismatch at depth " + depth.ToString() + " : " + expected.ToString()
          + " but got" + (result |> Seq.toList).ToString())
       Seq.zip result expected
       |> Seq.iter
            (fun (r : XElement, e : XElement) ->
-           Assert.That(r.Name, Is.EqualTo(e.Name), "Expected name " + e.Name.ToString())
+           NUnit.Framework.Assert.That(r.Name, Is.EqualTo(e.Name), "Expected name " + e.Name.ToString())
            let ra = r.Attributes()
            let ea = e.Attributes()
            Seq.zip ra ea
            |> Seq.iter
                 (fun (a1 : XAttribute, a2 : XAttribute) ->
-                Assert.That(a1.Name, Is.EqualTo(a2.Name))
+                NUnit.Framework.Assert.That(a1.Name, Is.EqualTo(a2.Name))
                 match a1.Name.ToString() with
                 | "bev" | "visited" | "visitedSequencePoints" | "visitedBranchPoints" | "visitedClasses" | "visitedMethods" | "sequenceCoverage" | "branchCoverage" | "uspid" | "minCrapScore" | "maxCrapScore" | "crapScore" | "hash" ->
                   ()
                 | "fullPath" ->
-                  Assert.That
+                  NUnit.Framework.Assert.That
                     (a1.Value.Replace("\\", "/"),
                      Does.EndWith(a2.Value.Replace("\\", "/")),
                      a1.Name.ToString() + " : " + r.ToString() + " -> document")
@@ -2416,16 +2419,16 @@ module AltCoverTests =
                   let expected =
                     if zero then "0"
                     else a2.Value
-                  Assert.That
+                  NUnit.Framework.Assert.That
                     (a1.Value, Is.EqualTo(expected), r.ToString() + " -> visitcount")
                 | _ ->
-                  Assert.That
+                  NUnit.Framework.Assert.That
                     (a1.Value, Is.EqualTo(a2.Value),
                      r.ToString() + " -> " + a1.Name.ToString()))
            RecursiveValidateOpenCover (r.Elements()) (e.Elements())
              (depth + 1) zero expectSkipped)
 
-    [<Test>]
+    [<Test;TestMethod>]
     let ShouldGenerateExpectedXmlReportWithSourceLinkOpenCoverStyle() =
       let visitor, document = OpenCover.ReportGenerator()
       // Hack for running while instrumented
@@ -2435,7 +2438,7 @@ module AltCoverTests =
       try
         Visitor.sourcelink := true
         Visitor.Visit [ visitor ] (Visitor.ToSeq (path, []))
-        Assert.That(Visitor.SourceLinkDocuments |> Option.isSome, "Documents should be present")
+        NUnit.Framework.Assert.That(Visitor.SourceLinkDocuments |> Option.isSome, "Documents should be present")
         let map = Visitor.SourceLinkDocuments |> Option.get
         let url = map.Values |> Seq.find (fun f -> f.EndsWith ("*", StringComparison.Ordinal))
 
@@ -2448,7 +2451,7 @@ module AltCoverTests =
                          url.Replace("*", "Sample14/Sample14/Program.cs")
                          url.Replace("*", "Sample5/Class1.cs")
                        ]
-        Assert.That (files, Is.EquivalentTo expected)
+        NUnit.Framework.Assert.That (files, Is.EquivalentTo expected)
 
         let untracked = document.Descendants(XName.Get "File")
                         |> Seq.map (fun s -> s.Attribute(XName.Get "fullPath").Value)
@@ -2460,12 +2463,12 @@ module AltCoverTests =
                           "Class2.cs"
                           "Sample14.SourceLink.Class3.cs"
                         ]
-        Assert.That (untracked, Is.EquivalentTo expected2)
+        NUnit.Framework.Assert.That (untracked, Is.EquivalentTo expected2)
       finally
         Visitor.NameFilters.Clear()
         Visitor.sourcelink := false
 
-    [<Test>]
+    [<Test;TestMethod>]
     let ShouldGenerateExpectedXmlReportFromDotNetOpenCoverStyle() =
       let visitor, document = OpenCover.ReportGenerator()
       // Hack for running while instrumented
@@ -2489,7 +2492,7 @@ module AltCoverTests =
         Visitor.NameFilters.Clear()
         Visitor.reportFormat <- None
 
-    [<Test>]
+    [<Test;TestMethod>]
     let ShouldGenerateExpectedXmlReportFromDotNetLineCoverStyle() =
       let visitor, document = OpenCover.ReportGenerator()
       // Hack for running while instrumented
@@ -2527,7 +2530,7 @@ module AltCoverTests =
         Visitor.reportFormat <- None
         Visitor.coverstyle <- CoverStyle.All
 
-    [<Test>]
+    [<Test;TestMethod>]
     let ShouldGenerateExpectedXmlReportFromDotNetBranchCoverStyle() =
       let visitor, document = OpenCover.ReportGenerator()
       // Hack for running while instrumented
@@ -2579,7 +2582,7 @@ module AltCoverTests =
             XAttribute(XName.Get "strategy", "Main")))
       baseline
 
-    [<Test>]
+    [<Test;TestMethod>]
     let ShouldGenerateExpectedXmlReportFromDotNetOpenCoverStyleWithTracking() =
       let visitor, document = OpenCover.ReportGenerator()
       // Hack for running while instrumented
@@ -2601,7 +2604,7 @@ module AltCoverTests =
         Visitor.NameFilters.Clear()
         Visitor.TrackingNames.Clear()
 
-    [<Test>]
+    [<Test;TestMethod>]
     let ShouldGenerateExpectedXmlReportWithModuleExclusionOpenCoverStyle() =
       let visitor, document = OpenCover.ReportGenerator()
       // Hack for running while instrumented
@@ -2633,7 +2636,7 @@ module AltCoverTests =
       finally
         Visitor.NameFilters.Clear()
 
-    [<Test>]
+    [<Test;TestMethod>]
     let ShouldGenerateExpectedTrackingXmlReportWithModuleExclusionOpenCoverStyle() =
       let visitor, document = OpenCover.ReportGenerator()
       // Hack for running while instrumented
@@ -2673,7 +2676,7 @@ module AltCoverTests =
         Visitor.TrackingNames.Clear()
         Visitor.reportFormat <- None
 
-    [<Test>]
+    [<Test;TestMethod>]
     let ShouldGenerateExpectedXmlReportWithClassExclusionOpenCoverStyle() =
       let visitor, document = OpenCover.ReportGenerator()
       Visitor.reportFormat <- Some Base.ReportFormat.OpenCover
@@ -2682,7 +2685,7 @@ module AltCoverTests =
       let path =
         Path.Combine(Path.GetDirectoryName(where) + Hack(), sample1)
       try
-        Assert.That(Visitor.ReportFormat(), Is.EqualTo Base.ReportFormat.OpenCover)
+        NUnit.Framework.Assert.That(Visitor.ReportFormat(), Is.EqualTo Base.ReportFormat.OpenCover)
         "Program"
         |> (Regex
             >> FilterRegex.Exclude
@@ -2702,7 +2705,7 @@ module AltCoverTests =
         Visitor.NameFilters.Clear()
         Visitor.reportFormat <- None
 
-    [<Test>]
+    [<Test;TestMethod>]
     let ShouldGenerateExpectedTrackingXmlReportWithClassExclusionOpenCoverStyle() =
       let visitor, document = OpenCover.ReportGenerator()
       Visitor.reportFormat <- Some Base.ReportFormat.OpenCover
@@ -2713,7 +2716,7 @@ module AltCoverTests =
       try
         Visitor.TrackingNames.Clear()
         Visitor.TrackingNames.Add("Main")
-        Assert.That
+        NUnit.Framework.Assert.That
           (Visitor.ReportFormat(), Is.EqualTo Base.ReportFormat.OpenCoverWithTracking)
         "Program"
         |> (Regex
@@ -2730,7 +2733,7 @@ module AltCoverTests =
         Visitor.TrackingNames.Clear()
         Visitor.reportFormat <- None
 
-    [<Test>]
+    [<Test;TestMethod>]
     let ShouldGenerateExpectedXmlReportWithMethodExclusionOpenCoverStyle() =
       let visitor, document = OpenCover.ReportGenerator()
       // Hack for running while instrumented
@@ -2757,7 +2760,7 @@ module AltCoverTests =
       finally
         Visitor.NameFilters.Clear()
 
-    [<Test>]
+    [<Test;TestMethod>]
     let ShouldGenerateExpectedXmlReportWithFileExclusionOpenCoverStyle() =
       let visitor, document = OpenCover.ReportGenerator()
       // Hack for running while instrumented
@@ -2793,7 +2796,7 @@ module AltCoverTests =
       finally
         Visitor.NameFilters.Clear()
 
-    [<Test>]
+    [<Test;TestMethod>]
     let ShouldGenerateExpectedTrackingXmlReportWithMethodExclusionOpenCoverStyle() =
       let visitor, document = OpenCover.ReportGenerator()
       Visitor.reportFormat <- Some Base.ReportFormat.OpenCover
@@ -2804,7 +2807,7 @@ module AltCoverTests =
       try
         Visitor.TrackingNames.Clear()
         Visitor.TrackingNames.Add("Main")
-        Assert.That
+        NUnit.Framework.Assert.That
           (Visitor.ReportFormat(), Is.EqualTo Base.ReportFormat.OpenCoverWithTracking)
         "Main"
         |> (Regex
@@ -2821,7 +2824,7 @@ module AltCoverTests =
         Visitor.TrackingNames.Clear()
         Visitor.reportFormat <- None
 
-    [<Test>]
+    [<Test;TestMethod>]
     let ShouldSortFileIds() =
       let visitor, document = OpenCover.ReportGenerator()
       let X name = XName.Get(name)
@@ -2843,8 +2846,8 @@ module AltCoverTests =
       let path' = path
 #endif
       Visitor.Visit [ visitor ] (Visitor.ToSeq (path',[]))
-      Assert.That(document.Descendants(X "Module") |> Seq.length, Is.EqualTo 1)
-      Assert.That(document.Descendants(X "File") |> Seq.length, Is.GreaterThan 1)
+      NUnit.Framework.Assert.That(document.Descendants(X "Module") |> Seq.length, Is.EqualTo 1)
+      NUnit.Framework.Assert.That(document.Descendants(X "File") |> Seq.length, Is.GreaterThan 1)
       document.Descendants(X "File")
       |> Seq.iteri
-           (fun i x -> Assert.That(x.Attribute(X "uid").Value, Is.EqualTo(string (1 + i))))
+           (fun i x -> NUnit.Framework.Assert.That(x.Attribute(X "uid").Value, Is.EqualTo(string (1 + i))))
