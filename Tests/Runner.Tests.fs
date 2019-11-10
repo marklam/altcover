@@ -1215,12 +1215,11 @@ module AltCoverTests =
 
     [<Test>]
     let ShouldHandleReturnCodes() =
-      // Hack for running while instrumented
-      let where = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location)
+      let where = SolutionRoot.location
 #if NETCOREAPP2_0
-      let path = Path.Combine(where, "Sample12.dll")
+      let path = Path.Combine(where, "_Binaries/Sample12/Debug+AnyCPU/netcoreapp2.0/Sample12.dll")
 #else
-      let path = Path.Combine(where, "Sample12.exe")
+      let path = Path.Combine(where, "_Binaries/Sample12/Debug+AnyCPU/Sample12.exe")
 #endif
 
       let nonWindows = System.Environment.GetEnvironmentVariable("OS") <> "Windows_NT"
@@ -2398,13 +2397,11 @@ or
     let private LoadSchema() =
       let schemas = new XmlSchemaSet()
 
-      use stream =
-          Assembly.GetExecutingAssembly()
-#if NETCOREAPP2_0
-                  .GetManifestResourceStream("altcover.tests.core.coverage-04.xsd")
-#else
-                  .GetManifestResourceStream("coverage-04.xsd")
-#endif
+      let resource =
+          Assembly.GetExecutingAssembly().GetManifestResourceNames()
+          |> Seq.find (fun n -> n.EndsWith("coverage-04.xsd", StringComparison.Ordinal))
+      use stream = Assembly.GetExecutingAssembly().GetManifestResourceStream(resource)
+
       use reader = new StreamReader(stream)
       use xreader = XmlReader.Create(reader)
       schemas.Add(String.Empty, xreader) |> ignore
