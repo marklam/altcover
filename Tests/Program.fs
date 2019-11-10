@@ -448,4 +448,4 @@ module Program =
   let main argv =
     let writeResults = TestResults.writeNUnitSummary ("AltCover.TestResults.xml", "AltCover.Tests")
     let config = defaultConfig.appendSummaryHandler writeResults
-    Tests.runTestsInAssembly config argv
+    runTestsWithArgs config argv TestMain.tests
