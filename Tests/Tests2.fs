@@ -1004,7 +1004,8 @@ module AltCoverTests2 =
       //IL_002b: br.s IL_0041
 
 #if NETCOREAPP2_0
-      let expected = 46
+      Assert.That(next, Is.GreaterThanOrEqualTo(42).And.LessThanOrEqualTo(46))
+      let expected = next
 #else
       let expected = 43
 #endif

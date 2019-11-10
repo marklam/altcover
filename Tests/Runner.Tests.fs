@@ -1463,7 +1463,7 @@ module AltCoverTests =
       // Hack for running while instrumented
       let where = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location)
 #if NETCOREAPP2_0
-      let path = Path.Combine(where, "Sample12.dll")
+      let path = Path.Combine(SolutionRoot.location, "_Binaries/Sample12/Debug+AnyCPU/netcoreapp2.0/Sample12.dll")
 #else
       let path = Path.Combine(where, "Sample12.exe")
 #endif
