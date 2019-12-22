@@ -13,7 +13,30 @@ type Summary =
   | RPlus = 3
   | BPlus = 4
 
-[<Cmdlet(VerbsLifecycle.Invoke, "AltCover")>]
+type ShowHidden =
+  | KeepHidden = 0
+  | Mark = 1
+  | Reveal = 2
+
+[<Sealed; AttributeUsage(AttributeTargets.Property)>]
+type ShowStaticTransformationAttribute() =
+  inherit ArgumentTransformationAttribute()
+  override self.Transform(engineIntrinsics:EngineIntrinsics, inputData:Object) =
+    if inputData.GetType() = typeof<ShowHidden>
+    then inputData
+    else
+      let o = inputData.ToString()
+      let (a,b) = Enum.TryParse<ShowHidden>(o, true)
+      (if a
+       then b
+       else match o with
+            | "+" -> ShowHidden.Mark
+            | "++" -> ShowHidden.Reveal
+            | _ -> ShowHidden.KeepHidden ) :> obj
+
+[<Cmdlet(VerbsLifecycle.Invoke, "AltCover",
+         SupportsShouldProcess = true,
+         ConfirmImpact =ConfirmImpact.Medium)>]
 [<OutputType([|"System.Void";"System.String"|])>]
 [<System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.PowerShell",
                                                   "PS1101:AllCmdletsShouldAcceptPipelineInput",
@@ -180,8 +203,9 @@ type InvokeAltCoverCommand(runner : bool) =
   member val ShowGenerated : SwitchParameter = SwitchParameter(false) with get, set
 
   [<Parameter(ParameterSetName = "Instrument", Mandatory = false,
-              ValueFromPipeline = false, ValueFromPipelineByPropertyName = false)>]
-  member val ShowStatic : String = "-" with get, set
+              ValueFromPipeline = false, ValueFromPipelineByPropertyName = false);
+              ShowStaticTransformation>]
+  member val ShowStatic = ShowHidden.KeepHidden with get, set
 
   [<Parameter(ParameterSetName = "Runner", Mandatory = false, ValueFromPipeline = false,
               ValueFromPipelineByPropertyName = false)>]
@@ -203,6 +227,7 @@ type InvokeAltCoverCommand(runner : bool) =
                                     SummaryFormat = formats.[self.SummaryFormat |> int]}
 
   member private self.Prepare() =
+    let showStatic = [| "-"; "+"; "++ "|]
     FSApi.PrepareParams.Primitive { InputDirectories = self.InputDirectory
                                     OutputDirectories = self.OutputDirectory
                                     SymbolDirectories = self.SymbolDirectory
@@ -230,7 +255,7 @@ type InvokeAltCoverCommand(runner : bool) =
                                     Defer = self.Defer.IsPresent
                                     LocalSource = self.LocalSource.IsPresent
                                     VisibleBranches = self.VisibleBranches.IsPresent
-                                    ShowStatic = self.ShowStatic
+                                    ShowStatic = showStatic.[self.ShowStatic |> int]
                                     ShowGenerated = self.ShowGenerated.IsPresent}
 
   member private self.Log() =
@@ -248,6 +273,11 @@ type InvokeAltCoverCommand(runner : bool) =
         ErrorRecord(InvalidOperationException(), s, ErrorCategory.InvalidOperation, self)
         |> self.WriteError
 
+      let zero _ =
+        0
+      let join (l: string list) =
+        String.Join(" ", l)
+
       let status =
         (match (self.Version.IsPresent, self.Runner.IsPresent) with
          | (true, _) ->
@@ -256,10 +286,14 @@ type InvokeAltCoverCommand(runner : bool) =
            0)
          | (_, true) ->
            let task = self.Collect()
-           Api.Collect task
+           if (self.ShouldProcess("Command Line : altcover " + (task |> FSApi.Args.Collect |> join)))
+           then Api.Collect task
+           else zero
          | _ ->
            let task = self.Prepare()
-           Api.Prepare task) log
+           if (self.ShouldProcess("Command Line : altcover " + (task |> FSApi.Args.Prepare |> join)))
+           then Api.Prepare task
+           else zero) log
       if status <> 0 then status.ToString() |> self.Log().Error
       else if self.Runner.IsPresent then Api.Summary () |> self.WriteObject
       match self.Fail with
