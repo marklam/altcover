@@ -2,6 +2,7 @@ namespace AltCover.Commands
 
 open System
 open System.Collections.Generic
+open System.Diagnostics.CodeAnalysis
 open System.IO
 open System.Management.Automation
 open System.Xml
@@ -24,25 +25,46 @@ type SelectByTrackingCommand(outputFile : String) =
 #endif
 
 [<Cmdlet(VerbsData.Merge, "Coverage")>]
-[<OutputType(typeof<XmlDocument>)>]
-type MergeCoverageCommand(outputFile : String) =
+[<OutputType(typeof<XmlDocument>); AutoSerializable(false)>]
+[<SuppressMessage("Microsoft.PowerShell", "PS1003:DoNotAccessPipelineParametersOutsideProcessRecord",
+  Justification="The rule gets confused by EndProcessing calling whileInCurrentDirectory")>]
+[<SuppressMessage("Microsoft.PowerShell", "PS1003:DoNotAccessPipelineParametersOutsideProcessRecord",
+  Justification="The rule gets confused by EndProcessing calling whileInCurrentDirectory")>]
+type MergeCoverageCommand() =
   inherit PSCmdlet()
 
-  new() = MergeCoverageCommand(String.Empty)
+  let whileInCurrentDirectory (self:PSCmdlet) f =
+    let here = Directory.GetCurrentDirectory()
+    try
+       let where = self.SessionState.Path.CurrentLocation.Path
+       Directory.SetCurrentDirectory where
+       f()
+    finally
+      Directory.SetCurrentDirectory here
 
   [<Parameter(ParameterSetName = "XmlDoc", Mandatory = true, Position = 1,
               ValueFromPipeline = true, ValueFromPipelineByPropertyName = false)>]
   [<ValidateNotNull; ValidateCount(1, Int32.MaxValue)>]
+  [<SuppressMessage(
+      "Gendarme.Rules.Performance", "AvoidReturningArraysOnPropertiesRule",
+      Justification = "Cannot convert 'System.Object[]' to the type 'System.Collections.Generic.IEnumerable`1[System.String]'")>]
+  [<SuppressMessage("Microsoft.Performance", "CA1819",
+                    Justification = "ditto, ditto")>]
   member val XmlDocument : IXPathNavigable array = [||] with get, set
 
   [<Parameter(ParameterSetName = "Files", Mandatory = true, Position = 1,
               ValueFromPipeline = true, ValueFromPipelineByPropertyName = false)>]
   [<ValidateNotNull; ValidateCount(1, Int32.MaxValue)>]
+  [<SuppressMessage(
+      "Gendarme.Rules.Performance", "AvoidReturningArraysOnPropertiesRule",
+      Justification = "Cannot convert 'System.Object[]' to the type 'System.Collections.Generic.IEnumerable`1[System.String]'")>]
+  [<SuppressMessage("Microsoft.Performance", "CA1819",
+                    Justification = "ditto, ditto")>]
   member val InputFile : string array = [||] with get, set
 
   [<Parameter(Mandatory = false, ValueFromPipeline = false,
               ValueFromPipelineByPropertyName = false)>]
-  member val OutputFile : string = outputFile with get, set
+  member val OutputFile : string = String.Empty with get, set
 
   [<Parameter(Mandatory = false)>]
   member val AsNCover : SwitchParameter = SwitchParameter(false) with get, set
@@ -51,25 +73,21 @@ type MergeCoverageCommand(outputFile : String) =
 
   override self.BeginProcessing() = self.Files.Clear()
 
-  override self.ProcessRecord() =
-    let here = Directory.GetCurrentDirectory()
-    try
-      let where = self.SessionState.Path.CurrentLocation.Path
-      Directory.SetCurrentDirectory where
+  [<SuppressMessage("Microsoft.Usage", "CA2208:InstantiateArgumentExceptionsCorrectly",
+    Justification="Inlined library code")>]
+  member private self.FilesToDocuments() =
+    self.InputFile
+    |> Array.map (fun x -> XPathDocument(x) :> IXPathNavigable)
+    |> self.Files.AddRange
 
-      if self.ParameterSetName.StartsWith("File", StringComparison.Ordinal) then
-        self.XmlDocument <- self.InputFile
-                            |> Array.map (fun x -> XPathDocument(x) :> IXPathNavigable)
-      self.Files.AddRange self.XmlDocument
-    finally
-      Directory.SetCurrentDirectory here
+  override self.ProcessRecord() =
+    whileInCurrentDirectory self (fun _ ->
+      if self.ParameterSetName.StartsWith("File", StringComparison.Ordinal)
+      then self.FilesToDocuments()
+      self.Files.AddRange self.XmlDocument)
 
   override self.EndProcessing() =
-    let here = Directory.GetCurrentDirectory()
-    try
-      let where = self.SessionState.Path.CurrentLocation.Path
-      Directory.SetCurrentDirectory where
-
+    whileInCurrentDirectory self (fun _ ->
       let xmlDocument =
         AltCover.OpenCoverUtilities.MergeCoverage self.Files self.AsNCover.IsPresent
       if self.OutputFile
@@ -77,12 +95,10 @@ type MergeCoverageCommand(outputFile : String) =
          |> not
       then xmlDocument.Save(self.OutputFile)
 
-      self.WriteObject xmlDocument
-    finally
-      Directory.SetCurrentDirectory here
+      self.WriteObject xmlDocument)
 
 [<Cmdlet(VerbsData.Compress, "Branching")>]
-[<OutputType(typeof<XmlDocument>)>]
+[<OutputType(typeof<XmlDocument>); AutoSerializable(false)>]
 type CompressBranchingCommand(outputFile : String) =
   inherit PSCmdlet()
 

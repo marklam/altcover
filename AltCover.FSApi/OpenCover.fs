@@ -25,7 +25,7 @@ module OpenCoverUtilities =
   [<SuppressMessage("Microsoft.Design", "CA1059", Justification = "Premature abstraction")>]
   let MergeOpenCover(inputs : XmlDocument list) =
     let loadFromString() =
-      use reader =
+      use reader = // fsharplint:disable-next-line  RedundantNewKeyword
         new StringReader("""<CoverageSession xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"><Summary numSequencePoints="?" visitedSequencePoints="0" numBranchPoints="?" visitedBranchPoints="0" sequenceCoverage="0" branchCoverage="0" maxCyclomaticComplexity="0" minCyclomaticComplexity="0" visitedClasses="0" numClasses="?" visitedMethods="0" numMethods="?" minCrapScore="0" maxCrapScore="0" /><Modules /></CoverageSession>""")
       let doc = XmlDocument()
       doc.Load(reader)
@@ -36,7 +36,8 @@ module OpenCoverUtilities =
     let modules =
       inputs
       |> List.collect
-           (fun x -> x.SelectNodes("//Module").OfType<XmlElement>() |> Seq.toList)
+           (fun x -> use nodes = x.SelectNodes("//Module")
+                     nodes.OfType<XmlElement>() |> Seq.toList)
       |> List.groupBy (fun x -> x.GetAttribute("hash"))
 
     let results = Dictionary<string, XmlElement>()
@@ -111,8 +112,8 @@ module OpenCoverUtilities =
     summary.SetAttribute("numMethods", numMethods.ToString(CultureInfo.InvariantCulture))
 
     // tidy up here
-    AltCover.Runner.PostProcess null AltCover.Base.ReportFormat.OpenCover doc
-    XmlUtilities.PrependDeclaration doc
+    AltCover.Runner.postProcess null AltCover.Base.ReportFormat.OpenCover doc
+    XmlUtilities.prependDeclaration doc
     doc
 
   [<SuppressMessage("Microsoft.Design", "CA1059", Justification = "Premature abstraction")>]
@@ -121,9 +122,10 @@ module OpenCoverUtilities =
       documents
       |> Seq.map (fun x ->
            let xmlDocument = new XmlDocument()
-           x.CreateNavigator().ReadSubtree() |> xmlDocument.Load
+           use reader = x.CreateNavigator().ReadSubtree()
+           reader |> xmlDocument.Load
            try
-             let format = XmlUtilities.DiscoverFormat xmlDocument
+             let format = XmlUtilities.discoverFormat xmlDocument
              match (ncover, format) with
              | (true, Base.ReportFormat.NCover) | (false, Base.ReportFormat.OpenCover) ->
                Some xmlDocument
@@ -134,13 +136,13 @@ module OpenCoverUtilities =
     match inputs with
     | [] -> XmlDocument()
     | [ x ] ->
-      XmlUtilities.PrependDeclaration x
+      XmlUtilities.prependDeclaration x
       x
     | _ ->
       if ncover then MergeNCover inputs
       else MergeOpenCover inputs
 
-  let private CompressMethod withinSequencePoint sameSpan (m : XmlElement) =
+  let private compressMethod withinSequencePoint sameSpan (m : XmlElement) =
     use sp0 = m.GetElementsByTagName("SequencePoint")
     let sp = sp0.OfType<XmlElement>() |> Seq.toList
     use bp0 =m.GetElementsByTagName("BranchPoint")
@@ -243,14 +245,22 @@ module OpenCoverUtilities =
     let xmlDocument = new XmlDocument()
     use reader = navigable.CreateNavigator().ReadSubtree()
     reader |> xmlDocument.Load
-    xmlDocument.Schemas <- XmlUtilities.LoadSchema AltCover.Base.ReportFormat.OpenCover
+    xmlDocument.Schemas <- XmlUtilities.loadSchema AltCover.Base.ReportFormat.OpenCover
     xmlDocument.Validate(null)
     // Get all the methods
     use methods = xmlDocument.SelectNodes("//Method")
     methods
     |> Seq.cast<XmlElement>
-    |> Seq.iter (CompressMethod withinSequencePoint sameSpan)
+    |> Seq.iter (compressMethod withinSequencePoint sameSpan)
     // tidy up here
-    AltCover.Runner.PostProcess null AltCover.Base.ReportFormat.OpenCover xmlDocument
-    XmlUtilities.PrependDeclaration xmlDocument
+    AltCover.Runner.postProcess null AltCover.Base.ReportFormat.OpenCover xmlDocument
+    XmlUtilities.prependDeclaration xmlDocument
     xmlDocument
+
+[<assembly: SuppressMessage("Microsoft.Naming", "CA1704:IdentifiersShouldBeSpelledCorrectly",
+  Scope="member", Target="AltCover.OpenCoverUtilities.#MergeCoverage(System.Collections.Generic.IEnumerable`1<System.Xml.XPath.IXPathNavigable>,System.Boolean)",
+  MessageId="ncover", Justification="NCover is a name")>]
+[<assembly: SuppressMessage("Microsoft.Naming", "CA1704:IdentifiersShouldBeSpelledCorrectly",
+  Scope="member", Target="AltCover.OpenCoverUtilities.#MergeNCover`1(!!0)",
+  MessageId="a", Justification="Compiler Generated")>]
+()

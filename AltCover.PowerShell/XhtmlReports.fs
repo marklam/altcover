@@ -25,7 +25,7 @@ type ConvertToSourceMapCommand(outputFile : String) =
 #endif
 
 [<Cmdlet(VerbsData.ConvertTo, "BarChart")>]
-[<OutputType(typeof<XmlDocument>)>]
+[<OutputType(typeof<XmlDocument>); AutoSerializable(false)>]
 [<SuppressMessage("Microsoft.PowerShell", "PS1008", Justification = "Cobertura is OK")>]
 type ConvertToBarChartCommand(outputFile : String) =
   inherit PSCmdlet()
