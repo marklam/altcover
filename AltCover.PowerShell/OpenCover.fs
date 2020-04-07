@@ -5,7 +5,7 @@ open System.Collections.Generic
 open System.Diagnostics.CodeAnalysis
 open System.IO
 open System.Management.Automation
-open System.Xml
+open System.Xml.Linq
 open System.Xml.XPath
 
 #if TODO
@@ -98,7 +98,7 @@ type MergeCoverageCommand() =
       self.WriteObject xmlDocument)
 
 [<Cmdlet(VerbsData.Compress, "Branching")>]
-[<OutputType(typeof<XmlDocument>); AutoSerializable(false)>]
+[<OutputType(typeof<XDocument>); AutoSerializable(false)>]
 type CompressBranchingCommand(outputFile : String) =
   inherit PSCmdlet()
 
@@ -108,7 +108,7 @@ type CompressBranchingCommand(outputFile : String) =
               ValueFromPipeline = true, ValueFromPipelineByPropertyName = false)>]
   [<Parameter(ParameterSetName = "XmlDocB", Mandatory = true, Position = 1,
               ValueFromPipeline = true, ValueFromPipelineByPropertyName = false)>]
-  member val XmlDocument : IXPathNavigable = null with get, set
+  member val XDocument : XDocument = null with get, set
 
   [<Parameter(ParameterSetName = "FromFileA", Mandatory = true, Position = 1,
               ValueFromPipeline = true, ValueFromPipelineByPropertyName = false)>]
@@ -148,10 +148,10 @@ type CompressBranchingCommand(outputFile : String) =
       let where = self.SessionState.Path.CurrentLocation.Path
       Directory.SetCurrentDirectory where
       if self.ParameterSetName.StartsWith("FromFile", StringComparison.Ordinal) then
-        self.XmlDocument <- XPathDocument self.InputFile
+        self.XDocument <- XDocument.Load self.InputFile
 
       let xmlDocument =
-        AltCover.OpenCoverUtilities.CompressBranching self.XmlDocument
+        AltCover.OpenCoverUtilities.CompressBranching self.XDocument
           self.WithinSequencePoint.IsPresent self.SameSpan.IsPresent
 
       if self.OutputFile
