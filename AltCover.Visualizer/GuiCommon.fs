@@ -88,3 +88,10 @@ module internal GuiCommon =
       System.Uri(document) |> Url
     else
       FileInfo(document) |> File
+
+  type internal AltCover.Exemption with
+    static member internal OfInt i =
+     if i > 0 then AltCover.Exemption.Visited
+     else if i < -4
+          then AltCover.Exemption.None
+          else i |> sbyte |> Microsoft.FSharp.Core.LanguagePrimitives.EnumOfValue<sbyte, AltCover.Exemption>

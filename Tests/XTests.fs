@@ -90,7 +90,7 @@ module AltCoverXTests =
                   else a2.Value
                 test' <@ expected = a1.Value @> (r.ToString() + " -> visitcount")
               | _ ->
-                test' <@ a1.Value = a2.Value @>
+                test' <@ a1.Value.Replace("\\", "/") = a2.Value.Replace("\\", "/") @>
                   (r.ToString() + " -> " + a1.Name.ToString()))
          RecursiveValidate (r.Elements()) (e.Elements()) (depth + 1) zero)
 
@@ -610,7 +610,7 @@ module AltCoverXTests =
   [<Test>]
   let ADryRunLooksAsExpected() =
     let where = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location)
-    let path = monoSample1path |> Path.GetDirectoryName
+    let path = monoSample1path |> Path.GetDirectoryName |> Path.GetFullPath
     let key = Path.Combine(SolutionDir(), "Build/SelfTest.snk")
     let unique = Guid.NewGuid().ToString()
     let unique' = Path.Combine(where, Guid.NewGuid().ToString())
@@ -639,15 +639,15 @@ module AltCoverXTests =
       test <@ stderr.ToString() |> Seq.isEmpty @>
       let expected =
         "Creating folder " + output + "\nInstrumenting files from "
-        + (Path.GetFullPath path) + "\nWriting files to " + output + "\n   => "
-        + Path.Combine(Path.GetFullPath path, "Sample1.exe") + "\n\nCoverage Report: "
+        + path + "\nWriting files to " + output + "\n   => "
+        + monoSample1path + "\n\nCoverage Report: "
         + report + "\n\n\n    " + Path.Combine(Path.GetFullPath output, "Sample1.exe")
         + "\n                <=  Sample1, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null\n"
       let console = stdout.ToString()
       test <@ console.Replace("\r\n", "\n").Replace("\\", "/") = (expected.Replace("\\", "/")) @>
       test <@  CoverageParameters.outputDirectories() |> Seq.head = output @>
       test <@ (CoverageParameters.inputDirectories() |> Seq.head).Replace("\\", "/") =
-               ((Path.GetFullPath path).Replace("\\", "/")) @>
+               (path.Replace("\\", "/")) @>
       test <@ CoverageParameters.reportPath() = report @>
       use stream = new FileStream(key, FileMode.Open)
       use buffer = new MemoryStream()
@@ -699,8 +699,9 @@ module AltCoverXTests =
         |> List.sortBy (fun f -> f.ToUpperInvariant())
 
       test <@ actual = theFiles @>
-      let expectedXml = XDocument.Load(new System.IO.StringReader(MonoBaseline))
-      let recordedXml = Runner.K.loadReport report
+      let expectedText = MonoBaseline.Replace("name=\"Sample1.exe\"", "name=\"" + monoSample1path + "\"")
+      let expectedXml = XDocument.Load(new StringReader(expectedText))
+      let recordedXml = Runner.J.loadReport report
       RecursiveValidate (recordedXml.Elements()) (expectedXml.Elements()) 0 true
     finally
       CoverageParameters.theOutputDirectories.Clear()
@@ -843,9 +844,9 @@ module AltCoverXTests =
          let updated = Instrument.I.prepareAssembly from
          Instrument.I.writeAssembly updated create
     let save = Runner.J.recorderName
-    let save1 = Runner.K.getPayload
-    let save2 = Runner.K.getMonitor
-    let save3 = Runner.K.doReport
+    let save1 = Runner.J.getPayload
+    let save2 = Runner.J.getMonitor
+    let save3 = Runner.J.doReport
     let codedreport = "coverage.xml" |> Path.GetFullPath
     let alternate = "not-coverage.xml" |> Path.GetFullPath
     try
@@ -867,9 +868,9 @@ module AltCoverXTests =
         test <@ hits |> Seq.isEmpty @>
         TimeSpan.Zero
 
-      Runner.K.getPayload <- payload
-      Runner.K.getMonitor <- monitor
-      Runner.K.doReport <- write
+      Runner.J.getPayload <- payload
+      Runner.J.getMonitor <- monitor
+      Runner.J.doReport <- write
       let empty = OptionSet()
       let dummy = codedreport + ".xx.acv"
       do use temp = File.Create dummy
@@ -882,9 +883,9 @@ module AltCoverXTests =
               |> not @>
       test <@ r = 127 @>
     finally
-      Runner.K.getPayload <- save1
-      Runner.K.getMonitor <- save2
-      Runner.K.doReport <- save3
+      Runner.J.getPayload <- save1
+      Runner.J.getMonitor <- save2
+      Runner.J.doReport <- save3
       Runner.J.recorderName <- save
       Directory.SetCurrentDirectory start
 
@@ -895,7 +896,8 @@ module AltCoverXTests =
     let where = Assembly.GetExecutingAssembly().Location
     let path = monoSample1path
     Visitor.visit [ visitor ] (Visitor.I.toSeq (path,[]))
-    let baseline = XDocument.Load(new System.IO.StringReader(MonoBaseline))
+    let expectedText = MonoBaseline.Replace("name=\"Sample1.exe\"", "name=\"" + (path |> Path.GetFullPath) + "\"")
+    let baseline = XDocument.Load(new System.IO.StringReader(expectedText))
     let result = document.Elements()
     let expected = baseline.Elements()
     RecursiveValidate result expected 0 true
@@ -915,6 +917,11 @@ module AltCoverXTests =
              (fun n -> n.EndsWith("HandRolledMonoCoverage.xml", StringComparison.Ordinal))
       use stream = Assembly.GetExecutingAssembly().GetManifestResourceStream(resource)
       let baseline = XDocument.Load(stream)
+      ("ModulePath"
+       |> XName.Get
+       |> baseline.Descendants
+       |> Seq.head).SetValue path
+
       let result = document.Elements()
       let expected = baseline.Elements()
       RecursiveValidateOpenCover result expected 0 true false

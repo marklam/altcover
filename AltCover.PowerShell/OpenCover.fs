@@ -25,7 +25,7 @@ type SelectByTrackingCommand(outputFile : String) =
 #endif
 
 [<Cmdlet(VerbsData.Merge, "Coverage")>]
-[<OutputType(typeof<XmlDocument>); AutoSerializable(false)>]
+[<OutputType(typeof<XDocument>); AutoSerializable(false)>]
 [<SuppressMessage("Microsoft.PowerShell", "PS1003:DoNotAccessPipelineParametersOutsideProcessRecord",
   Justification="The rule gets confused by EndProcessing calling whileInCurrentDirectory")>]
 [<SuppressMessage("Microsoft.PowerShell", "PS1003:DoNotAccessPipelineParametersOutsideProcessRecord",
@@ -50,7 +50,7 @@ type MergeCoverageCommand() =
       Justification = "Cannot convert 'System.Object[]' to the type 'System.Collections.Generic.IEnumerable`1[System.String]'")>]
   [<SuppressMessage("Microsoft.Performance", "CA1819",
                     Justification = "ditto, ditto")>]
-  member val XmlDocument : IXPathNavigable array = [||] with get, set
+  member val XDocument : XDocument array = [||] with get, set
 
   [<Parameter(ParameterSetName = "Files", Mandatory = true, Position = 1,
               ValueFromPipeline = true, ValueFromPipelineByPropertyName = false)>]
@@ -69,7 +69,7 @@ type MergeCoverageCommand() =
   [<Parameter(Mandatory = false)>]
   member val AsNCover : SwitchParameter = SwitchParameter(false) with get, set
 
-  member val private Files = new List<IXPathNavigable>()
+  member val private Files = new List<XDocument>()
 
   override self.BeginProcessing() = self.Files.Clear()
 
@@ -77,14 +77,14 @@ type MergeCoverageCommand() =
     Justification="Inlined library code")>]
   member private self.FilesToDocuments() =
     self.InputFile
-    |> Array.map (fun x -> XPathDocument(x) :> IXPathNavigable)
+    |> Array.map XDocument.Load
     |> self.Files.AddRange
 
   override self.ProcessRecord() =
     whileInCurrentDirectory self (fun _ ->
       if self.ParameterSetName.StartsWith("File", StringComparison.Ordinal)
       then self.FilesToDocuments()
-      self.Files.AddRange self.XmlDocument)
+      self.Files.AddRange self.XDocument)
 
   override self.EndProcessing() =
     whileInCurrentDirectory self (fun _ ->

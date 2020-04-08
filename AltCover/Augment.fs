@@ -16,15 +16,14 @@ module internal Augment =
       with get() =
         self |> isNull |> not
 
-#if GUI
-#else
-#if !WEAKNAME
+#if !WEAK_NAME
   type System.String with
     member self.X
       with get() =
         System.Xml.Linq.XName.Get self
 #endif
 
+#if !GUI
   type Microsoft.FSharp.Core.Option<'T> with
     [<SuppressMessage("Gendarme.Rules.Naming",
                       "UseCorrectCasingRule",
@@ -60,14 +59,21 @@ module internal Augment =
     function
     | Choice1Of2 x -> Right x
     | Choice2Of2 x -> Left x
-#if GUI
-#else
+
+#if !WEAK_NAME
+#if !GUI
+  let internal doWithStream (create : unit -> 'a) (action : 'a -> unit) =
+    use stream = create()
+    action stream
+#endif
+#endif
+
+#if !GUI
   type System.Boolean with
     member self.ToInt32
       with get() =
         if self then 1 else 0
-
-#if !WEAKNAME
+#if !WEAK_NAME
   type System.Int32 with
     member self.Increment (b : bool) =
       self + b.ToInt32
@@ -77,11 +83,6 @@ module internal Augment =
    member self.Split
      with get () =
       (self.Head, self.Tail) // since Gendarme thinks the concatenation operator is a hardcoded path!
-#if !WEAKNAME
-  let internal doWithStream (create : unit -> 'a) (action : 'a -> unit) =
-    use stream = create()
-    action stream
-#endif
 #endif
 
 [<assembly: SuppressMessage("Microsoft.Naming", "CA1704:IdentifiersShouldBeSpelledCorrectly",
@@ -109,4 +110,10 @@ module internal Augment =
 [<assembly: SuppressMessage("Microsoft.Naming", "CA1704:IdentifiersShouldBeSpelledCorrectly",
   Scope="member", Target="AltCover.Augment.#Right`2(!!0)", MessageId="x",
   Justification="Trivial usage")>]
+[<assembly: SuppressMessage("Microsoft.Naming", "CA1704:IdentifiersShouldBeSpelledCorrectly",
+  Scope="member", Target="AltCover.Augment.#String.get_X(System.String)", MessageId="param",
+  Justification="Compiler generated")>]
+[<assembly: SuppressMessage("Microsoft.Naming", "CA1707:IdentifiersShouldNotContainUnderscores",
+  Scope="member", Target="AltCover.Augment.#String.get_X(System.String)",
+  Justification="Compiler generated")>]
 ()
